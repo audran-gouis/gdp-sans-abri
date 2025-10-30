@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
+    <title>App Finale Maraudes</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/modal.css">
+    <link rel="stylesheet" href="styles/form.css">
+</head>
+<body>
+    <div id="app">
+        <nav class="tabs-navigation">
+            <button class="tab-button active" data-tab="transmissions">Transmissions Quotidiennes</button>
+            <button class="tab-button" data-tab="adp">ADP</button>
+            <button class="tab-button" data-tab="statistiques">Statistiques</button>
+        </nav>
+
+        <main class="app-main">
+            <div id="transmissions-tab" class="tab-content active">
+                <div class="content-card">
+                    <div class="date-selector-container">
+                        <label for="transmissions-date">Date :</label>
+                        <input type="date" id="transmissions-date" class="date-input">
+                    </div>
+                    
+                    <div class="filters-container">
+                        <div class="filter-group">
+                            <label for="filter-nom">Nom :</label>
+                            <input type="text" id="filter-nom" class="filter-input" placeholder="Rechercher par nom">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="filter-prenom">Prénom :</label>
+                            <input type="text" id="filter-prenom" class="filter-input" placeholder="Rechercher par prénom">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="filter-ddn">Date de Naissance :</label>
+                            <input type="date" id="filter-ddn" class="filter-input">
+                        </div>
+                        
+                        <button id="btn-ajouter" class="btn-add">Ajouter</button>
+                    </div>
+                    
+                    <h2>Transmissions Quotidiennes</h2>
+                    <p>Gérez vos transmissions quotidiennes ici.</p>
+                </div>
+            </div>
+
+            <div id="adp-tab" class="tab-content">
+                <div class="content-card">
+                    <h2>ADP</h2>
+                    <p>Accès Droits Personnes - Gestion des accès.</p>
+                </div>
+            </div>
+
+            <div id="statistiques-tab" class="tab-content">
+                <div class="content-card">
+                    <h2>Statistiques</h2>
+                    <p>Consultez les statistiques et rapports.</p>
+                </div>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <p>Version 1.0.0 - Electron App</p>
+        </footer>
+    </div>
+
+    <!-- Modal Ajout Transmission -->
+    <div id="modal-ajout" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nouvelle Transmission</h2>
+                <div class="modal-actions">
+                    <button class="modal-expand" id="btn-expand" title="Agrandir">⛶</button>
+                    <button class="modal-close">&times;</button>
+                </div>
+            </div>
+            
+            <form id="form-transmission" class="modal-body">
+                <!-- Section Informations Personnelles -->
+                <div class="form-section">
+                    <h3>Informations Personnelles</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="form-nom">Nom :</label>
+                            <input type="text" id="form-nom" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="form-prenom">Prénom :</label>
+                            <input type="text" id="form-prenom" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="form-ddn">Date de Naissance :</label>
+                            <input type="date" id="form-ddn" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="form-typologie">Typologie de Ménages :</label>
+                            <select id="form-typologie" class="form-input">
+                                <option value="">Sélectionner...</option>
+                                <option value="homme-seul">Homme Seul</option>
+                                <option value="femme-seule">Femme seule</option>
+                                <option value="femme-seule-avec-enfants">Femme seule avec enfant(s)</option>
+                                <option value="homme-seul-avec-enfants">Homme seul avec enfant(s)</option>
+                                <option value="groupe-adultes-avec-enfants">Groupe d'adultes avec enfant(s)</option>
+                                <option value="groupe-adultes-sans-enfant">Groupe d'adultes sans enfant</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="form-nb-personnes">Nombre de Personnes :</label>
+                            <select id="form-nb-personnes" class="form-input">
+                                <option value="">Sélectionner...</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10+">10+</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="form-mineurs">dont Mineurs :</label>
+                            <select id="form-mineurs" class="form-input">
+                                <option value="">Sélectionner...</option>
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10+">10+</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Transmission -->
+                <div class="form-section">
+                    <h3>Transmission</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="form-adresse">Adresse :</label>
+                            <input type="text" id="form-adresse" class="form-input" placeholder="Numéro et nom de rue">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="form-ville">Ville :</label>
+                            <select id="form-ville" class="form-input">
+                                <option value="">Sélectionner...</option>
+                                <option value="Ablon-sur-Seine">Ablon-sur-Seine</option>
+                                <option value="Alfortville">Alfortville</option>
+                                <option value="Arcueil">Arcueil</option>
+                                <option value="Boissy-Saint-Léger">Boissy-Saint-Léger</option>
+                                <option value="Bonneuil-sur-Marne">Bonneuil-sur-Marne</option>
+                                <option value="Bry-sur-Marne">Bry-sur-Marne</option>
+                                <option value="Cachan">Cachan</option>
+                                <option value="Champigny-sur-Marne">Champigny-sur-Marne</option>
+                                <option value="Charenton-le-Pont">Charenton-le-Pont</option>
+                                <option value="Chennevières-sur-Marne">Chennevières-sur-Marne</option>
+                                <option value="Chevilly-Larue">Chevilly-Larue</option>
+                                <option value="Choisy-le-Roi">Choisy-le-Roi</option>
+                                <option value="Créteil A (MONDOR/ECHAT/MOSQUEE)">Créteil A (MONDOR/ECHAT/MOSQUEE)</option>
+                                <option value="Créteil B (CHIC/EGLISE/PONT ST MAUR)">Créteil B (CHIC/EGLISE/PONT ST MAUR)</option>
+                                <option value="Créteil C (SOLEIL/MONT MESLY)">Créteil C (SOLEIL/MONT MESLY)</option>
+                                <option value="Créteil D (POMPADOUR/LAC)">Créteil D (POMPADOUR/LAC)</option>
+                                <option value="Fontenay-sous-Bois">Fontenay-sous-Bois</option>
+                                <option value="Fresnes">Fresnes</option>
+                                <option value="Gentilly">Gentilly</option>
+                                <option value="Ivry-sur-Seine">Ivry-sur-Seine</option>
+                                <option value="Joinville-le-Pont">Joinville-le-Pont</option>
+                                <option value="L'Haÿ-les-Roses">L'Haÿ-les-Roses</option>
+                                <option value="La Queue-en-Brie">La Queue-en-Brie</option>
+                                <option value="Le Kremlin-Bicêtre">Le Kremlin-Bicêtre</option>
+                                <option value="Le Perreux-sur-Marne">Le Perreux-sur-Marne</option>
+                                <option value="Le Plessis-Trévise">Le Plessis-Trévise</option>
+                                <option value="Limeil-Brévannes">Limeil-Brévannes</option>
+                                <option value="Maisons-Alfort">Maisons-Alfort</option>
+                                <option value="Mandres-les-Roses">Mandres-les-Roses</option>
+                                <option value="Marolles-en-Brie">Marolles-en-Brie</option>
+                                <option value="Nogent-sur-Marne">Nogent-sur-Marne</option>
+                                <option value="Noiseau">Noiseau</option>
+                                <option value="Orly">Orly</option>
+                                <option value="Ormesson-sur-Marne">Ormesson-sur-Marne</option>
+                                <option value="Périgny">Périgny</option>
+                                <option value="Rungis">Rungis</option>
+                                <option value="Saint-Mandé">Saint-Mandé</option>
+                                <option value="Saint-Maur-des-Fossés">Saint-Maur-des-Fossés</option>
+                                <option value="Saint-Maurice">Saint-Maurice</option>
+                                <option value="Santeny">Santeny</option>
+                                <option value="Sucy-en-Brie">Sucy-en-Brie</option>
+                                <option value="Thiais">Thiais</option>
+                                <option value="Valenton">Valenton</option>
+                                <option value="Villecresnes">Villecresnes</option>
+                                <option value="Villejuif">Villejuif</option>
+                                <option value="Villeneuve-le-Roi">Villeneuve-le-Roi</option>
+                                <option value="Villeneuve-Saint-Georges">Villeneuve-Saint-Georges</option>
+                                <option value="Villiers-sur-Marne">Villiers-sur-Marne</option>
+                                <option value="Vincennes">Vincennes</option>
+                                <option value="Vitry-sur-Seine">Vitry-sur-Seine</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="form-signalement">Signalement :</label>
+                            <select id="form-signalement" class="form-input">
+                                <option value=""></option>
+                                <option value="115">115</option>
+                                <option value="Partenaires">Partenaires</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="form-transmission">Contenu de la transmission :</label>
+                            <textarea id="form-transmission" class="form-textarea" rows="6" required></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btn-annuler">Annuler</button>
+                    <button type="submit" class="btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
+
