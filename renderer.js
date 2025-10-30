@@ -1,5 +1,268 @@
 // Script du processus de rendu
 document.addEventListener('DOMContentLoaded', () => {
+  // ==================== INDEXEDDB POUR TRANSMISSIONS ====================
+  let db;
+  const DB_NAME = 'MaraudesDB';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'transmissions';
+
+  // Initialiser IndexedDB
+  const initDB = () => {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+      request.onerror = () => {
+        console.error('Erreur lors de l\'ouverture de la base de données');
+        reject(request.error);
+      };
+
+      request.onsuccess = (event) => {
+        db = event.target.result;
+        console.log('Base de données ouverte avec succès');
+        resolve(db);
+      };
+
+      request.onupgradeneeded = (event) => {
+        db = event.target.result;
+        
+        // Créer l'object store pour les transmissions
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          const objectStore = db.createObjectStore(STORE_NAME, { 
+            keyPath: 'id', 
+            autoIncrement: true 
+          });
+          
+          // Créer des index pour faciliter les recherches
+          objectStore.createIndex('nom', 'nom', { unique: false });
+          objectStore.createIndex('prenom', 'prenom', { unique: false });
+          objectStore.createIndex('dateNaissance', 'dateNaissance', { unique: false });
+          objectStore.createIndex('ville', 'ville', { unique: false });
+          objectStore.createIndex('dateCreation', 'dateCreation', { unique: false });
+          
+          console.log('Object store créé avec succès');
+        }
+      };
+    });
+  };
+
+  // Ajouter une transmission dans la base de données
+  const addTransmission = (data) => {
+    return new Promise((resolve, reject) => {
+      // Ajouter la date de création
+      data.dateCreation = new Date().toISOString();
+      
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const objectStore = transaction.objectStore(STORE_NAME);
+      const request = objectStore.add(data);
+
+      request.onsuccess = () => {
+        console.log('Transmission ajoutée avec succès, ID:', request.result);
+        resolve(request.result);
+      };
+
+      request.onerror = () => {
+        console.error('Erreur lors de l\'ajout de la transmission');
+        reject(request.error);
+      };
+    });
+  };
+
+  // Récupérer toutes les transmissions
+  const getAllTransmissions = () => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readonly');
+      const objectStore = transaction.objectStore(STORE_NAME);
+      const request = objectStore.getAll();
+
+      request.onsuccess = () => {
+        resolve(request.result);
+      };
+
+      request.onerror = () => {
+        reject(request.error);
+      };
+    });
+  };
+
+  // Supprimer une transmission
+  const deleteTransmission = (id) => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const objectStore = transaction.objectStore(STORE_NAME);
+      const request = objectStore.delete(id);
+
+      request.onsuccess = () => {
+        console.log('Transmission supprimée avec succès');
+        resolve();
+      };
+
+      request.onerror = () => {
+        reject(request.error);
+      };
+    });
+  };
+
+  // Mettre à jour une transmission
+  const updateTransmission = (data) => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const objectStore = transaction.objectStore(STORE_NAME);
+      const request = objectStore.put(data);
+
+      request.onsuccess = () => {
+        console.log('Transmission mise à jour avec succès');
+        resolve(request.result);
+      };
+
+      request.onerror = () => {
+        reject(request.error);
+      };
+    });
+  };
+
+  // Initialiser la base de données au chargement
+  initDB().then(() => {
+    // Charger et afficher les cartes au démarrage
+    loadAndDisplayCards();
+  }).catch(error => {
+    console.error('Erreur lors de l\'initialisation de la base de données:', error);
+  });
+
+  // ==================== AFFICHAGE DES CARTES ====================
+  
+  // Fonction pour formater la date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Non spécifiée';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric' 
+    });
+  };
+
+  // Fonction pour créer une carte HTML
+  const createCard = (transmission) => {
+    const card = document.createElement('div');
+    card.className = 'transmission-card';
+    card.dataset.id = transmission.id;
+
+    // Construire les badges pour les interventions
+    let badges = '';
+    
+    // Type d'intervention
+    if (transmission.orly) {
+      if (transmission.orly.premierContact) badges += '<span class="badge">1er contact</span>';
+      if (transmission.orly.personnePresente) badges += '<span class="badge">Personne présente</span>';
+      if (transmission.orly.pnt) badges += '<span class="badge">PNT</span>';
+      if (transmission.orly.maraude) badges += '<span class="badge secondary">Maraude</span>';
+      if (transmission.orly.veille) badges += '<span class="badge secondary">Veille</span>';
+      if (transmission.orly.refusContact) badges += '<span class="badge secondary">Refus de contact</span>';
+    }
+
+    card.innerHTML = `
+      <div class="card-header">
+        <h3 class="card-title">${transmission.nom || 'Nom inconnu'} ${transmission.prenom || ''}</h3>
+        <span class="card-date">${formatDate(transmission.dateCreation)}</span>
+      </div>
+      <div class="card-content">
+        ${transmission.dateNaissance ? `
+          <div class="card-info">
+            <span class="card-label">Date de naissance :</span>
+            <span class="card-value">${formatDate(transmission.dateNaissance)}</span>
+          </div>
+        ` : ''}
+        ${transmission.typologie ? `
+          <div class="card-info">
+            <span class="card-label">Typologie :</span>
+            <span class="card-value">${transmission.typologie}</span>
+          </div>
+        ` : ''}
+        ${transmission.ville ? `
+          <div class="card-info">
+            <span class="card-label">Ville :</span>
+            <span class="card-value">${transmission.ville}</span>
+          </div>
+        ` : ''}
+        ${transmission.adresse ? `
+          <div class="card-info">
+            <span class="card-label">Adresse :</span>
+            <span class="card-value">${transmission.adresse}</span>
+          </div>
+        ` : ''}
+        ${transmission.typeTransmission ? `
+          <div class="card-info">
+            <span class="card-label">Transmission :</span>
+            <span class="card-value">${transmission.typeTransmission}</span>
+          </div>
+        ` : ''}
+        ${badges ? `<div class="card-badges">${badges}</div>` : ''}
+      </div>
+      <div class="card-actions">
+        <button class="btn-card btn-edit" onclick="editTransmission(${transmission.id})">Compléter</button>
+        <button class="btn-card btn-delete" onclick="deleteTransmissionCard(${transmission.id})">Supprimer</button>
+      </div>
+    `;
+
+    return card;
+  };
+
+  // Fonction pour afficher toutes les cartes
+  const displayCards = (transmissions) => {
+    const container = document.getElementById('transmissions-list');
+    
+    if (!transmissions || transmissions.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📋</div>
+          <p>Aucune transmission enregistrée</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = '';
+    transmissions.forEach(transmission => {
+      const card = createCard(transmission);
+      container.appendChild(card);
+    });
+  };
+
+  // Fonction pour charger et afficher les cartes
+  const loadAndDisplayCards = async () => {
+    try {
+      const transmissions = await getAllTransmissions();
+      displayCards(transmissions);
+    } catch (error) {
+      console.error('Erreur lors du chargement des transmissions:', error);
+    }
+  };
+
+  // Fonction globale pour supprimer une transmission
+  window.deleteTransmissionCard = async (id) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette transmission ?')) {
+      try {
+        await deleteTransmission(id);
+        await loadAndDisplayCards();
+        console.log('Transmission supprimée avec succès');
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        alert('Erreur lors de la suppression de la transmission');
+      }
+    }
+  };
+
+  // Fonction globale pour éditer une transmission (à implémenter)
+  window.editTransmission = (id) => {
+    console.log('Édition de la transmission:', id);
+    // TODO: Implémenter l'édition
+    alert('Fonction d\'édition à venir');
+  };
+
+  // ==================== FIN AFFICHAGE DES CARTES ====================
+
+  // ==================== FIN INDEXEDDB ====================
+
   // Initialiser le sélecteur de date à la date du jour
   // Si entre minuit et 3h, utiliser la veille
   const dateInput = document.getElementById('transmissions-date');
@@ -80,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Soumettre le formulaire
-  formTransmission.addEventListener('submit', (e) => {
+  formTransmission.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const formData = {
@@ -121,10 +384,22 @@ document.addEventListener('DOMContentLoaded', () => {
       transmission: document.getElementById('form-transmission').value
     };
 
-    console.log('Données du formulaire:', formData);
-    // TODO: Traiter les données (sauvegarder, envoyer, etc.)
-    
-    closeModal();
+    try {
+      // Sauvegarder dans IndexedDB
+      const id = await addTransmission(formData);
+      console.log('Données du formulaire sauvegardées avec succès, ID:', id);
+      
+      // Recharger et afficher les cartes
+      await loadAndDisplayCards();
+      
+      // Afficher un message de succès (optionnel)
+      alert('Transmission enregistrée avec succès !');
+      
+      closeModal();
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      alert('Erreur lors de l\'enregistrement de la transmission');
+    }
   });
 
   // Gestion automatique des champs selon la typologie de ménage
