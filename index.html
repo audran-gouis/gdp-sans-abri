@@ -26,15 +26,15 @@
                     </div>
                     
                     <div class="filters-container">
-                        <div class="filter-group">
-                            <label for="filter-nom">Nom :</label>
-                            <input type="text" id="filter-nom" class="filter-input" placeholder="Rechercher par nom">
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label for="filter-prenom">Prénom :</label>
-                            <input type="text" id="filter-prenom" class="filter-input" placeholder="Rechercher par prénom">
-                        </div>
+                    <div class="filter-group">
+                        <label for="filter-nom">Nom :</label>
+                        <input type="text" id="filter-nom" class="filter-input" placeholder="Rechercher par nom" autocomplete="family-name">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="filter-prenom">Prénom :</label>
+                        <input type="text" id="filter-prenom" class="filter-input" placeholder="Rechercher par prénom" autocomplete="given-name">
+                    </div>
                         
                         <div class="filter-group">
                             <label for="filter-ddn">Date de Naissance :</label>
@@ -62,25 +62,25 @@
                     </div>
                     
                     <div class="filters-container">
-                        <div class="filter-group">
-                            <label for="adp-filter-nom">Nom :</label>
-                            <input type="text" id="adp-filter-nom" class="filter-input" placeholder="Rechercher par nom">
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label for="adp-filter-prenom">Prénom :</label>
-                            <input type="text" id="adp-filter-prenom" class="filter-input" placeholder="Rechercher par prénom">
-                        </div>
+                    <div class="filter-group">
+                        <label for="adp-filter-nom">Nom :</label>
+                        <input type="text" id="adp-filter-nom" class="filter-input" placeholder="Rechercher par nom" autocomplete="family-name">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="adp-filter-prenom">Prénom :</label>
+                        <input type="text" id="adp-filter-prenom" class="filter-input" placeholder="Rechercher par prénom" autocomplete="given-name">
+                    </div>
                         
                         <div class="filter-group">
                             <label for="adp-filter-ddn">Date de Naissance :</label>
                             <input type="date" id="adp-filter-ddn" class="filter-input">
                         </div>
                         
-                        <div class="filter-group">
-                            <label for="adp-filter-description">Description Physique :</label>
-                            <input type="text" id="adp-filter-description" class="filter-input" placeholder="Rechercher par description">
-                        </div>
+                    <div class="filter-group">
+                        <label for="adp-filter-description">Description Physique :</label>
+                        <input type="text" id="adp-filter-description" class="filter-input" placeholder="Rechercher par description" autocomplete="on">
+                    </div>
                         
                         <div class="filter-group">
                             <label for="adp-filter-inconnu">Inconnu :</label>
@@ -93,6 +93,9 @@
                         
                         <button id="adp-btn-ajouter" class="btn-add">Ajouter</button>
                     </div>
+                    
+                    <!-- Conteneur pour les cartes ADP -->
+                    <div id="adp-list" class="transmissions-container"></div>
                     
                     <h2>ADP</h2>
                     <p>Accès Droits Personnes - Gestion des accès.</p>
@@ -125,17 +128,20 @@
             
             <form id="form-transmission" class="modal-body">
                 <!-- Section Informations Personnelles -->
-                <div class="form-section">
-                    <h3>Informations Personnelles</h3>
-                    <div class="form-grid">
+                <div class="form-section" id="section-info-perso">
+                    <h3 class="section-header">
+                        Informations Personnelles
+                        <span class="collapse-toggle">▼</span>
+                    </h3>
+                    <div class="form-grid" id="grid-info-perso">
                         <div class="form-group">
                             <label for="form-nom">Nom :</label>
-                            <input type="text" id="form-nom" class="form-input" required>
+                            <input type="text" id="form-nom" class="form-input" autocomplete="family-name">
                         </div>
                         
                         <div class="form-group">
                             <label for="form-prenom">Prénom :</label>
-                            <input type="text" id="form-prenom" class="form-input" required>
+                            <input type="text" id="form-prenom" class="form-input" autocomplete="given-name">
                         </div>
                         
                         <div class="form-group">
@@ -210,7 +216,7 @@
                         
                         <div class="form-group">
                             <label for="form-adresse">Adresse :</label>
-                            <input type="text" id="form-adresse" class="form-input" placeholder="Numéro et nom de rue">
+                            <input type="text" id="form-adresse" class="form-input" placeholder="Numéro et nom de rue" autocomplete="street-address">
                         </div>
                         
                         <div class="form-group">
@@ -371,7 +377,7 @@
                         
                         <div class="form-group full-width">
                             <label for="form-transmission">Contenu de la transmission :</label>
-                            <textarea id="form-transmission" class="form-textarea" rows="6" required></textarea>
+                            <textarea id="form-transmission" class="form-textarea" rows="6"></textarea>
                         </div>
                     </div>
                 </div>
@@ -402,12 +408,12 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="adp-form-nom">Nom :</label>
-                            <input type="text" id="adp-form-nom" class="form-input" required>
+                            <input type="text" id="adp-form-nom" class="form-input" autocomplete="family-name">
                         </div>
                         
                         <div class="form-group">
                             <label for="adp-form-prenom">Prénom :</label>
-                            <input type="text" id="adp-form-prenom" class="form-input" required>
+                            <input type="text" id="adp-form-prenom" class="form-input" autocomplete="given-name">
                         </div>
                         
                         <div class="form-group">
@@ -417,7 +423,7 @@
                         
                         <div class="form-group">
                             <label for="adp-form-description">Description Physique :</label>
-                            <input type="text" id="adp-form-description" class="form-input" placeholder="Description physique">
+                            <input type="text" id="adp-form-description" class="form-input" placeholder="Description physique" autocomplete="on">
                         </div>
                         
                         <div class="form-group">
@@ -607,7 +613,7 @@
                         
                         <div class="form-group">
                             <label for="adp-form-adresse">Adresse :</label>
-                            <input type="text" id="adp-form-adresse" class="form-input" placeholder="Numéro et nom de rue">
+                            <input type="text" id="adp-form-adresse" class="form-input" placeholder="Numéro et nom de rue" autocomplete="street-address">
                         </div>
                         
                         <div class="form-group">
@@ -768,7 +774,7 @@
                         
                         <div class="form-group full-width">
                             <label for="adp-form-transmission">Commentaires :</label>
-                            <textarea id="adp-form-transmission" class="form-textarea" rows="6" required></textarea>
+                            <textarea id="adp-form-transmission" class="form-textarea" rows="6"></textarea>
                         </div>
                     </div>
                 </div>
