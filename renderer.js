@@ -1750,6 +1750,699 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ==================== GESTION DES STATISTIQUES ====================
+  
+  const statsSource = document.getElementById('stats-source');
+  const statsPeriodType = document.getElementById('stats-period-type');
+  const statsDaySelector = document.getElementById('stats-day-selector');
+  const statsMonthSelector = document.getElementById('stats-month-selector');
+  const statsYearSelector = document.getElementById('stats-year-selector');
+  const statsRangeSelector = document.getElementById('stats-range-selector');
+  const statsApplyFilter = document.getElementById('stats-apply-filter');
+  const statsResetFilters = document.getElementById('stats-reset-filters');
+  
+  // Fonction pour extraire les options d'un select
+  const extractSelectOptions = (selectId) => {
+    const select = document.getElementById(selectId);
+    if (!select) return [];
+    
+    const options = [];
+    for (let i = 0; i < select.options.length; i++) {
+      const option = select.options[i];
+      if (option.value) { // Ignorer les options vides
+        options.push({
+          value: option.value,
+          text: option.text
+        });
+      }
+    }
+    return options;
+  };
+  
+  // Fonction pour combiner les options uniques de plusieurs selects
+  const combineSelectOptions = (selectIds) => {
+    const allOptions = [];
+    const seenValues = new Set();
+    
+    selectIds.forEach(selectId => {
+      const options = extractSelectOptions(selectId);
+      options.forEach(option => {
+        if (!seenValues.has(option.value)) {
+          seenValues.add(option.value);
+          allOptions.push(option);
+        }
+      });
+    });
+    
+    return allOptions;
+  };
+  
+  // Fonction pour remplir un select avec des options
+  const populateSelect = (selectId, options) => {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    
+    // Garder seulement l'option "Tous" ou l'option vide
+    const firstOption = select.options[0];
+    select.innerHTML = '';
+    if (firstOption) {
+      select.appendChild(firstOption);
+    }
+    
+    // Ajouter les nouvelles options
+    options.forEach(option => {
+      const optElement = document.createElement('option');
+      optElement.value = option.value;
+      optElement.text = option.text;
+      select.appendChild(optElement);
+    });
+  };
+  
+  // Fonction pour mettre à jour les selects des statistiques selon la source
+  const updateStatsSelects = (source) => {
+    let typologieOptions = [];
+    let transmissionOptions = [];
+    let signalementOptions = [];
+    let departementOptions = [];
+    
+    switch (source) {
+      case 'all':
+        // Combiner les options des deux sources
+        typologieOptions = combineSelectOptions(['form-typologie', 'adp-form-typologie']);
+        transmissionOptions = combineSelectOptions(['form-type-transmission', 'adp-form-type-transmission']);
+        signalementOptions = combineSelectOptions(['form-signalement', 'adp-form-signalement']);
+        departementOptions = extractSelectOptions('adp-form-departement'); // Seulement ADP a les départements
+        break;
+      
+      case 'transmissions':
+        // Utiliser uniquement les options de Transmissions Quotidiennes
+        typologieOptions = extractSelectOptions('form-typologie');
+        transmissionOptions = extractSelectOptions('form-type-transmission');
+        signalementOptions = extractSelectOptions('form-signalement');
+        departementOptions = []; // Pas de département pour Transmissions Quotidiennes
+        break;
+      
+      case 'adp':
+        // Utiliser uniquement les options d'ADP
+        typologieOptions = extractSelectOptions('adp-form-typologie');
+        transmissionOptions = extractSelectOptions('adp-form-type-transmission');
+        signalementOptions = extractSelectOptions('adp-form-signalement');
+        departementOptions = extractSelectOptions('adp-form-departement');
+        break;
+    }
+    
+    // Mettre à jour les selects
+    populateSelect('stats-filter-typologie', typologieOptions);
+    populateSelect('stats-filter-transmission-type', transmissionOptions);
+    populateSelect('stats-filter-signalement', signalementOptions);
+    populateSelect('stats-filter-departement', departementOptions);
+  };
+  
+  // Initialiser les selects au chargement
+  updateStatsSelects('all');
+  
+  // Initialiser la date du jour pour le sélecteur de jour précis
+  const statsSpecificDay = document.getElementById('stats-specific-day');
+  if (statsSpecificDay) {
+    statsSpecificDay.value = new Date().toISOString().split('T')[0];
+  }
+  
+  // Initialiser le mois actuel
+  const statsMonth = document.getElementById('stats-month');
+  if (statsMonth) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    statsMonth.value = `${year}-${month}`;
+  }
+  
+  // Initialiser l'année actuelle
+  const statsYear = document.getElementById('stats-year');
+  if (statsYear) {
+    statsYear.value = new Date().getFullYear();
+  }
+  
+  // Gérer le changement de source de données
+  if (statsSource) {
+    statsSource.addEventListener('change', (e) => {
+      const selectedSource = e.target.value;
+      const adpOnlyFields = document.querySelectorAll('.adp-only');
+      
+      // Afficher/masquer les champs spécifiques à ADP
+      adpOnlyFields.forEach(field => {
+        if (selectedSource === 'all' || selectedSource === 'adp') {
+          field.classList.add('active');
+        } else {
+          field.classList.remove('active');
+        }
+      });
+      
+      // Mettre à jour les selects selon la source
+      updateStatsSelects(selectedSource);
+    });
+  }
+  
+  // Gérer le changement de type de période
+  if (statsPeriodType) {
+    statsPeriodType.addEventListener('change', (e) => {
+      const selectedType = e.target.value;
+      
+      // Masquer toutes les options
+      [statsDaySelector, statsMonthSelector, statsYearSelector, statsRangeSelector].forEach(selector => {
+        if (selector) selector.classList.remove('active');
+      });
+      
+      // Afficher l'option sélectionnée
+      switch (selectedType) {
+        case 'day':
+          if (statsDaySelector) statsDaySelector.classList.add('active');
+          break;
+        case 'month':
+          if (statsMonthSelector) statsMonthSelector.classList.add('active');
+          break;
+        case 'year':
+          if (statsYearSelector) statsYearSelector.classList.add('active');
+          break;
+        case 'range':
+          if (statsRangeSelector) statsRangeSelector.classList.add('active');
+          break;
+      }
+    });
+  }
+  
+  // Fonction pour collecter tous les filtres
+  const collectStatsFilters = () => {
+    const filters = {
+      // Source de données
+      source: document.getElementById('stats-source').value,
+      
+      // Période
+      periodType: statsPeriodType.value,
+      
+      // Pas de passage
+      pasDePassage: document.getElementById('stats-filter-pas-passage').checked,
+      
+      // Informations personnelles
+      nom: document.getElementById('stats-filter-nom').value,
+      prenom: document.getElementById('stats-filter-prenom').value,
+      dateNaissance: document.getElementById('stats-filter-ddn').value,
+      typologie: document.getElementById('stats-filter-typologie').value,
+      nbPersonnes: document.getElementById('stats-filter-nb-personnes').value,
+      mineurs: document.getElementById('stats-filter-mineurs').value,
+      
+      // Champs spécifiques ADP
+      descriptionPhysique: document.getElementById('stats-filter-description').value,
+      inconnu: document.getElementById('stats-filter-inconnu').value,
+      departement: document.getElementById('stats-filter-departement').value,
+      
+      // Données de transmission
+      typeTransmission: document.getElementById('stats-filter-transmission-type').value,
+      ville: document.getElementById('stats-filter-ville').value,
+      adresse: document.getElementById('stats-filter-adresse').value,
+      signalement: document.getElementById('stats-filter-signalement').value,
+      pointAccueil: document.getElementById('stats-filter-point-accueil').value,
+      
+      // Type d'intervention
+      orly: {
+        premierContact: document.getElementById('stats-filter-premier-contact').checked,
+        personnePresente: document.getElementById('stats-filter-personne-presente').checked,
+        pnt: document.getElementById('stats-filter-pnt').checked,
+        maraude: document.getElementById('stats-filter-maraude').checked,
+        veille: document.getElementById('stats-filter-veille').checked,
+        refusContact: document.getElementById('stats-filter-refus-contact').checked
+      },
+      
+      // Accompagnement
+      accompagnement: {
+        ecoute: document.getElementById('stats-filter-accomp-ecoute').checked,
+        orientation: document.getElementById('stats-filter-accomp-orientation').checked,
+        admin: document.getElementById('stats-filter-accomp-admin').checked,
+        medical: document.getElementById('stats-filter-accomp-medical').checked,
+        hebergement: document.getElementById('stats-filter-accomp-hebergement').checked,
+        autre: document.getElementById('stats-filter-accomp-autre').checked
+      },
+      
+      // Distribution
+      distribution: {
+        alimentaire: document.getElementById('stats-filter-distrib-alimentaire').checked,
+        vestimentaire: document.getElementById('stats-filter-distrib-vestimentaire').checked,
+        hygiene: document.getElementById('stats-filter-distrib-hygiene').checked,
+        couvertures: document.getElementById('stats-filter-distrib-couvertures').checked,
+        duvet: document.getElementById('stats-filter-distrib-duvet').checked,
+        autre: document.getElementById('stats-filter-distrib-autre').checked
+      }
+    };
+    
+    // Ajouter les dates selon le type de période
+    switch (filters.periodType) {
+      case 'day':
+        filters.date = document.getElementById('stats-specific-day').value;
+        break;
+      case 'month':
+        filters.month = document.getElementById('stats-month').value;
+        break;
+      case 'year':
+        filters.year = document.getElementById('stats-year').value;
+        break;
+      case 'range':
+        filters.startDate = document.getElementById('stats-date-start').value;
+        filters.endDate = document.getElementById('stats-date-end').value;
+        break;
+    }
+    
+    return filters;
+  };
+  
+  // Fonction pour réinitialiser tous les filtres
+  const resetStatsFilters = () => {
+    // Réinitialiser les inputs texte
+    document.getElementById('stats-filter-nom').value = '';
+    document.getElementById('stats-filter-prenom').value = '';
+    document.getElementById('stats-filter-ddn').value = '';
+    document.getElementById('stats-filter-nb-personnes').value = '';
+    document.getElementById('stats-filter-mineurs').value = '';
+    document.getElementById('stats-filter-description').value = '';
+    document.getElementById('stats-filter-ville').value = '';
+    document.getElementById('stats-filter-adresse').value = '';
+    
+    // Réinitialiser les selects
+    document.getElementById('stats-filter-typologie').value = '';
+    document.getElementById('stats-filter-inconnu').value = '';
+    document.getElementById('stats-filter-departement').value = '';
+    document.getElementById('stats-filter-transmission-type').value = '';
+    document.getElementById('stats-filter-signalement').value = '';
+    document.getElementById('stats-filter-point-accueil').value = '';
+    
+    // Décocher toutes les cases (y compris "pas de passage")
+    document.querySelectorAll('.stats-checkbox').forEach(checkbox => {
+      checkbox.checked = false;
+    });
+    document.getElementById('stats-filter-pas-passage').checked = false;
+  };
+  
+  // Gérer le clic sur le bouton Réinitialiser
+  if (statsResetFilters) {
+    statsResetFilters.addEventListener('click', () => {
+      resetStatsFilters();
+      console.log('Filtres réinitialisés');
+    });
+  }
+  
+  // Gérer le clic sur le bouton Appliquer
+  if (statsApplyFilter) {
+    statsApplyFilter.addEventListener('click', () => {
+      const filters = collectStatsFilters();
+      console.log('Filtres statistiques appliqués:', filters);
+      generateStatistics(filters);
+    });
+  }
+  
+  // Fonction pour générer les statistiques
+  const generateStatistics = async (filters) => {
+    const statsContent = document.getElementById('stats-content');
+    
+    if (!statsContent) return;
+    
+    // Récupérer les données selon la source
+    let transmissionsData = [];
+    let adpData = [];
+    
+    if (filters.source === 'all' || filters.source === 'transmissions') {
+      transmissionsData = await getAllTransmissions();
+    }
+    
+    if (filters.source === 'all' || filters.source === 'adp') {
+      adpData = await getAllTransmissionsAdp();
+    }
+    
+    // Filtrer les données par période
+    const filteredTransmissions = filterByPeriod(transmissionsData, filters);
+    const filteredAdp = filterByPeriod(adpData, filters);
+    
+    // Si "Pas de passage" est coché, on doit trouver les personnes sans transmission pour cette période
+    if (filters.pasDePassage) {
+      // Récupérer toutes les personnes (toutes les transmissions)
+      const allTransmissions = filters.source === 'adp' ? adpData : 
+                               filters.source === 'transmissions' ? transmissionsData :
+                               [...transmissionsData, ...adpData];
+      
+      // Identifier les personId qui ONT des transmissions pour la période
+      const personIdsWithTransmission = new Set();
+      [...filteredTransmissions, ...filteredAdp].forEach(t => {
+        const personId = t.personId || t.id;
+        personIdsWithTransmission.add(personId);
+      });
+      
+      // Filtrer pour ne garder que les personnes SANS transmission pour la période
+      const personsWithoutTransmission = [];
+      const seenPersons = new Set();
+      
+      allTransmissions.forEach(t => {
+        const personId = t.personId || t.id;
+        if (!personIdsWithTransmission.has(personId) && !seenPersons.has(personId)) {
+          seenPersons.add(personId);
+          personsWithoutTransmission.push(t);
+        }
+      });
+      
+      // Appliquer TOUS les filtres (y compris les filtres de transmission) sur les données historiques
+      // Ces filtres sont appliqués sur n'importe quelle transmission de la personne, pas seulement pour la période
+      const filteredPersons = applyDetailedFilters(personsWithoutTransmission, filters);
+      
+      // Remplacer les données filtrées par les personnes sans passage
+      if (filters.source === 'all') {
+        // Séparer selon la source d'origine
+        const finalTransmissions = filteredPersons.filter(t => 
+          transmissionsData.some(td => (td.personId || td.id) === (t.personId || t.id))
+        );
+        const finalAdp = filteredPersons.filter(t => 
+          adpData.some(ad => (ad.personId || ad.id) === (t.personId || t.id))
+        );
+        
+        const statsTransmissions = calculateStats(finalTransmissions);
+        const statsAdpTotal = calculateStats(finalAdp);
+        const statsAdpWithPoint = { menages: 0, personnes: 0, mineurs: 0 };
+        const statsAdpWithoutPoint = { menages: 0, personnes: 0, mineurs: 0 };
+        
+        const allData = [...finalTransmissions, ...finalAdp];
+        const statsTotal = calculateStats(allData);
+        
+        displayStatsResults(filters, statsTotal, statsTransmissions, statsAdpTotal, statsAdpWithPoint, statsAdpWithoutPoint);
+      } else if (filters.source === 'transmissions') {
+        const stats = calculateStats(filteredPersons);
+        displayStatsResults(filters, stats, stats, { menages: 0, personnes: 0, mineurs: 0 }, 
+                          { menages: 0, personnes: 0, mineurs: 0 }, { menages: 0, personnes: 0, mineurs: 0 });
+      } else { // adp
+        const stats = calculateStats(filteredPersons);
+        displayStatsResults(filters, stats, { menages: 0, personnes: 0, mineurs: 0 }, stats, 
+                          { menages: 0, personnes: 0, mineurs: 0 }, { menages: 0, personnes: 0, mineurs: 0 });
+      }
+      
+      return;
+    }
+    
+    // Comportement normal (avec passage)
+    // Appliquer les filtres détaillés
+    const finalTransmissions = applyDetailedFilters(filteredTransmissions, filters);
+    const finalAdp = applyDetailedFilters(filteredAdp, filters);
+    
+    // Séparer ADP avec et sans point accueil
+    const adpWithPointAccueil = finalAdp.filter(t => t.pointAccueil === true);
+    const adpWithoutPointAccueil = finalAdp.filter(t => !t.pointAccueil);
+    
+    // Calculer les statistiques pour chaque source
+    const statsTransmissions = calculateStats(finalTransmissions);
+    const statsAdpWithPoint = calculateStats(adpWithPointAccueil);
+    const statsAdpWithoutPoint = calculateStats(adpWithoutPointAccueil);
+    const statsAdpTotal = calculateStats(finalAdp);
+    
+    // Calculer le total global
+    const allData = [...finalTransmissions, ...finalAdp];
+    const statsTotal = calculateStats(allData);
+    
+    displayStatsResults(filters, statsTotal, statsTransmissions, statsAdpTotal, statsAdpWithPoint, statsAdpWithoutPoint);
+  };
+  
+  // Fonction pour afficher les résultats des statistiques
+  const displayStatsResults = (filters, statsTotal, statsTransmissions, statsAdpTotal, statsAdpWithPoint, statsAdpWithoutPoint) => {
+    const statsContent = document.getElementById('stats-content');
+    if (!statsContent) return;
+    // Construire le texte de la période
+    let periodText = '';
+    switch (filters.periodType) {
+      case 'day':
+        periodText = `Statistiques pour le ${formatDate(filters.date)}`;
+        break;
+      case 'month':
+        const [year, month] = filters.month.split('-');
+        const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                           'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+        periodText = `Statistiques pour ${monthNames[parseInt(month) - 1]} ${year}`;
+        break;
+      case 'year':
+        periodText = `Statistiques pour l'année ${filters.year}`;
+        break;
+      case 'range':
+        periodText = `Statistiques du ${formatDate(filters.startDate)} au ${formatDate(filters.endDate)}`;
+        break;
+    }
+    
+    // Déterminer la source
+    let sourceText = '';
+    switch (filters.source) {
+      case 'all':
+        sourceText = 'Toutes les sources';
+        break;
+      case 'transmissions':
+        sourceText = 'Transmissions Quotidiennes';
+        break;
+      case 'adp':
+        sourceText = 'ADP (Orly)';
+        break;
+    }
+    
+    // Générer l'HTML des statistiques
+    let statsHTML = `
+      <h3 style="color: #667eea; margin-bottom: 1rem;">${periodText}</h3>
+      <p style="color: #764ba2; font-weight: 600; margin-bottom: 2rem;">Source : ${sourceText}</p>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+    `;
+    
+    // Total global (si "Tous" est sélectionné)
+    if (filters.source === 'all') {
+      statsHTML += `
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+          <h4 style="margin: 0 0 1rem 0; font-size: 1.2rem; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 0.5rem;">TOTAL GÉNÉRAL</h4>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; font-size: 1.1rem;">
+              <span>Nombre de ménages :</span>
+              <strong style="font-size: 1.3rem;">${statsTotal.menages}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 1.1rem;">
+              <span>Nombre de personnes :</span>
+              <strong style="font-size: 1.3rem;">${statsTotal.personnes}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 1.1rem;">
+              <span>dont Mineurs :</span>
+              <strong style="font-size: 1.3rem;">${statsTotal.mineurs}</strong>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Transmissions Quotidiennes
+    if (filters.source === 'all' || filters.source === 'transmissions') {
+      statsHTML += `
+        <div style="background: white; border: 2px solid #667eea; padding: 1.5rem; border-radius: 10px;">
+          <h4 style="margin: 0 0 1rem 0; color: #667eea; font-size: 1.1rem; border-bottom: 2px solid #f0f0f0; padding-bottom: 0.5rem;">Transmissions Quotidiennes</h4>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #555;">Nombre de ménages :</span>
+              <strong style="color: #667eea; font-size: 1.2rem;">${statsTransmissions.menages}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #555;">Nombre de personnes :</span>
+              <strong style="color: #667eea; font-size: 1.2rem;">${statsTransmissions.personnes}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #555;">dont Mineurs :</span>
+              <strong style="color: #667eea; font-size: 1.2rem;">${statsTransmissions.mineurs}</strong>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // ADP Total
+    if (filters.source === 'all' || filters.source === 'adp') {
+      statsHTML += `
+        <div style="background: white; border: 2px solid #764ba2; padding: 1.5rem; border-radius: 10px;">
+          <h4 style="margin: 0 0 1rem 0; color: #764ba2; font-size: 1.1rem; border-bottom: 2px solid #f0f0f0; padding-bottom: 0.5rem;">ADP (Orly) - TOTAL</h4>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #555;">Nombre de ménages :</span>
+              <strong style="color: #764ba2; font-size: 1.2rem;">${statsAdpTotal.menages}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #555;">Nombre de personnes :</span>
+              <strong style="color: #764ba2; font-size: 1.2rem;">${statsAdpTotal.personnes}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #555;">dont Mineurs :</span>
+              <strong style="color: #764ba2; font-size: 1.2rem;">${statsAdpTotal.mineurs}</strong>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // ADP avec Point Accueil
+      statsHTML += `
+        <div style="background: #f8f9fa; border: 2px solid #764ba2; padding: 1.5rem; border-radius: 10px;">
+          <h4 style="margin: 0 0 1rem 0; color: #764ba2; font-size: 1rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 0.5rem;">ADP - Avec Point Accueil</h4>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #555; font-size: 0.9rem;">Nombre de ménages :</span>
+              <strong style="color: #764ba2;">${statsAdpWithPoint.menages}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #555; font-size: 0.9rem;">Nombre de personnes :</span>
+              <strong style="color: #764ba2;">${statsAdpWithPoint.personnes}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #555; font-size: 0.9rem;">dont Mineurs :</span>
+              <strong style="color: #764ba2;">${statsAdpWithPoint.mineurs}</strong>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // ADP sans Point Accueil
+      statsHTML += `
+        <div style="background: #f8f9fa; border: 2px solid #764ba2; padding: 1.5rem; border-radius: 10px;">
+          <h4 style="margin: 0 0 1rem 0; color: #764ba2; font-size: 1rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 0.5rem;">ADP - Sans Point Accueil</h4>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #555; font-size: 0.9rem;">Nombre de ménages :</span>
+              <strong style="color: #764ba2;">${statsAdpWithoutPoint.menages}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #555; font-size: 0.9rem;">Nombre de personnes :</span>
+              <strong style="color: #764ba2;">${statsAdpWithoutPoint.personnes}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #555; font-size: 0.9rem;">dont Mineurs :</span>
+              <strong style="color: #764ba2;">${statsAdpWithoutPoint.mineurs}</strong>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    statsHTML += `</div>`;
+    
+    statsContent.innerHTML = statsHTML;
+  };
+  
+  // Fonction pour filtrer par période
+  const filterByPeriod = (data, filters) => {
+    return data.filter(item => {
+      const itemDate = item.dateTransmission;
+      if (!itemDate) return false;
+      
+      switch (filters.periodType) {
+        case 'day':
+          return itemDate === filters.date;
+        
+        case 'month':
+          return itemDate.startsWith(filters.month);
+        
+        case 'year':
+          return itemDate.startsWith(filters.year);
+        
+        case 'range':
+          return itemDate >= filters.startDate && itemDate <= filters.endDate;
+        
+        default:
+          return true;
+      }
+    });
+  };
+  
+  // Fonction pour appliquer les filtres détaillés
+  const applyDetailedFilters = (data, filters) => {
+    return data.filter(item => {
+      // Filtres texte
+      if (filters.nom && !item.nom?.toLowerCase().includes(filters.nom.toLowerCase())) return false;
+      if (filters.prenom && !item.prenom?.toLowerCase().includes(filters.prenom.toLowerCase())) return false;
+      if (filters.dateNaissance && item.dateNaissance !== filters.dateNaissance) return false;
+      if (filters.ville && !item.ville?.toLowerCase().includes(filters.ville.toLowerCase())) return false;
+      if (filters.adresse && !item.adresse?.toLowerCase().includes(filters.adresse.toLowerCase())) return false;
+      if (filters.descriptionPhysique && !item.descriptionPhysique?.toLowerCase().includes(filters.descriptionPhysique.toLowerCase())) return false;
+      
+      // Filtres select
+      if (filters.typologie && item.typologie !== filters.typologie) return false;
+      if (filters.typeTransmission && item.typeTransmission !== filters.typeTransmission) return false;
+      if (filters.signalement && item.signalement !== filters.signalement) return false;
+      if (filters.departement && item.departementOrigine !== filters.departement) return false;
+      
+      // Filtres numériques
+      if (filters.nbPersonnes && item.nbPersonnes !== filters.nbPersonnes) return false;
+      if (filters.mineurs && item.mineurs !== filters.mineurs) return false;
+      
+      // Filtres booléens
+      if (filters.inconnu) {
+        const isInconnu = filters.inconnu === 'true';
+        if (item.inconnu !== isInconnu) return false;
+      }
+      
+      if (filters.pointAccueil) {
+        const hasPointAccueil = filters.pointAccueil === 'true';
+        if (item.pointAccueil !== hasPointAccueil) return false;
+      }
+      
+      // Filtres checkboxes - Type d'intervention
+      if (filters.orly.premierContact && !item.orly?.premierContact) return false;
+      if (filters.orly.personnePresente && !item.orly?.personnePresente) return false;
+      if (filters.orly.pnt && !item.orly?.pnt) return false;
+      if (filters.orly.maraude && !item.orly?.maraude) return false;
+      if (filters.orly.veille && !item.orly?.veille) return false;
+      if (filters.orly.refusContact && !item.orly?.refusContact) return false;
+      
+      // Filtres checkboxes - Accompagnement
+      if (filters.accompagnement.ecoute && !item.accompagnement?.ecoute) return false;
+      if (filters.accompagnement.orientation && !item.accompagnement?.orientation) return false;
+      if (filters.accompagnement.admin && !item.accompagnement?.admin) return false;
+      if (filters.accompagnement.medical && !item.accompagnement?.medical) return false;
+      if (filters.accompagnement.hebergement && !item.accompagnement?.hebergement) return false;
+      if (filters.accompagnement.autre && !item.accompagnement?.autre) return false;
+      
+      // Filtres checkboxes - Distribution
+      if (filters.distribution.alimentaire && !item.distribution?.alimentaire) return false;
+      if (filters.distribution.vestimentaire && !item.distribution?.vestimentaire) return false;
+      if (filters.distribution.hygiene && !item.distribution?.hygiene) return false;
+      if (filters.distribution.couvertures && !item.distribution?.couvertures) return false;
+      if (filters.distribution.duvet && !item.distribution?.duvet) return false;
+      if (filters.distribution.autre && !item.distribution?.autre) return false;
+      
+      return true;
+    });
+  };
+  
+  // Fonction pour calculer les statistiques
+  const calculateStats = (data) => {
+    // Regrouper par personId pour compter les ménages
+    const menagesMap = new Map();
+    let totalPersonnes = 0;
+    let totalMineurs = 0;
+    
+    data.forEach(item => {
+      const personId = item.personId || item.id;
+      
+      // Si c'est un nouveau ménage, l'ajouter
+      if (!menagesMap.has(personId)) {
+        menagesMap.set(personId, item);
+        
+        // Ajouter le nombre de personnes (si spécifié, sinon 1)
+        const nbPersonnes = parseInt(item.nbPersonnes) || 1;
+        totalPersonnes += nbPersonnes;
+        
+        // Ajouter le nombre de mineurs
+        const nbMineurs = parseInt(item.mineurs) || 0;
+        totalMineurs += nbMineurs;
+      }
+    });
+    
+    return {
+      menages: menagesMap.size,
+      personnes: totalPersonnes,
+      mineurs: totalMineurs
+    };
+  };
+
+
+
   // Exemple d'utilisation de l'API Electron (si disponible)
   if (window.electronAPI) {
     console.log('API Electron disponible');
