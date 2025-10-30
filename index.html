@@ -385,11 +385,23 @@
                         <div class="stats-filter-actions">
                             <button id="stats-reset-filters" class="btn-secondary">Réinitialiser les filtres</button>
                             <button id="stats-apply-filter" class="btn-add">Appliquer</button>
+                            <button id="stats-show-cards" class="btn-secondary" style="background: #17a2b8;">Afficher les cartes</button>
                         </div>
                     </div>
                     
                     <div id="stats-content">
                         <p>Sélectionnez une période et des filtres pour afficher les statistiques.</p>
+                    </div>
+                    
+                    <!-- Cartes des personnes filtrées -->
+                    <div id="stats-cards-section" style="display: none; margin-top: 2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
+                            <h3 style="color: #667eea; margin: 0;">Cartes des personnes concernées</h3>
+                            <button id="stats-hide-cards" class="btn-secondary" style="padding: 0.5rem 1rem;">Masquer les cartes</button>
+                        </div>
+                        <div id="stats-cards-list" class="transmissions-container">
+                            <!-- Les cartes seront insérées ici -->
+                        </div>
                     </div>
                 </div>
             </div>

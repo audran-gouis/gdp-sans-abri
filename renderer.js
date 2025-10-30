@@ -1760,6 +1760,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const statsRangeSelector = document.getElementById('stats-range-selector');
   const statsApplyFilter = document.getElementById('stats-apply-filter');
   const statsResetFilters = document.getElementById('stats-reset-filters');
+  const statsShowCards = document.getElementById('stats-show-cards');
+  const statsHideCards = document.getElementById('stats-hide-cards');
+  const statsCardsSection = document.getElementById('stats-cards-section');
+  const statsCardsList = document.getElementById('stats-cards-list');
+  
+  // Variable pour stocker les données filtrées actuelles
+  let currentFilteredData = {
+    transmissions: [],
+    adp: [],
+    filters: null
+  };
   
   // Fonction pour extraire les options d'un select
   const extractSelectOptions = (selectId) => {
@@ -2119,6 +2130,13 @@ document.addEventListener('DOMContentLoaded', () => {
           adpData.some(ad => (ad.personId || ad.id) === (t.personId || t.id))
         );
         
+        // Sauvegarder les données filtrées
+        currentFilteredData = {
+          transmissions: finalTransmissions,
+          adp: finalAdp,
+          filters: filters
+        };
+        
         const statsTransmissions = calculateStats(finalTransmissions);
         const statsAdpTotal = calculateStats(finalAdp);
         const statsAdpWithPoint = { menages: 0, personnes: 0, mineurs: 0 };
@@ -2129,10 +2147,22 @@ document.addEventListener('DOMContentLoaded', () => {
         
         displayStatsResults(filters, statsTotal, statsTransmissions, statsAdpTotal, statsAdpWithPoint, statsAdpWithoutPoint);
       } else if (filters.source === 'transmissions') {
+        currentFilteredData = {
+          transmissions: filteredPersons,
+          adp: [],
+          filters: filters
+        };
+        
         const stats = calculateStats(filteredPersons);
         displayStatsResults(filters, stats, stats, { menages: 0, personnes: 0, mineurs: 0 }, 
                           { menages: 0, personnes: 0, mineurs: 0 }, { menages: 0, personnes: 0, mineurs: 0 });
       } else { // adp
+        currentFilteredData = {
+          transmissions: [],
+          adp: filteredPersons,
+          filters: filters
+        };
+        
         const stats = calculateStats(filteredPersons);
         displayStatsResults(filters, stats, { menages: 0, personnes: 0, mineurs: 0 }, stats, 
                           { menages: 0, personnes: 0, mineurs: 0 }, { menages: 0, personnes: 0, mineurs: 0 });
@@ -2145,6 +2175,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Appliquer les filtres détaillés
     const finalTransmissions = applyDetailedFilters(filteredTransmissions, filters);
     const finalAdp = applyDetailedFilters(filteredAdp, filters);
+    
+    // Sauvegarder les données filtrées
+    currentFilteredData = {
+      transmissions: finalTransmissions,
+      adp: finalAdp,
+      filters: filters
+    };
     
     // Séparer ADP avec et sans point accueil
     const adpWithPointAccueil = finalAdp.filter(t => t.pointAccueil === true);
@@ -2442,6 +2479,154 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
 
+
+  // ==================== AFFICHAGE DES CARTES DANS STATISTIQUES ====================
+  
+  // Fonction pour afficher les cartes des personnes filtrées
+  const displayStatsCards = () => {
+    if (!statsCardsList) return;
+    
+    // Masquer les cartes si aucune donnée
+    if (!currentFilteredData.filters || 
+        (currentFilteredData.transmissions.length === 0 && currentFilteredData.adp.length === 0)) {
+      alert('Aucune donnée à afficher. Veuillez d\'abord appliquer des filtres.');
+      return;
+    }
+    
+    // Vider le conteneur
+    statsCardsList.innerHTML = '';
+    
+    // Combiner toutes les données
+    const allData = [...currentFilteredData.transmissions, ...currentFilteredData.adp];
+    
+    // Regrouper par personne
+    const personsMap = new Map();
+    allData.forEach(transmission => {
+      const personId = transmission.personId || transmission.id;
+      if (!personsMap.has(personId)) {
+        personsMap.set(personId, {
+          personId: personId,
+          nom: transmission.nom,
+          prenom: transmission.prenom,
+          dateNaissance: transmission.dateNaissance,
+          typologie: transmission.typologie,
+          nbPersonnes: transmission.nbPersonnes,
+          mineurs: transmission.mineurs,
+          descriptionPhysique: transmission.descriptionPhysique,
+          inconnu: transmission.inconnu,
+          departementOrigine: transmission.departementOrigine,
+          transmissions: []
+        });
+      }
+      personsMap.get(personId).transmissions.push(transmission);
+    });
+    
+    const persons = Array.from(personsMap.values());
+    
+    // Afficher un message si aucune personne
+    if (persons.length === 0) {
+      statsCardsList.innerHTML = '<div class="empty-state"><p>Aucune personne ne correspond aux critères.</p></div>';
+      statsCardsSection.style.display = 'block';
+      return;
+    }
+    
+    // Créer les cartes
+    persons.forEach(person => {
+      const card = createStatsPersonCard(person);
+      statsCardsList.appendChild(card);
+    });
+    
+    // Afficher la section
+    statsCardsSection.style.display = 'block';
+    
+    // Scroll vers les cartes
+    statsCardsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  
+  // Fonction pour créer une carte simplifiée pour les statistiques
+  const createStatsPersonCard = (person) => {
+    const card = document.createElement('div');
+    card.className = 'transmission-card';
+    card.dataset.personId = person.personId;
+    
+    // Récupérer la dernière transmission pour afficher les infos
+    const lastTransmission = person.transmissions[person.transmissions.length - 1];
+    
+    card.innerHTML = `
+      <div class="card-header">
+        <h3 class="card-title">${person.nom || 'Nom inconnu'} ${person.prenom || ''}</h3>
+        <span class="card-date">${person.transmissions.length} transmission${person.transmissions.length > 1 ? 's' : ''}</span>
+      </div>
+      <div class="card-content">
+        ${person.dateNaissance ? `
+          <div class="card-info">
+            <span class="card-label">Date de naissance :</span>
+            <span class="card-value">${formatDate(person.dateNaissance)}</span>
+          </div>
+        ` : ''}
+        ${person.typologie ? `
+          <div class="card-info">
+            <span class="card-label">Typologie :</span>
+            <span class="card-value">${person.typologie}</span>
+          </div>
+        ` : ''}
+        ${person.nbPersonnes ? `
+          <div class="card-info">
+            <span class="card-label">Nombre :</span>
+            <span class="card-value">${person.nbPersonnes} personne${person.nbPersonnes > 1 ? 's' : ''}</span>
+          </div>
+        ` : ''}
+        ${person.mineurs && person.mineurs !== '0' ? `
+          <div class="card-info">
+            <span class="card-label">dont Mineurs :</span>
+            <span class="card-value">${person.mineurs}</span>
+          </div>
+        ` : ''}
+        ${person.descriptionPhysique ? `
+          <div class="card-info">
+            <span class="card-label">Description :</span>
+            <span class="card-value">${person.descriptionPhysique}</span>
+          </div>
+        ` : ''}
+        ${person.departementOrigine ? `
+          <div class="card-info">
+            <span class="card-label">Département :</span>
+            <span class="card-value">${person.departementOrigine}</span>
+          </div>
+        ` : ''}
+        ${lastTransmission.ville ? `
+          <div class="card-info">
+            <span class="card-label">Ville :</span>
+            <span class="card-value">${lastTransmission.ville}</span>
+          </div>
+        ` : ''}
+        ${lastTransmission.adresse ? `
+          <div class="card-info">
+            <span class="card-label">Adresse :</span>
+            <span class="card-value">${lastTransmission.adresse}</span>
+          </div>
+        ` : ''}
+      </div>
+    `;
+    
+    return card;
+  };
+  
+  // Gérer le clic sur "Afficher les cartes"
+  if (statsShowCards) {
+    statsShowCards.addEventListener('click', () => {
+      displayStatsCards();
+    });
+  }
+  
+  // Gérer le clic sur "Masquer les cartes"
+  if (statsHideCards) {
+    statsHideCards.addEventListener('click', () => {
+      if (statsCardsSection) {
+        statsCardsSection.style.display = 'none';
+      }
+    });
+  }
 
   // Exemple d'utilisation de l'API Electron (si disponible)
   if (window.electronAPI) {
