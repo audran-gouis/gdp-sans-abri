@@ -1,0 +1,397 @@
+<!-- Modal ADP -->
+<div id="modal-adp" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Nouvelle personne</h2>
+            <div class="modal-actions">
+                <button class="modal-expand" id="adp-btn-expand" title="Agrandir">⛶</button>
+                <button class="modal-close adp-modal-close">&times;</button>
+            </div>
+        </div>
+        
+        <form id="form-adp" class="modal-body">
+            <!-- Section Informations Personnelles -->
+            <div class="form-section">
+                <h3>Informations Personnelles</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="adp-form-nom">Nom :</label>
+                        <input type="text" id="adp-form-nom" class="form-input" autocomplete="family-name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adp-form-prenom">Prénom :</label>
+                        <input type="text" id="adp-form-prenom" class="form-input" autocomplete="given-name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adp-form-ddn">Date de Naissance :</label>
+                        <input type="date" id="adp-form-ddn" class="form-input">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adp-form-description">Description Physique :</label>
+                        <input type="text" id="adp-form-description" class="form-input" placeholder="Description physique" autocomplete="on">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adp-form-inconnu" class="checkbox-label-inline">
+                            <input type="checkbox" id="adp-form-inconnu" class="form-checkbox">
+                            <span>Inconnu ?</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adp-form-departement">Département d'origine :</label>
+                        <select id="adp-form-departement" class="form-input">
+                            <option value="">Sélectionner...</option>
+                            <option value="01">01 - Ain</option>
+                            <option value="02">02 - Aisne</option>
+                            <option value="03">03 - Allier</option>
+                            <option value="04">04 - Alpes-de-Haute-Provence</option>
+                            <option value="05">05 - Hautes-Alpes</option>
+                            <option value="06">06 - Alpes-Maritimes</option>
+                            <option value="07">07 - Ardèche</option>
+                            <option value="08">08 - Ardennes</option>
+                            <option value="09">09 - Ariège</option>
+                            <option value="10">10 - Aube</option>
+                            <option value="11">11 - Aude</option>
+                            <option value="12">12 - Aveyron</option>
+                            <option value="13">13 - Bouches-du-Rhône</option>
+                            <option value="14">14 - Calvados</option>
+                            <option value="15">15 - Cantal</option>
+                            <option value="16">16 - Charente</option>
+                            <option value="17">17 - Charente-Maritime</option>
+                            <option value="18">18 - Cher</option>
+                            <option value="19">19 - Corrèze</option>
+                            <option value="21">21 - Côte-d'Or</option>
+                            <option value="22">22 - Côtes-d'Armor</option>
+                            <option value="23">23 - Creuse</option>
+                            <option value="24">24 - Dordogne</option>
+                            <option value="25">25 - Doubs</option>
+                            <option value="26">26 - Drôme</option>
+                            <option value="27">27 - Eure</option>
+                            <option value="28">28 - Eure-et-Loir</option>
+                            <option value="29">29 - Finistère</option>
+                            <option value="2A">2A - Corse-du-Sud</option>
+                            <option value="2B">2B - Haute-Corse</option>
+                            <option value="30">30 - Gard</option>
+                            <option value="31">31 - Haute-Garonne</option>
+                            <option value="32">32 - Gers</option>
+                            <option value="33">33 - Gironde</option>
+                            <option value="34">34 - Hérault</option>
+                            <option value="35">35 - Ille-et-Vilaine</option>
+                            <option value="36">36 - Indre</option>
+                            <option value="37">37 - Indre-et-Loire</option>
+                            <option value="38">38 - Isère</option>
+                            <option value="39">39 - Jura</option>
+                            <option value="40">40 - Landes</option>
+                            <option value="41">41 - Loir-et-Cher</option>
+                            <option value="42">42 - Loire</option>
+                            <option value="43">43 - Haute-Loire</option>
+                            <option value="44">44 - Loire-Atlantique</option>
+                            <option value="45">45 - Loiret</option>
+                            <option value="46">46 - Lot</option>
+                            <option value="47">47 - Lot-et-Garonne</option>
+                            <option value="48">48 - Lozère</option>
+                            <option value="49">49 - Maine-et-Loire</option>
+                            <option value="50">50 - Manche</option>
+                            <option value="51">51 - Marne</option>
+                            <option value="52">52 - Haute-Marne</option>
+                            <option value="53">53 - Mayenne</option>
+                            <option value="54">54 - Meurthe-et-Moselle</option>
+                            <option value="55">55 - Meuse</option>
+                            <option value="56">56 - Morbihan</option>
+                            <option value="57">57 - Moselle</option>
+                            <option value="58">58 - Nièvre</option>
+                            <option value="59">59 - Nord</option>
+                            <option value="60">60 - Oise</option>
+                            <option value="61">61 - Orne</option>
+                            <option value="62">62 - Pas-de-Calais</option>
+                            <option value="63">63 - Puy-de-Dôme</option>
+                            <option value="64">64 - Pyrénées-Atlantiques</option>
+                            <option value="65">65 - Hautes-Pyrénées</option>
+                            <option value="66">66 - Pyrénées-Orientales</option>
+                            <option value="67">67 - Bas-Rhin</option>
+                            <option value="68">68 - Haut-Rhin</option>
+                            <option value="69">69 - Rhône</option>
+                            <option value="70">70 - Haute-Saône</option>
+                            <option value="71">71 - Saône-et-Loire</option>
+                            <option value="72">72 - Sarthe</option>
+                            <option value="73">73 - Savoie</option>
+                            <option value="74">74 - Haute-Savoie</option>
+                            <option value="75">75 - Paris</option>
+                            <option value="76">76 - Seine-Maritime</option>
+                            <option value="77">77 - Seine-et-Marne</option>
+                            <option value="78">78 - Yvelines</option>
+                            <option value="79">79 - Deux-Sèvres</option>
+                            <option value="80">80 - Somme</option>
+                            <option value="81">81 - Tarn</option>
+                            <option value="82">82 - Tarn-et-Garonne</option>
+                            <option value="83">83 - Var</option>
+                            <option value="84">84 - Vaucluse</option>
+                            <option value="85">85 - Vendée</option>
+                            <option value="86">86 - Vienne</option>
+                            <option value="87">87 - Haute-Vienne</option>
+                            <option value="88">88 - Vosges</option>
+                            <option value="89">89 - Yonne</option>
+                            <option value="90">90 - Territoire de Belfort</option>
+                            <option value="91">91 - Essonne</option>
+                            <option value="92">92 - Hauts-de-Seine</option>
+                            <option value="93">93 - Seine-Saint-Denis</option>
+                            <option value="94">94 - Val-de-Marne</option>
+                            <option value="95">95 - Val-d'Oise</option>
+                            <option value="971">971 - Guadeloupe</option>
+                            <option value="972">972 - Martinique</option>
+                            <option value="973">973 - Guyane</option>
+                            <option value="974">974 - La Réunion</option>
+                            <option value="976">976 - Mayotte</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adp-form-typologie">Typologie de Ménages :</label>
+                        <select id="adp-form-typologie" class="form-input">
+                            <option value="">Sélectionner...</option>
+                            <option value="homme-seul">Homme Seul</option>
+                            <option value="femme-seule">Femme seule</option>
+                            <option value="femme-seule-avec-enfants">Femme seule avec enfant(s)</option>
+                            <option value="homme-seul-avec-enfants">Homme seul avec enfant(s)</option>
+                            <option value="groupe-adultes-avec-enfants">Groupe d'adultes avec enfant(s)</option>
+                            <option value="groupe-adultes-sans-enfant">Groupe d'adultes sans enfant</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adp-form-nb-personnes">Nombre de Personnes :</label>
+                        <select id="adp-form-nb-personnes" class="form-input">
+                            <option value="">Sélectionner...</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10+">10+</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adp-form-mineurs">dont Mineurs :</label>
+                        <select id="adp-form-mineurs" class="form-input">
+                            <option value="">Sélectionner...</option>
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10+">10+</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Transmission -->
+            <div class="form-section">
+                <h3>Transmission</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="adp-form-type-transmission">Transmission :</label>
+                        <select id="adp-form-type-transmission" class="form-input">
+                            <option value="">Sélectionner...</option>
+                            <option value="Jour">Jour</option>
+                            <option value="Nuit">Nuit</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adp-form-point-accueil" class="checkbox-label-inline">
+                            <input type="checkbox" id="adp-form-point-accueil" class="form-checkbox">
+                            <span>Point Accueil</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adp-form-adresse">Adresse :</label>
+                        <input type="text" id="adp-form-adresse" class="form-input" placeholder="Numéro et nom de rue" autocomplete="street-address">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adp-form-ville">Ville :</label>
+                        <select id="adp-form-ville" class="form-input">
+                            <option value="">Sélectionner...</option>
+                            <option value="Ablon-sur-Seine">Ablon-sur-Seine</option>
+                            <option value="Alfortville">Alfortville</option>
+                            <option value="Arcueil">Arcueil</option>
+                            <option value="Boissy-Saint-Léger">Boissy-Saint-Léger</option>
+                            <option value="Bonneuil-sur-Marne">Bonneuil-sur-Marne</option>
+                            <option value="Bry-sur-Marne">Bry-sur-Marne</option>
+                            <option value="Cachan">Cachan</option>
+                            <option value="Champigny-sur-Marne">Champigny-sur-Marne</option>
+                            <option value="Charenton-le-Pont">Charenton-le-Pont</option>
+                            <option value="Chennevières-sur-Marne">Chennevières-sur-Marne</option>
+                            <option value="Chevilly-Larue">Chevilly-Larue</option>
+                            <option value="Choisy-le-Roi">Choisy-le-Roi</option>
+                            <option value="Créteil A (MONDOR/ECHAT/MOSQUEE)">Créteil A (MONDOR/ECHAT/MOSQUEE)</option>
+                            <option value="Créteil B (CHIC/EGLISE/PONT ST MAUR)">Créteil B (CHIC/EGLISE/PONT ST MAUR)</option>
+                            <option value="Créteil C (SOLEIL/MONT MESLY)">Créteil C (SOLEIL/MONT MESLY)</option>
+                            <option value="Créteil D (POMPADOUR/LAC)">Créteil D (POMPADOUR/LAC)</option>
+                            <option value="Fontenay-sous-Bois">Fontenay-sous-Bois</option>
+                            <option value="Fresnes">Fresnes</option>
+                            <option value="Gentilly">Gentilly</option>
+                            <option value="Ivry-sur-Seine">Ivry-sur-Seine</option>
+                            <option value="Joinville-le-Pont">Joinville-le-Pont</option>
+                            <option value="L'Haÿ-les-Roses">L'Haÿ-les-Roses</option>
+                            <option value="La Queue-en-Brie">La Queue-en-Brie</option>
+                            <option value="Le Kremlin-Bicêtre">Le Kremlin-Bicêtre</option>
+                            <option value="Le Perreux-sur-Marne">Le Perreux-sur-Marne</option>
+                            <option value="Le Plessis-Trévise">Le Plessis-Trévise</option>
+                            <option value="Limeil-Brévannes">Limeil-Brévannes</option>
+                            <option value="Maisons-Alfort">Maisons-Alfort</option>
+                            <option value="Mandres-les-Roses">Mandres-les-Roses</option>
+                            <option value="Marolles-en-Brie">Marolles-en-Brie</option>
+                            <option value="Nogent-sur-Marne">Nogent-sur-Marne</option>
+                            <option value="Noiseau">Noiseau</option>
+                            <option value="Orly">Orly</option>
+                            <option value="Ormesson-sur-Marne">Ormesson-sur-Marne</option>
+                            <option value="Périgny">Périgny</option>
+                            <option value="Rungis">Rungis</option>
+                            <option value="Saint-Mandé">Saint-Mandé</option>
+                            <option value="Saint-Maur-des-Fossés">Saint-Maur-des-Fossés</option>
+                            <option value="Saint-Maurice">Saint-Maurice</option>
+                            <option value="Santeny">Santeny</option>
+                            <option value="Sucy-en-Brie">Sucy-en-Brie</option>
+                            <option value="Thiais">Thiais</option>
+                            <option value="Valenton">Valenton</option>
+                            <option value="Villecresnes">Villecresnes</option>
+                            <option value="Villejuif">Villejuif</option>
+                            <option value="Villeneuve-le-Roi">Villeneuve-le-Roi</option>
+                            <option value="Villeneuve-Saint-Georges">Villeneuve-Saint-Georges</option>
+                            <option value="Villiers-sur-Marne">Villiers-sur-Marne</option>
+                            <option value="Vincennes">Vincennes</option>
+                            <option value="Vitry-sur-Seine">Vitry-sur-Seine</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adp-form-signalement">Signalement :</label>
+                        <select id="adp-form-signalement" class="form-input">
+                            <option value=""></option>
+                            <option value="115">115</option>
+                            <option value="Partenaires">Partenaires</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label>Type d'intervention :</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-premier-contact" class="form-checkbox">
+                                <span>1er contact</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-personne-presente" class="form-checkbox">
+                                <span>Personne présente</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-pnt" class="form-checkbox">
+                                <span>PNT</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-maraude" class="form-checkbox">
+                                <span>Maraude</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-veille" class="form-checkbox">
+                                <span>Veille</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-refus-contact" class="form-checkbox">
+                                <span>Refus de contact</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label>Accompagnement :</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-accomp-ecoute" class="form-checkbox">
+                                <span>Écoute</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-accomp-orientation" class="form-checkbox">
+                                <span>Orientation</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-accomp-admin" class="form-checkbox">
+                                <span>Aide administrative</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-accomp-medical" class="form-checkbox">
+                                <span>Aide médicale</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-accomp-hebergement" class="form-checkbox">
+                                <span>Recherche hébergement</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-accomp-autre" class="form-checkbox">
+                                <span>Autre</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label>Distribution :</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-distrib-alimentaire" class="form-checkbox">
+                                <span>Alimentaire</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-distrib-vestimentaire" class="form-checkbox">
+                                <span>Vestimentaire</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-distrib-hygiene" class="form-checkbox">
+                                <span>Hygiène</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-distrib-couvertures" class="form-checkbox">
+                                <span>Couvertures</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-distrib-duvet" class="form-checkbox">
+                                <span>Duvet</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="adp-form-distrib-autre" class="form-checkbox">
+                                <span>Autre</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="adp-form-transmission">Commentaires :</label>
+                        <textarea id="adp-form-transmission" class="form-textarea" rows="6"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="adp-btn-annuler">Annuler</button>
+                <button type="submit" class="btn-primary">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+

@@ -1,0 +1,49 @@
+<!-- Onglet ADP (Accès Droits Personnes) -->
+<div id="adp-tab" class="tab-content">
+    <div class="content-card">
+        <div class="date-selector-container">
+            <label for="adp-date">Date :</label>
+            <input type="date" id="adp-date" class="date-input">
+        </div>
+        
+        <div class="filters-container">
+            <div class="filter-group">
+                <label for="adp-filter-nom">Nom :</label>
+                <input type="text" id="adp-filter-nom" class="filter-input" placeholder="Rechercher par nom" autocomplete="family-name">
+            </div>
+
+            <div class="filter-group">
+                <label for="adp-filter-prenom">Prénom :</label>
+                <input type="text" id="adp-filter-prenom" class="filter-input" placeholder="Rechercher par prénom" autocomplete="given-name">
+            </div>
+            
+            <div class="filter-group">
+                <label for="adp-filter-ddn">Date de Naissance :</label>
+                <input type="date" id="adp-filter-ddn" class="filter-input">
+            </div>
+            
+            <div class="filter-group">
+                <label for="adp-filter-description">Description Physique :</label>
+                <input type="text" id="adp-filter-description" class="filter-input" placeholder="Rechercher par description" autocomplete="on">
+            </div>
+            
+            <div class="filter-group">
+                <label for="adp-filter-inconnu">Inconnu :</label>
+                <select id="adp-filter-inconnu" class="filter-input">
+                    <option value=""></option>
+                    <option value="Oui">Oui</option>
+                    <option value="Non">Non</option>
+                </select>
+            </div>
+            
+            <button id="adp-btn-ajouter" class="btn-add">Ajouter</button>
+        </div>
+        
+        <!-- Conteneur pour les cartes ADP -->
+        <div id="adp-list" class="transmissions-container"></div>
+        
+        <h2>ADP</h2>
+        <p>Accès Droits Personnes - Gestion des accès.</p>
+    </div>
+</div>
+

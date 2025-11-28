@@ -1,4 +1,42 @@
-<!DOCTYPE html>
+/**
+ * Script de build pour assembler les fichiers HTML partiels
+ * Usage: node build-html.js
+ * 
+ * Ce script assemble les fichiers HTML modulaires en un seul index.html
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+// Configuration des fichiers partiels
+const partials = {
+    navigation: 'fonctionnalites/navigation_complet/navigation-tabs.html',
+    transmissionsTab: 'fonctionnalites/transmissions_complet/affichage_page/transmissions-tab.html',
+    adpTab: 'fonctionnalites/adp_complet/adp-tab.html',
+    statistiquesTab: 'fonctionnalites/statistiques_complet/statistiques-tab.html',
+    modalTransmission: 'fonctionnalites/interface_complet/gestion_modales/modal-transmission.html',
+    modalAdp: 'fonctionnalites/adp_complet/modal-adp.html',
+    footer: 'fonctionnalites/interface_complet/footer.html'
+};
+
+// Fonction pour lire un fichier partial
+function readPartial(partialPath) {
+    try {
+        return fs.readFileSync(partialPath, 'utf8');
+    } catch (error) {
+        console.error(`Erreur lecture ${partialPath}:`, error.message);
+        return `<!-- Erreur: ${partialPath} non trouvé -->`;
+    }
+}
+
+// Fonction pour indenter le contenu
+function indent(content, spaces = 8) {
+    const indentation = ' '.repeat(spaces);
+    return content.split('\n').map(line => indentation + line).join('\n');
+}
+
+// Template principal
+const template = `<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -43,34 +81,30 @@
 </head>
 <body>
     <div id="app">
-        <!-- Navigation : fonctionnalites/navigation_complet/navigation-tabs.html -->
-        <nav id="navigation-container"></nav>
+        <!-- Navigation (from: fonctionnalites/navigation_complet/navigation-tabs.html) -->
+{{NAVIGATION}}
 
         <main class="app-main">
-            <!-- Transmissions : fonctionnalites/transmissions_complet/affichage_page/transmissions-tab.html -->
-            <div id="transmissions-tab-container"></div>
+            <!-- Transmissions Tab (from: fonctionnalites/transmissions_complet/affichage_page/transmissions-tab.html) -->
+{{TRANSMISSIONS_TAB}}
 
-            <!-- ADP : fonctionnalites/adp_complet/adp-tab.html -->
-            <div id="adp-tab-container"></div>
+            <!-- ADP Tab (from: fonctionnalites/adp_complet/adp-tab.html) -->
+{{ADP_TAB}}
 
-            <!-- Statistiques : fonctionnalites/statistiques_complet/statistiques-tab.html -->
-            <div id="statistiques-tab-container"></div>
+            <!-- Statistiques Tab (from: fonctionnalites/statistiques_complet/statistiques-tab.html) -->
+{{STATISTIQUES_TAB}}
         </main>
 
-        <!-- Footer : fonctionnalites/interface_complet/footer.html -->
-        <div id="footer-container"></div>
+        <!-- Footer (from: fonctionnalites/interface_complet/footer.html) -->
+{{FOOTER}}
     </div>
 
-    <!-- Modales -->
-    <!-- Modal Transmission : fonctionnalites/interface_complet/gestion_modales/modal-transmission.html -->
-    <div id="modal-transmission-container"></div>
-    
-    <!-- Modal ADP : fonctionnalites/adp_complet/modal-adp.html -->
-    <div id="modal-adp-container"></div>
+    <!-- Modal Transmission (from: fonctionnalites/interface_complet/gestion_modales/modal-transmission.html) -->
+{{MODAL_TRANSMISSION}}
 
-    <!-- Chargeur de modules HTML -->
-    <script src="fonctionnalites/html-loader.js"></script>
-    
+    <!-- Modal ADP (from: fonctionnalites/adp_complet/modal-adp.html) -->
+{{MODAL_ADP}}
+
     <!-- Scripts fonctionnels -->
     <script src="fonctionnalites/persistance_complet/database.js"></script>
     <script src="fonctionnalites/transmissions_complet/affichage_page/code.js"></script>
@@ -81,4 +115,28 @@
     <!-- Script principal -->
     <script src="renderer.js"></script>
 </body>
-</html>
+</html>`;
+
+// Build
+console.log('🔨 Assemblage des fichiers HTML...');
+
+let output = template;
+
+// Remplacer les placeholders
+output = output.replace('{{NAVIGATION}}', indent(readPartial(partials.navigation), 8));
+output = output.replace('{{TRANSMISSIONS_TAB}}', indent(readPartial(partials.transmissionsTab), 12));
+output = output.replace('{{ADP_TAB}}', indent(readPartial(partials.adpTab), 12));
+output = output.replace('{{STATISTIQUES_TAB}}', indent(readPartial(partials.statistiquesTab), 12));
+output = output.replace('{{FOOTER}}', indent(readPartial(partials.footer), 8));
+output = output.replace('{{MODAL_TRANSMISSION}}', indent(readPartial(partials.modalTransmission), 4));
+output = output.replace('{{MODAL_ADP}}', indent(readPartial(partials.modalAdp), 4));
+
+// Écrire le fichier
+fs.writeFileSync('index.html', output, 'utf8');
+console.log('✅ index.html généré avec succès!');
+console.log('');
+console.log('Fichiers sources utilisés:');
+Object.entries(partials).forEach(([name, path]) => {
+    console.log(`  - ${name}: ${path}`);
+});
+
