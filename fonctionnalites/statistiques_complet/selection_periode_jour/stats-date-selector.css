@@ -1,0 +1,96 @@
+/* Styles pour le sélecteur de dates des statistiques */
+.stats-date-selector {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.stats-selector-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stats-selector-group label {
+    font-weight: 600;
+    color: #667eea;
+    font-size: 1.1rem;
+    min-width: 80px;
+}
+
+.stats-select {
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-family: inherit;
+    cursor: pointer;
+    background: white;
+    transition: all 0.3s ease;
+    min-width: 200px;
+}
+
+.stats-select:hover {
+    border-color: #667eea;
+}
+
+.stats-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.stats-date-option {
+    display: none;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+}
+
+.stats-date-option.active {
+    display: flex;
+}
+
+.stats-date-option label {
+    font-weight: 600;
+    color: #555;
+    min-width: 80px;
+}
+
+.stats-range-group {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.stats-range-group > div {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 200px;
+}
+
+#stats-year {
+    max-width: 150px;
+}
+
+#stats-content {
+    padding: 2rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+    min-height: 200px;
+}
+
+
+
+
+

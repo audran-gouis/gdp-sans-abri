@@ -8,3 +8,21 @@ build/
 package-lock.json
 yarn.lock
 
+# Rapports de tests BDD
+reports/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Captures d'écran et vidéos de tests
+screenshots/
+videos/
+traces/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+

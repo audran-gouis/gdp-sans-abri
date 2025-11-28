@@ -1,0 +1,49 @@
+<!-- Sélecteur de période pour les statistiques -->
+<div class="stats-date-selector">
+    <div class="stats-selector-group">
+        <label for="stats-period-type">Période :</label>
+        <select id="stats-period-type" class="stats-select">
+            <option value="day">Jour précis</option>
+            <option value="month">Mois</option>
+            <option value="year">Année</option>
+            <option value="range">Plage de dates</option>
+        </select>
+    </div>
+    
+    <!-- Jour précis -->
+    <div id="stats-day-selector" class="stats-date-option active">
+        <label for="stats-specific-day">Date :</label>
+        <input type="date" id="stats-specific-day" class="date-input">
+    </div>
+    
+    <!-- Mois -->
+    <div id="stats-month-selector" class="stats-date-option">
+        <label for="stats-month">Mois :</label>
+        <input type="month" id="stats-month" class="date-input">
+    </div>
+    
+    <!-- Année -->
+    <div id="stats-year-selector" class="stats-date-option">
+        <label for="stats-year">Année :</label>
+        <input type="number" id="stats-year" class="date-input" min="2000" max="2100" placeholder="AAAA">
+    </div>
+    
+    <!-- Plage de dates -->
+    <div id="stats-range-selector" class="stats-date-option">
+        <div class="stats-range-group">
+            <div>
+                <label for="stats-date-start">Du :</label>
+                <input type="date" id="stats-date-start" class="date-input">
+            </div>
+            <div>
+                <label for="stats-date-end">Au :</label>
+                <input type="date" id="stats-date-end" class="date-input">
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+

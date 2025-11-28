@@ -1,0 +1,59 @@
+/* Styles pour les groupes de cases à cocher */
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+    color: #555;
+    transition: all 0.2s ease;
+}
+
+.checkbox-label:hover {
+    color: #667eea;
+}
+
+.form-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.checkbox-label span {
+    user-select: none;
+}
+
+/* Case à cocher inline dans un form-group */
+.checkbox-label-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    color: #555;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.checkbox-label-inline:hover {
+    color: #667eea;
+}
+
+.checkbox-label-inline .form-checkbox {
+    margin: 0;
+}
+
+
+
+
+

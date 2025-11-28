@@ -5,9 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
     <title>App Finale Maraudes</title>
-    <link rel="stylesheet" href="styles/main.css">
-    <link rel="stylesheet" href="styles/modal.css">
-    <link rel="stylesheet" href="styles/form.css">
+    <!-- Styles de base -->
+    <link rel="stylesheet" href="fonctionnalites/interface_complet/base.css">
+    <link rel="stylesheet" href="fonctionnalites/interface_complet/content-card.css">
+    
+    <!-- Navigation -->
+    <link rel="stylesheet" href="fonctionnalites/navigation_complet/navigation-tabs.css">
+    
+    <!-- Modales -->
+    <link rel="stylesheet" href="fonctionnalites/interface_complet/gestion_modales/modal.css">
+    <link rel="stylesheet" href="fonctionnalites/interface_complet/gestion_modales/modal-header.css">
+    <link rel="stylesheet" href="fonctionnalites/interface_complet/gestion_modales/modal-body.css">
+    
+    <!-- Formulaires -->
+    <link rel="stylesheet" href="fonctionnalites/formulaires_complet/form-grid.css">
+    <link rel="stylesheet" href="fonctionnalites/formulaires_complet/form-inputs.css">
+    <link rel="stylesheet" href="fonctionnalites/formulaires_complet/form-buttons.css">
+    <link rel="stylesheet" href="fonctionnalites/formulaires_complet/form-section-collapse.css">
+    <link rel="stylesheet" href="fonctionnalites/formulaires_complet/modal-footer.css">
+    <link rel="stylesheet" href="fonctionnalites/formulaires_complet/selection_multiple_checkboxes/checkbox-group.css">
+    
+    <!-- Transmissions -->
+    <link rel="stylesheet" href="fonctionnalites/transmissions_complet/affichage_page/date-selector.css">
+    <link rel="stylesheet" href="fonctionnalites/transmissions_complet/affichage_page/transmission-card.css">
+    <link rel="stylesheet" href="fonctionnalites/transmissions_complet/affichage_page/empty-state.css">
+    <link rel="stylesheet" href="fonctionnalites/transmissions_complet/filtrage_par_nom/filtres.css">
+    <link rel="stylesheet" href="fonctionnalites/transmissions_complet/ajout_transmission_minimale/btn-add.css">
+    <link rel="stylesheet" href="fonctionnalites/transmissions_complet/modification_transmission/card-actions.css">
+    
+    <!-- Statistiques -->
+    <link rel="stylesheet" href="fonctionnalites/statistiques_complet/stats-source-selector.css">
+    <link rel="stylesheet" href="fonctionnalites/statistiques_complet/stats-filter-actions.css">
+    <link rel="stylesheet" href="fonctionnalites/statistiques_complet/selection_periode_jour/stats-date-selector.css">
+    <link rel="stylesheet" href="fonctionnalites/statistiques_complet/filtrage_par_type_intervention/stats-filters.css">
+    <link rel="stylesheet" href="fonctionnalites/statistiques_complet/filtrage_par_type_intervention/stats-checkbox.css">
 </head>
 <body>
     <div id="app">
@@ -423,7 +454,7 @@
                 </div>
             </div>
             
-            <form id="form-transmission" class="modal-body">
+            <form id="form-modal-transmission" class="modal-body">
                 <!-- Section Informations Personnelles -->
                 <div class="form-section" id="section-info-perso">
                     <h3 class="section-header">
@@ -1084,7 +1115,17 @@
         </div>
     </div>
 
+    <!-- Scripts fonctionnels - chargés AVANT renderer.js -->
+    <script src="fonctionnalites/persistance_complet/database.js"></script>
+    <script src="fonctionnalites/transmissions_complet/affichage_page/code.js"></script>
+    <script src="fonctionnalites/transmissions_complet/ajout_transmission_minimale/code.js"></script>
+    <script src="fonctionnalites/adp_complet/ajout_personne_complete/code.js"></script>
+    <script src="fonctionnalites/navigation_complet/affichage_onglet_par_defaut/code.js"></script>
+    
+    <!-- Script principal monolithique (fonctionnel) -->
     <script src="renderer.js"></script>
+    
+    <!-- NOTE: Les modules dans modules/ sont des prototypes pour future refonte -->
+    <!-- Une vraie modularisation nécessite un bundler (Webpack/Vite) -->
 </body>
 </html>
-

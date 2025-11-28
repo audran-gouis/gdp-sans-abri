@@ -1,0 +1,113 @@
+<!-- Formulaire complet pour ajout transmission complète -->
+<form id="form-modal-transmission" class="modal-body">
+    <!-- Section Informations Personnelles -->
+    <div class="form-section" id="section-info-perso">
+        <h3 class="section-header">
+            Informations Personnelles
+            <span class="collapse-toggle">▼</span>
+        </h3>
+        <div class="form-grid" id="grid-info-perso">
+            <div class="form-group">
+                <label for="form-nom">Nom :</label>
+                <input type="text" id="form-nom" class="form-input" autocomplete="family-name">
+            </div>
+            
+            <div class="form-group">
+                <label for="form-prenom">Prénom :</label>
+                <input type="text" id="form-prenom" class="form-input" autocomplete="given-name">
+            </div>
+            
+            <div class="form-group">
+                <label for="form-ddn">Date de Naissance :</label>
+                <input type="date" id="form-ddn" class="form-input">
+            </div>
+            
+            <div class="form-group">
+                <label for="form-typologie">Typologie de Ménages :</label>
+                <select id="form-typologie" class="form-input">
+                    <option value="">Sélectionner...</option>
+                    <option value="homme-seul">Homme Seul</option>
+                    <option value="femme-seule">Femme seule</option>
+                    <option value="femme-seule-avec-enfants">Femme seule avec enfant(s)</option>
+                    <option value="homme-seul-avec-enfants">Homme seul avec enfant(s)</option>
+                    <option value="groupe-adultes-avec-enfants">Groupe d'adultes avec enfant(s)</option>
+                    <option value="groupe-adultes-sans-enfant">Groupe d'adultes sans enfant</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="form-nb-personnes">Nombre de Personnes :</label>
+                <select id="form-nb-personnes" class="form-input">
+                    <option value="">Sélectionner...</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10+">10+</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="form-mineurs">dont Mineurs :</label>
+                <select id="form-mineurs" class="form-input">
+                    <option value="">Sélectionner...</option>
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10+">10+</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Transmission -->
+    <div class="form-section">
+        <h3>Transmission</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="form-type-transmission">Transmission :</label>
+                <select id="form-type-transmission" class="form-input">
+                    <option value="">Sélectionner...</option>
+                    <option value="Jour">Jour</option>
+                    <option value="Nuit">Nuit</option>
+                    <option value="Info-coordination">Info-coordination</option>
+                    <option value="Transmission-coordination">Transmission-coordination</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="form-adresse">Adresse :</label>
+                <input type="text" id="form-adresse" class="form-input" placeholder="Numéro et nom de rue" autocomplete="street-address">
+            </div>
+            
+            <!-- Type d'intervention, Accompagnement, Distribution inclus -->
+            
+            <div class="form-group full-width">
+                <label for="form-transmission">Contenu de la transmission :</label>
+                <textarea id="form-transmission" class="form-textarea" rows="6"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="btn-annuler">Annuler</button>
+        <button type="submit" class="btn-primary">Enregistrer</button>
+    </div>
+</form>
+
+
+
+
+

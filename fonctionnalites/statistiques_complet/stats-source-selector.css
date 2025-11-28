@@ -1,0 +1,22 @@
+/* Sélecteur de source pour les statistiques */
+.stats-source-selector {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stats-source-selector label {
+    font-weight: 600;
+    color: #667eea;
+    font-size: 1.1rem;
+    min-width: 80px;
+}
+
+
+
+
+

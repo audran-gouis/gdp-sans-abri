@@ -1,0 +1,14 @@
+/* Pied de page du formulaire modal */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    border-top: 2px solid #f0f0f0;
+    background: #fafafa;
+}
+
+
+
+
+
