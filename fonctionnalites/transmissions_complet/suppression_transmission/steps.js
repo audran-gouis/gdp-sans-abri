@@ -201,3 +201,7 @@ Then('la carte devrait disparaître de la liste', async function() {
   // Vérifier qu'il y a une carte de moins
   expect(nombreCartesFinal).toBe(nombreCartesAvantSuppression - 1);
 });
+
+  // Vérifier que la carte avec nom "Test" et prénom "User" a disparu
+  const resultat = await manager.verifierCarteDisparue({ nom: 'Test', prenom: 'User' });
+  expect(resultat).toBeTruthy();

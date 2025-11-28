@@ -26,7 +26,7 @@ async function initDB() {
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
       db = request.result;
-      console.log('✅ Base de données transmissions initialisée');
+      console.log('Base de données transmissions initialisée');
       resolve(db);
     };
     
@@ -56,7 +56,7 @@ async function addTransmission(data) {
     const request = objectStore.add(data);
     
     request.onsuccess = () => {
-      console.log('✅ Transmission ajoutée, ID:', request.result);
+      console.log('Transmission ajoutée, ID:', request.result);
       resolve(request.result);
     };
     request.onerror = () => reject(request.error);
@@ -91,7 +91,7 @@ async function updateTransmission(data) {
     const request = objectStore.put(data);
     
     request.onsuccess = () => {
-      console.log('✅ Transmission mise à jour');
+      console.log('Transmission mise à jour, ID:', request.result);
       resolve(request.result);
     };
     request.onerror = () => reject(request.error);
@@ -110,7 +110,7 @@ async function deleteTransmission(id) {
     const request = objectStore.delete(id);
     
     request.onsuccess = () => {
-      console.log('✅ Transmission supprimée');
+      console.log('Transmission supprimée, ID:', id);
       resolve();
     };
     request.onerror = () => reject(request.error);
@@ -131,7 +131,7 @@ async function initDBADP() {
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
       dbAdp = request.result;
-      console.log('✅ Base de données ADP initialisée');
+      console.log('Base de données ADP initialisée');
       resolve(dbAdp);
     };
     
@@ -161,7 +161,7 @@ async function addTransmissionAdp(data) {
     const request = objectStore.add(data);
     
     request.onsuccess = () => {
-      console.log('✅ Transmission ADP ajoutée, ID:', request.result);
+      console.log('Transmission ADP ajoutée, ID:', request.result);
       resolve(request.result);
     };
     request.onerror = () => reject(request.error);
@@ -196,7 +196,7 @@ async function updateTransmissionAdp(data) {
     const request = objectStore.put(data);
     
     request.onsuccess = () => {
-      console.log('✅ Transmission ADP mise à jour');
+      console.log('Transmission ADP mise à jour, ID:', request.result);
       resolve(request.result);
     };
     request.onerror = () => reject(request.error);
@@ -215,45 +215,58 @@ async function deleteTransmissionAdp(id) {
     const request = objectStore.delete(id);
     
     request.onsuccess = () => {
-      console.log('✅ Transmission ADP supprimée');
+      console.log('Transmission ADP supprimée, ID:', id);
       resolve();
     };
     request.onerror = () => reject(request.error);
   });
 }
 
-// Export pour Node.js (tests) et browser (application)
-// Toujours rendre les fonctions disponibles globalement dans le navigateur
-if (typeof window !== 'undefined') {
-  console.log('🔧 Exposition des fonctions database globalement...');
-  window.initDB = initDB;
-  window.addTransmission = addTransmission;
-  window.getAllTransmissions = getAllTransmissions;
-  window.updateTransmission = updateTransmission;
-  window.deleteTransmission = deleteTransmission;
-  window.initDBADP = initDBADP;
-  window.addTransmissionAdp = addTransmissionAdp;
-  window.getAllTransmissionsAdp = getAllTransmissionsAdp;
-  window.updateTransmissionAdp = updateTransmissionAdp;
-  window.deleteTransmissionAdp = deleteTransmissionAdp;
-  
-  // Exposer les références aux bases pour les tests
-  window._resetDbAdp = function() {
-    if (dbAdp) {
-      dbAdp.close();
-    }
-    dbAdp = null;
-  };
-  
-  window._resetDb = function() {
+// ==================== EXPORT GLOBAL ====================
+
+// Exposer les fonctions globalement pour l'application
+window.initDB = initDB;
+window.addTransmission = addTransmission;
+window.getAllTransmissions = getAllTransmissions;
+window.updateTransmission = updateTransmission;
+window.deleteTransmission = deleteTransmission;
+
+window.initDBADP = initDBADP;
+window.addTransmissionAdp = addTransmissionAdp;
+window.getAllTransmissionsAdp = getAllTransmissionsAdp;
+window.updateTransmissionAdp = updateTransmissionAdp;
+window.deleteTransmissionAdp = deleteTransmissionAdp;
+
+// Fonctions de reset pour les tests
+window._resetDb = function() {
+  return new Promise((resolve, reject) => {
     if (db) {
       db.close();
+      db = null;
     }
-    db = null;
-  };
-  
-  console.log('✅ Fonctions database exposées globalement');
-}
+    const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
+    deleteRequest.onsuccess = () => {
+      console.log('Base de données Transmissions réinitialisée');
+      resolve();
+    };
+    deleteRequest.onerror = () => reject(deleteRequest.error);
+  });
+};
+
+window._resetDbAdp = function() {
+  return new Promise((resolve, reject) => {
+    if (dbAdp) {
+      dbAdp.close();
+      dbAdp = null;
+    }
+    const deleteRequest = indexedDB.deleteDatabase(DB_ADP_NAME);
+    deleteRequest.onsuccess = () => {
+      console.log('Base de données ADP réinitialisée');
+      resolve();
+    };
+    deleteRequest.onerror = () => reject(deleteRequest.error);
+  });
+};
 
 // Export pour Node.js (tests)
 if (typeof module !== 'undefined' && module.exports) {
@@ -270,3 +283,5 @@ if (typeof module !== 'undefined' && module.exports) {
     deleteTransmissionAdp
   };
 }
+
+console.log('✅ Module database.js chargé');

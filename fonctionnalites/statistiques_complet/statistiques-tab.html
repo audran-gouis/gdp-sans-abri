@@ -25,25 +25,25 @@
             </div>
             
             <!-- Jour précis -->
-            <div id="stats-day-selector" class="stats-date-option active">
+            <div id="stats-day-selector" class="stats-date-option active" style="display: flex;">
                 <label for="stats-specific-day">Date :</label>
                 <input type="date" id="stats-specific-day" class="date-input">
             </div>
             
             <!-- Mois -->
-            <div id="stats-month-selector" class="stats-date-option">
+            <div id="stats-month-selector" class="stats-date-option" style="display: none;">
                 <label for="stats-month">Mois :</label>
                 <input type="month" id="stats-month" class="date-input">
             </div>
             
             <!-- Année -->
-            <div id="stats-year-selector" class="stats-date-option">
+            <div id="stats-year-selector" class="stats-date-option" style="display: none;">
                 <label for="stats-year">Année :</label>
                 <input type="number" id="stats-year" class="date-input" min="2000" max="2100" placeholder="AAAA">
             </div>
             
             <!-- Plage de dates -->
-            <div id="stats-range-selector" class="stats-date-option">
+            <div id="stats-range-selector" class="stats-date-option" style="display: none;">
                 <div class="stats-range-group">
                     <div>
                         <label for="stats-date-start">Du :</label>
@@ -77,93 +77,8 @@
                     </div>
                     
                     <div class="stats-filter-group">
-                        <label for="stats-filter-ddn">Date de Naissance :</label>
-                        <input type="date" id="stats-filter-ddn" class="filter-input">
-                    </div>
-                    
-                    <div class="stats-filter-group">
-                        <label for="stats-filter-typologie">Typologie de Ménages :</label>
-                        <select id="stats-filter-typologie" class="filter-input">
-                            <option value="">Tous</option>
-                        </select>
-                    </div>
-                    
-                    <div class="stats-filter-group">
-                        <label for="stats-filter-nb-personnes">Nombre de Personnes :</label>
-                        <input type="number" id="stats-filter-nb-personnes" class="filter-input" min="0" placeholder="Nombre">
-                    </div>
-                    
-                    <div class="stats-filter-group">
-                        <label for="stats-filter-mineurs">Nombre de Mineurs :</label>
-                        <input type="number" id="stats-filter-mineurs" class="filter-input" min="0" placeholder="Nombre">
-                    </div>
-                    
-                    <!-- Champs spécifiques à ADP -->
-                    <div class="stats-filter-group adp-only">
-                        <label for="stats-filter-description">Description Physique :</label>
-                        <input type="text" id="stats-filter-description" class="filter-input" placeholder="Description">
-                    </div>
-                    
-                    <div class="stats-filter-group adp-only">
-                        <label for="stats-filter-inconnu">Inconnu :</label>
-                        <select id="stats-filter-inconnu" class="filter-input">
-                            <option value="">Tous</option>
-                            <option value="true">Oui</option>
-                            <option value="false">Non</option>
-                        </select>
-                    </div>
-                    
-                    <div class="stats-filter-group adp-only">
-                        <label for="stats-filter-departement">Département d'origine :</label>
-                        <select id="stats-filter-departement" class="filter-input">
-                            <option value="">Tous</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Données de Transmission -->
-                <div class="stats-filter-section">
-                    <h4>Données de Transmission</h4>
-                    
-                    <div class="stats-filter-group">
-                        <label class="stats-checkbox-label" style="padding: 0.75rem; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; margin-bottom: 1rem;">
-                            <input type="checkbox" id="stats-filter-pas-passage" class="stats-checkbox">
-                            <span style="font-weight: 600; color: #856404;">Pas de passage (personnes sans données de transmission pour la période)</span>
-                        </label>
-                    </div>
-                    
-                    <div class="stats-filter-group">
-                        <label for="stats-filter-transmission-type">Type de Transmission :</label>
-                        <select id="stats-filter-transmission-type" class="filter-input">
-                            <option value="">Tous</option>
-                        </select>
-                    </div>
-                    
-                    <div class="stats-filter-group">
                         <label for="stats-filter-ville">Ville :</label>
                         <input type="text" id="stats-filter-ville" class="filter-input" placeholder="Filtrer par ville">
-                    </div>
-                    
-                    <div class="stats-filter-group">
-                        <label for="stats-filter-adresse">Adresse :</label>
-                        <input type="text" id="stats-filter-adresse" class="filter-input" placeholder="Filtrer par adresse">
-                    </div>
-                    
-                    <div class="stats-filter-group">
-                        <label for="stats-filter-signalement">Signalement :</label>
-                        <select id="stats-filter-signalement" class="filter-input">
-                            <option value="">Tous</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Point Accueil (ADP uniquement) -->
-                    <div class="stats-filter-group adp-only">
-                        <label for="stats-filter-point-accueil">Point Accueil :</label>
-                        <select id="stats-filter-point-accueil" class="filter-input">
-                            <option value="">Tous</option>
-                            <option value="true">Oui</option>
-                            <option value="false">Non</option>
-                        </select>
                     </div>
                 </div>
                 
@@ -280,7 +195,7 @@
             </div>
             
             <div class="stats-filter-actions">
-                <button id="stats-reset-filters" class="btn-secondary">Réinitialiser les filtres</button>
+                <button id="stats-reset-filters" class="btn-secondary">Réinitialiser</button>
                 <button id="stats-apply-filter" class="btn-add">Appliquer</button>
                 <button id="stats-show-cards" class="btn-secondary" style="background: #17a2b8;">Afficher les cartes</button>
             </div>
@@ -292,14 +207,14 @@
         
         <!-- Cartes des personnes filtrées -->
         <div id="stats-cards-section" style="display: none; margin-top: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h3 style="color: #667eea; margin: 0;">Cartes des personnes concernées</h3>
-                <button id="stats-hide-cards" class="btn-secondary" style="padding: 0.5rem 1rem;">Masquer les cartes</button>
+                <button id="stats-hide-cards" class="btn-secondary">Masquer</button>
             </div>
             <div id="stats-cards-list" class="transmissions-container">
-                <!-- Les cartes seront insérées ici -->
             </div>
         </div>
     </div>
 </div>
+
 

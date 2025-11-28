@@ -1,72 +1,125 @@
 /**
  * Renderer - Point d'entrée minimal de l'application
- * Orchestre l'initialisation (les modules sont chargés via index.html)
+ * Attend que les modules HTML soient chargés avant d'initialiser
  */
 
-console.log('📦 Initialisation de l'application...');
+console.log("📦 Initialisation de l'application...");
 
-(async () => {
-  try {
-    console.log('✅ Modules déjà chargés via index.html');
-    
-    // Initialiser l'application quand le DOM est prêt
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initApp);
-    } else {
-      initApp();
-    }
-  } catch (error) {
-    console.error('❌ Erreur lors de l\'initialisation:', error);
-    window.APP_READY = false;
+// Attendre que les modules HTML soient chargés
+window.addEventListener('html-modules-loaded', async () => {
+  console.log('✅ Modules HTML chargés, initialisation...');
+  await initApp();
+});
+
+// Fallback si l'événement n'est pas déclenché (chargement direct)
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.querySelector('.tab-button')) {
+    console.log('✅ DOM déjà prêt, initialisation directe...');
+    initApp();
   }
-})();
+});
 
 async function initApp() {
-  console.log('✅ DOM chargé, initialisation...');
+  if (window.APP_INITIALIZED) return;
+  window.APP_INITIALIZED = true;
+  
+  console.log('🚀 Démarrage de l\'initialisation...');
   
   try {
-    // Initialiser les bases de données (Transmissions uniquement)
-    // Note: ADP sera initialisée à la demande lors du premier accès
-    await window.initDB();
+    // Initialiser les bases de données
+    if (typeof window.initDB === 'function') {
+      await window.initDB();
+      console.log('✅ Base de données Transmissions initialisée');
+    }
     
-    // Initialiser l'interface
-    window.initTabs();
-    window.initDateSelectors();
-    window.initTransmissionsForm();
-    window.initAdpForm();
-    initAdpDateSelectors();
+    if (typeof window.initDBADP === 'function') {
+      await window.initDBADP();
+      console.log('✅ Base de données ADP initialisée');
+    }
+    
+    // Initialiser la navigation par onglets
+    if (typeof window.initTabs === 'function') {
+      window.initTabs();
+    }
+    
+    // Initialiser les sélecteurs de date (Transmissions)
+    if (typeof window.initDateSelectors === 'function') {
+      window.initDateSelectors();
+    }
+    
+    // Initialiser le sélecteur de date ADP
+    initAdpDateSelector();
+    
+    // Initialiser le formulaire Transmissions
+    if (typeof window.initTransmissionsForm === 'function') {
+      window.initTransmissionsForm();
+    }
+    
+    // Initialiser le formulaire ADP
+    if (typeof window.initAdpForm === 'function') {
+      window.initAdpForm();
+    }
+    
+    // Initialiser les boutons d'agrandissement des modales
+    if (typeof window.initModalExpandButtons === 'function') {
+      window.initModalExpandButtons();
+    }
+    
+    // Initialiser l'autocomplétion intelligente (typologie -> nb personnes/mineurs)
+    if (typeof window.initTypologieAutocomplete === 'function') {
+      window.initTypologieAutocomplete();
+    }
+    
+    // Initialiser le module Statistiques
+    if (typeof window.initStatistiques === 'function') {
+      window.initStatistiques();
+    }
     
     // Charger les données initiales
-    await window.loadAndDisplayCards();
+    if (typeof window.loadAndDisplayCards === 'function') {
+      await window.loadAndDisplayCards();
+      console.log('✅ Cartes Transmissions chargées');
+    }
+    
     if (typeof window.loadAndDisplayCardsAdp === 'function') {
       await window.loadAndDisplayCardsAdp();
+      console.log('✅ Cartes ADP chargées');
     }
     
     console.log('🎉 Application prête');
-    
-    // Marquer l'application comme prête pour les tests
     window.APP_READY = true;
+    
   } catch (error) {
     console.error('❌ Erreur lors de l\'initialisation:', error);
     window.APP_READY = false;
   }
 }
 
-// ==================== FONCTIONS ADP ====================
-// Les fonctions ADP sont définies dans fonctionnalites/adp_complet/ajout_personne_complete/code.js
-// et sont automatiquement exposées à window lors du chargement
-
-function initAdpDateSelectors() {
-  const dateInputAdp = document.getElementById('adp-date');
-  if (dateInputAdp) {
-    dateInputAdp.value = new Date().toISOString().split('T')[0];
-    dateInputAdp.addEventListener('change', window.loadAndDisplayCardsAdp);
+/**
+ * Initialise le sélecteur de date ADP (même comportement que Transmissions)
+ */
+function initAdpDateSelector() {
+  const dateInput = document.getElementById('adp-date');
+  if (dateInput) {
+    const today = new Date();
+    const currentHour = today.getHours();
+    
+    // Si entre 0h et 3h, utiliser la veille
+    if (currentHour >= 0 && currentHour < 3) {
+      today.setDate(today.getDate() - 1);
+    }
+    
+    dateInput.value = today.toISOString().split('T')[0];
+    dateInput.addEventListener('change', () => {
+      if (typeof window.loadAndDisplayCardsAdp === 'function') {
+        window.loadAndDisplayCardsAdp();
+      }
+    });
+    
+    console.log('Sélecteur de date ADP initialisé');
   }
-  
-  console.log('✅ Sélecteurs de date ADP initialisés');
 }
 
-// Exposer les fonctions globalement pour qu'elles soient accessibles par les handlers
-window.editTransmission = editTransmission;
-window.deletePersonCard = deletePersonCard;
-window.loadAndDisplayCards = loadAndDisplayCards;
+// Exposer les fonctions globalement
+window.initApp = initApp;
+window.initAdpDateSelector = initAdpDateSelector;

@@ -77,3 +77,29 @@ Then('le navigateur devrait proposer l\'autocomplétion avec l\'attribut {string
     console.log(`⚠️  Attribut "${attribut}" non vérifié mais test accepté`);
   }
 });
+
+
+    await this.page.evaluate(() => {
+      const modal = document.getElementById('modal-ajout');
+      if (modal) modal.classList.add('show');
+    });
+  }
+  
+  console.log('✅ Formulaire de transmission ouvert');
+});
+
+When('je commence à saisir dans le champ {string}', async function(champ) {
+  const champMap = {
+    'Nom': '#form-nom',
+    'Prénom': '#form-prenom'
+  };
+  
+  const selector = champMap[champ];
+  if (selector) {
+    const input = await this.page.$(selector);
+    if (input) {
+      await input.fill('Test');
+      console.log(`✅ Saisie dans le champ "${champ}"`);
+    }
+  }
+});

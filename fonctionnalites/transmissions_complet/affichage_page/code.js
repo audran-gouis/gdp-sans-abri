@@ -24,9 +24,6 @@ function formatDate(dateString) {
 function groupTransmissionsByPerson(transmissions) {
   const personsMap = new Map();
   
-  console.log('=== REGROUPEMENT DES TRANSMISSIONS ===');
-  console.log('Nombre total:', transmissions.length);
-  
   transmissions.forEach(transmission => {
     const personId = transmission.personId || transmission.id;
     
@@ -46,7 +43,6 @@ function groupTransmissionsByPerson(transmissions) {
     personsMap.get(personId).transmissions.push(transmission);
   });
   
-  console.log('Personnes uniques:', personsMap.size);
   return Array.from(personsMap.values());
 }
 
@@ -106,11 +102,19 @@ function createPersonCard(person, selectedDate, handlers) {
     `;
   }
   
+  // Indicateur si pas de transmission pour ce jour
+  const noTransmissionToday = !transmissionForDate;
+  
   card.innerHTML = `
     <div class="card-header">
       <h3>${displayData.prenom || ''} ${displayData.nom || 'Inconnu'}</h3>
       <span class="transmissions-count">${transmissionsCount} transmission${transmissionsCount > 1 ? 's' : ''}</span>
     </div>
+    ${noTransmissionToday ? `
+      <div class="no-transmission-badge" style="background: #fff3cd; color: #856404; padding: 0.5rem 1rem; margin: 0.5rem 1rem; border-radius: 4px; font-weight: 600; text-align: center; border: 1px solid #ffc107;">
+        ⚠️ Pas de passage ce jour
+      </div>
+    ` : ''}
     <div class="card-body">
       ${displayData.dateNaissance ? `
         <div class="card-info">
@@ -132,7 +136,6 @@ function createPersonCard(person, selectedDate, handlers) {
     </div>
   `;
   
-  // Attacher les event listeners si fournis
   if (handlers) {
     const btnEdit = card.querySelector('.btn-edit');
     const btnDelete = card.querySelector('.btn-delete');
@@ -156,7 +159,7 @@ function displayCards(persons, selectedDate, containerId, handlers) {
   const container = document.getElementById(containerId);
   
   if (!container) {
-    console.error(`❌ Conteneur #${containerId} introuvable`);
+    console.error('Conteneur #' + containerId + ' introuvable');
     return;
   }
   
@@ -179,9 +182,6 @@ function displayCards(persons, selectedDate, containerId, handlers) {
 
 // ==================== FONCTIONS TESTS (PLAYWRIGHT) ====================
 
-/**
- * Navigue vers un onglet spécifique
- */
 async function naviguerVersOnglet(page, onglet) {
   const ongletMap = { 
     'Transmissions Quotidiennes': 'transmissions', 
@@ -193,16 +193,10 @@ async function naviguerVersOnglet(page, onglet) {
   await page.waitForSelector(`#${tabId}-tab.active`, { state: 'visible' });
 }
 
-/**
- * Vérifie si le sélecteur de date est visible
- */
 async function selecteurDateVisible(page) {
   return await page.isVisible('#transmissions-date');
 }
 
-/**
- * Vérifie si les filtres de recherche sont visibles
- */
 async function filtresRechercheVisible(page) {
   const nomVisible = await page.isVisible('#filter-nom');
   const prenomVisible = await page.isVisible('#filter-prenom');
@@ -210,17 +204,11 @@ async function filtresRechercheVisible(page) {
   return { nomVisible, prenomVisible, ddnVisible };
 }
 
-/**
- * Vérifie si un bouton est visible
- */
 async function boutonVisible(page, texte) {
   const button = await page.locator(`button:has-text("${texte}")`).first();
   return await button.isVisible();
 }
 
-/**
- * Vérifie si la liste des transmissions est visible
- */
 async function listeTransmissionsVisible(page) {
   return await page.isVisible('#transmissions-list');
 }
@@ -230,12 +218,10 @@ async function listeTransmissionsVisible(page) {
  */
 async function loadAndDisplayCards() {
   try {
-    // Utiliser window.getAllTransmissions pour accéder à la fonction globale
     const getAllTransmissionsFn = window.getAllTransmissions || getAllTransmissions;
     const transmissions = await getAllTransmissionsFn();
     const selectedDate = document.getElementById('transmissions-date')?.value || new Date().toISOString().split('T')[0];
     
-    // Filtres
     const filterNom = document.getElementById('filter-nom')?.value.toLowerCase() || '';
     const filterPrenom = document.getElementById('filter-prenom')?.value.toLowerCase() || '';
     const filterDdn = document.getElementById('filter-ddn')?.value || '';
@@ -262,7 +248,6 @@ async function loadAndDisplayCards() {
     
     const persons = groupTransmissionsByPerson(filteredTransmissions);
     
-    // Les handlers seront fournis par le code qui appelle cette fonction
     const handlers = {
       onEdit: window.editTransmission || function() {},
       onDelete: window.deletePersonCard || function() {}
@@ -270,7 +255,7 @@ async function loadAndDisplayCards() {
     
     displayCards(persons, selectedDate, 'transmissions-list', handlers);
   } catch (error) {
-    console.error('❌ Erreur lors du chargement des transmissions:', error);
+    console.error('Erreur lors du chargement des transmissions:', error);
   }
 }
 
@@ -283,7 +268,6 @@ function initDateSelectors() {
     const today = new Date();
     const currentHour = today.getHours();
     
-    // Si entre 0h et 3h, utiliser la veille
     if (currentHour >= 0 && currentHour < 3) {
       today.setDate(today.getDate() - 1);
     }
@@ -291,13 +275,12 @@ function initDateSelectors() {
     dateInput.value = today.toISOString().split('T')[0];
     dateInput.addEventListener('change', loadAndDisplayCards);
     
-    // Écouteurs sur les filtres
     document.getElementById('filter-nom')?.addEventListener('input', loadAndDisplayCards);
     document.getElementById('filter-prenom')?.addEventListener('input', loadAndDisplayCards);
     document.getElementById('filter-ddn')?.addEventListener('change', loadAndDisplayCards);
   }
   
-  console.log('✅ Sélecteurs de date initialisés');
+  console.log('Sélecteurs de date initialisés');
 }
 
 // Export pour Node.js (tests) et browser (application)
@@ -316,7 +299,6 @@ if (typeof module !== 'undefined' && module.exports) {
     listeTransmissionsVisible
   };
 } else {
-  // Rendre les fonctions disponibles globalement dans le navigateur
   window.formatDate = formatDate;
   window.groupTransmissionsByPerson = groupTransmissionsByPerson;
   window.createPersonCard = createPersonCard;

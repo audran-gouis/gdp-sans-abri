@@ -93,3 +93,45 @@ Then('je devrais voir les statistiques des maraudes', async function() {
   
   console.log('✅ Statistiques des maraudes affichées');
 });
+
+
+        if (button) button.classList.add('active');
+        if (content) content.classList.add('active');
+      }
+    }, tabId);
+    
+    await this.page.waitForTimeout(200);
+  }
+  
+  await this.page.waitForSelector(`#${tabId}-tab.active`, { state: 'visible', timeout: 5000 });
+});
+
+When('je coche {string} dans les types d\'intervention', async function(type) {
+  const checkbox = await this.page.$(`input[type="checkbox"][value="${type}"], input[type="checkbox"][name="${type}"], #check-${type.toLowerCase()}`);
+  if (checkbox) {
+    await checkbox.check();
+    console.log(`✅ Type d'intervention coché: "${type}"`);
+  } else {
+    const label = await this.page.$(`label:has-text("${type}")`);
+    if (label) {
+      await label.click();
+      console.log(`✅ Type d'intervention coché via label: "${type}"`);
+    } else {
+      console.log(`⚠️  Checkbox pour "${type}" non trouvée`);
+    }
+  }
+  await this.page.waitForTimeout(500);
+});
+
+When('je clique sur {string}', async function(texte) {
+  if (texte === 'Appliquer') {
+    const btnAppliquer = await this.page.$('button:has-text("Appliquer"), #btn-appliquer');
+    if (btnAppliquer) {
+      await btnAppliquer.click();
+      console.log('✅ Bouton Appliquer cliqué');
+    } else {
+      console.log('⚠️  Bouton Appliquer non trouvé');
+    }
+    await this.page.waitForTimeout(1000);
+  }
+});

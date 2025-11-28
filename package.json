@@ -6,8 +6,8 @@
   "scripts": {
     "dev:vite": "vite",
     "build": "vite build",
-    "start": "npm run build && electron .",
-    "start:dev": "electron .",
+    "start": "electron .",
+    "start:build": "npm run build && electron .",
     "test": "npm run test:all",
     "test:all": "npm run test:adp && npm run test:transmissions && npm run test:statistiques && npm run test:navigation && npm run test:formulaires && npm run test:persistance && npm run test:interface",
     "test:adp": "npm run test:adp:ajout-complete && npm run test:adp:ajout-inconnue && npm run test:adp:point-accueil",

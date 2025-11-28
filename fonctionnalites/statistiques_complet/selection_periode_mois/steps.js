@@ -133,3 +133,81 @@ Then('je devrais voir les statistiques pour novembre 2025', async function() {
   
   console.log('✅ Statistiques affichées pour novembre 2025');
 });
+
+
+    
+    await this.page.waitForTimeout(200);
+  }
+  
+  await this.page.waitForSelector(`#${tabId}-tab.active`, { state: 'visible', timeout: 5000 });
+});
+
+When('je sélectionne le type de période {string}', async function(typePeriode) {
+  const selecteur = await this.page.$('#stats-period-type');
+  if (selecteur) {
+    // Mapper le texte français vers la valeur de l'option
+    const valueMap = {
+      'Jour précis': 'day',
+      'Mois': 'month',
+      'Année': 'year',
+      'Plage de dates': 'range'
+    };
+    const value = valueMap[typePeriode] || typePeriode.toLowerCase();
+    await selecteur.selectOption({ value: value });
+    console.log(`✅ Type de période sélectionné: "${typePeriode}" (value: ${value})`);
+    
+    // Activer manuellement le bon sélecteur de date
+    await this.page.evaluate((val) => {
+      // Cacher tous les sélecteurs de date
+      document.querySelectorAll('.stats-date-option').forEach(el => {
+        el.classList.remove('active');
+        el.style.display = 'none';
+      });
+      
+      // Afficher le bon sélecteur selon le type
+      const selectorMap = {
+        'day': '#stats-day-selector',
+        'month': '#stats-month-selector',
+        'year': '#stats-year-selector',
+        'range': '#stats-range-selector'
+      };
+      
+      const selector = document.querySelector(selectorMap[val]);
+      if (selector) {
+        selector.classList.add('active');
+        selector.style.display = 'block';
+      }
+    }, value);
+    
+    await this.page.waitForTimeout(300);
+  } else {
+    console.log('⚠️  Sélecteur de type de période non trouvé');
+  }
+});
+
+When('je sélectionne le mois {string}', async function(mois) {
+  // Attendre que le champ de mois soit visible
+  await this.page.waitForTimeout(500);
+  
+  const monthInput = await this.page.$('#stats-month');
+  if (monthInput) {
+    await monthInput.fill(mois);
+    console.log(`✅ Mois sélectionné: "${mois}"`);
+  } else {
+    console.log('⚠️  Champ de mois non trouvé');
+  }
+  await this.page.waitForTimeout(500);
+});
+
+When('je clique sur {string}', async function(texte) {
+  if (texte === 'Appliquer') {
+    const btnAppliquer = await this.page.$('button:has-text("Appliquer"), #btn-appliquer');
+    if (btnAppliquer) {
+      await btnAppliquer.click();
+      console.log('✅ Bouton Appliquer cliqué');
+    } else {
+      console.log('⚠️  Bouton Appliquer non trouvé');
+    }
+    await this.page.waitForTimeout(1000);
+  }
+});

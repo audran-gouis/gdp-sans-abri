@@ -8,7 +8,7 @@
 /**
  * Formate une date
  */
-function formatDate(dateString) {
+function formatDateAdp(dateString) {
   if (!dateString) return 'Non spécifiée';
   const date = new Date(dateString);
   return date.toLocaleDateString('fr-FR', { 
@@ -23,9 +23,6 @@ function formatDate(dateString) {
  */
 function groupTransmissionsByPersonAdp(transmissions) {
   const personsMap = new Map();
-  
-  console.log('=== REGROUPEMENT DES TRANSMISSIONS ADP ===');
-  console.log('Nombre total:', transmissions.length);
   
   transmissions.forEach(transmission => {
     const personId = transmission.personId || transmission.id;
@@ -49,7 +46,6 @@ function groupTransmissionsByPersonAdp(transmissions) {
     personsMap.get(personId).transmissions.push(transmission);
   });
   
-  console.log('Personnes uniques ADP:', personsMap.size);
   return Array.from(personsMap.values());
 }
 
@@ -98,7 +94,6 @@ function createPersonCardAdp(person, selectedDate, handlers) {
       ${badges ? `<div class="card-badges">${badges}</div>` : ''}
     `;
   } else if (person.transmissions && person.transmissions.length > 0) {
-    // Si pas de transmission pour cette date, afficher les infos de la dernière transmission
     const lastTransmission = person.transmissions[person.transmissions.length - 1];
     let badges = '';
     if (lastTransmission.pointAccueil) {
@@ -125,16 +120,24 @@ function createPersonCardAdp(person, selectedDate, handlers) {
     `;
   }
   
+  // Indicateur si pas de transmission pour ce jour
+  const noTransmissionToday = !transmissionForDate;
+  
   card.innerHTML = `
     <div class="card-header">
       <h3>${displayName}</h3>
       <span class="transmissions-count">${transmissionsCount} transmission${transmissionsCount > 1 ? 's' : ''}</span>
     </div>
+    ${noTransmissionToday ? `
+      <div class="no-transmission-badge" style="background: #fff3cd; color: #856404; padding: 0.5rem 1rem; margin: 0.5rem 1rem; border-radius: 4px; font-weight: 600; text-align: center; border: 1px solid #ffc107;">
+        ⚠️ Pas de passage ce jour
+      </div>
+    ` : ''}
     <div class="card-body">
       ${displayData.dateNaissance && !displayData.inconnu ? `
         <div class="card-info">
           <span class="card-label">Date de naissance :</span>
-          <span class="card-value">${formatDate(displayData.dateNaissance)}</span>
+          <span class="card-value">${formatDateAdp(displayData.dateNaissance)}</span>
         </div>
       ` : ''}
       ${displayData.descriptionPhysique ? `
@@ -157,7 +160,6 @@ function createPersonCardAdp(person, selectedDate, handlers) {
     </div>
   `;
   
-  // Attacher les event listeners si fournis
   if (handlers) {
     const btnEdit = card.querySelector('.btn-edit');
     const btnDelete = card.querySelector('.btn-delete');
@@ -181,7 +183,7 @@ function displayCardsAdp(persons, selectedDate, containerId, handlers) {
   const container = document.getElementById(containerId);
   
   if (!container) {
-    console.error(`❌ Conteneur #${containerId} introuvable`);
+    console.error('Conteneur #' + containerId + ' introuvable');
     return;
   }
   
@@ -211,35 +213,108 @@ async function loadAndDisplayCardsAdp() {
   try {
     const selectedDate = document.getElementById('adp-date')?.value || new Date().toISOString().split('T')[0];
     
-    // Récupérer toutes les transmissions ADP
     const transmissions = await window.getAllTransmissionsAdp();
-    console.log(`📊 ${transmissions.length} transmission(s) ADP chargée(s)`);
+    console.log(transmissions.length + ' transmission(s) ADP chargée(s)');
     
-    // Regrouper par personne
     const persons = groupTransmissionsByPersonAdp(transmissions);
     
-    // Afficher les cartes
     displayCardsAdp(persons, selectedDate, 'adp-list', {
       onEdit: editTransmissionAdp,
       onDelete: deletePersonCardAdp
     });
     
-    console.log(`✅ ${persons.length} personne(s) ADP affichée(s)`);
+    console.log(persons.length + ' personne(s) ADP affichée(s)');
   } catch (error) {
-    console.error('❌ Erreur lors du chargement des cartes ADP:', error);
+    console.error('Erreur lors du chargement des cartes ADP:', error);
   }
 }
 
 /**
- * Fonction pour éditer une transmission ADP (à implémenter)
+ * Fonction pour éditer une transmission ADP
  */
-function editTransmissionAdp(id) {
-  console.log('Édition transmission ADP:', id);
-  // TODO: implémenter l'édition
+async function editTransmissionAdp(id) {
+  console.log('Compléter la transmission ADP pour ID:', id, 'type:', typeof id);
+  
+  try {
+    const allTransmissions = await window.getAllTransmissionsAdp();
+    console.log('Transmissions ADP trouvées:', allTransmissions.length);
+    
+    // Comparaison robuste (convertir en string pour éviter les problèmes de type)
+    const baseTransmission = allTransmissions.find(t => String(t.id) === String(id));
+    
+    if (!baseTransmission) {
+      console.error('Transmission ADP non trouvée');
+      alert('Erreur lors du chargement des données');
+      return;
+    }
+    
+    const modal = document.getElementById('modal-adp');
+    const formAdp = document.getElementById('form-adp');
+    
+    if (!modal || !formAdp) {
+      console.error('Modal ADP non trouvée');
+      return;
+    }
+    
+    // Remplir le formulaire avec les données existantes
+    document.getElementById('adp-form-nom').value = baseTransmission.nom || '';
+    document.getElementById('adp-form-prenom').value = baseTransmission.prenom || '';
+    document.getElementById('adp-form-ddn').value = baseTransmission.dateNaissance || '';
+    document.getElementById('adp-form-description').value = baseTransmission.descriptionPhysique || '';
+    document.getElementById('adp-form-inconnu').checked = baseTransmission.inconnu || false;
+    document.getElementById('adp-form-departement').value = baseTransmission.departementOrigine || '';
+    document.getElementById('adp-form-typologie').value = baseTransmission.typologie || '';
+    document.getElementById('adp-form-nb-personnes').value = baseTransmission.nbPersonnes || '';
+    document.getElementById('adp-form-mineurs').value = baseTransmission.mineurs || '';
+    document.getElementById('adp-form-type-transmission').value = baseTransmission.typeTransmission || '';
+    document.getElementById('adp-form-point-accueil').checked = baseTransmission.pointAccueil || false;
+    document.getElementById('adp-form-adresse').value = baseTransmission.adresse || '';
+    document.getElementById('adp-form-ville').value = baseTransmission.ville || '';
+    document.getElementById('adp-form-signalement').value = baseTransmission.signalement || '';
+    document.getElementById('adp-form-transmission').value = baseTransmission.transmission || '';
+    
+    // Remplir les checkboxes Orly
+    if (baseTransmission.orly) {
+      const orlyFields = ['premier-contact', 'personne-presente', 'pnt', 'maraude', 'veille', 'refus-contact'];
+      orlyFields.forEach(field => {
+        const el = document.getElementById('adp-form-' + field);
+        if (el) el.checked = baseTransmission.orly[field.replace(/-/g, '')] || false;
+      });
+    }
+    
+    // Remplir les checkboxes Accompagnement
+    if (baseTransmission.accompagnement) {
+      const accompFields = ['ecoute', 'orientation', 'admin', 'medical', 'hebergement', 'autre'];
+      accompFields.forEach(field => {
+        const el = document.getElementById('adp-form-accomp-' + field);
+        if (el) el.checked = baseTransmission.accompagnement[field] || false;
+      });
+    }
+    
+    // Remplir les checkboxes Distribution
+    if (baseTransmission.distribution) {
+      const distribFields = ['alimentaire', 'vestimentaire', 'hygiene', 'couvertures', 'duvet', 'autre'];
+      distribFields.forEach(field => {
+        const el = document.getElementById('adp-form-distrib-' + field);
+        if (el) el.checked = baseTransmission.distribution[field] || false;
+      });
+    }
+    
+    // Stocker l'ID pour la mise à jour
+    formAdp.dataset.editId = baseTransmission.id;
+    formAdp.dataset.personId = baseTransmission.personId || baseTransmission.id;
+    
+    // Ouvrir le modal
+    modal.classList.add('show');
+    
+  } catch (error) {
+    console.error('Erreur lors du chargement:', error);
+    alert('Erreur lors du chargement des données');
+  }
 }
 
 /**
- * Fonction pour supprimer une carte personne ADP (à implémenter)
+ * Fonction pour supprimer une carte personne ADP
  */
 async function deletePersonCardAdp(personId) {
   if (confirm('Êtes-vous sûr de vouloir supprimer cette personne ?')) {
@@ -254,9 +329,9 @@ async function deletePersonCardAdp(personId) {
       }
       
       await loadAndDisplayCardsAdp();
-      console.log('✅ Personne ADP supprimée');
+      console.log('Personne ADP supprimée');
     } catch (error) {
-      console.error('❌ Erreur lors de la suppression:', error);
+      console.error('Erreur lors de la suppression:', error);
       alert('Erreur lors de la suppression');
     }
   }
@@ -265,7 +340,7 @@ async function deletePersonCardAdp(personId) {
 // ==================== INITIALISATION FORMULAIRE ADP ====================
 
 /**
- * Initialise le formulaire ADP (event listeners pour le bouton Ajouter et la modal)
+ * Initialise le formulaire ADP
  */
 function initAdpForm() {
   const btnAjouter = document.getElementById('adp-btn-ajouter');
@@ -275,11 +350,10 @@ function initAdpForm() {
   const modalClose = document.querySelector('.adp-modal-close');
   
   if (!btnAjouter || !modal || !formAdp) {
-    console.warn('⚠️  Éléments ADP non trouvés');
+    console.warn('Éléments ADP non trouvés');
     return;
   }
   
-  // Ouvrir la modal
   btnAjouter.addEventListener('click', () => {
     modal.classList.add('show');
     formAdp.reset();
@@ -287,7 +361,6 @@ function initAdpForm() {
     delete formAdp.dataset.personId;
   });
   
-  // Fermer la modal
   const closeModal = () => {
     modal.classList.remove('show');
     formAdp.reset();
@@ -298,7 +371,6 @@ function initAdpForm() {
   btnAnnuler?.addEventListener('click', closeModal);
   modalClose?.addEventListener('click', closeModal);
   
-  // Soumettre le formulaire
   formAdp.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -346,17 +418,34 @@ function initAdpForm() {
     };
     
     try {
-      await window.addTransmissionAdp(formData);
+      const editId = formAdp.dataset.editId;
+      const personId = formAdp.dataset.personId;
+      
+      if (editId) {
+        // Mode édition : mettre à jour
+        formData.id = parseInt(editId);
+        formData.personId = personId ? parseInt(personId) : parseInt(editId);
+        await window.updateTransmissionAdp(formData);
+        console.log('Personne ADP mise à jour');
+      } else {
+        // Mode ajout : créer
+        const id = await window.addTransmissionAdp(formData);
+        // Mettre à jour avec le personId
+        formData.id = id;
+        formData.personId = id;
+        await window.updateTransmissionAdp(formData);
+        console.log('Personne ADP enregistrée');
+      }
+      
       closeModal();
       await loadAndDisplayCardsAdp();
-      console.log('✅ Personne ADP enregistrée');
     } catch (error) {
-      console.error('❌ Erreur lors de l\'enregistrement ADP:', error);
+      console.error('Erreur lors de l\'enregistrement ADP:', error);
       alert('Erreur lors de l\'enregistrement');
     }
   });
   
-  console.log('✅ Formulaire ADP initialisé');
+  console.log('Formulaire ADP initialisé');
 }
 
 // ==================== FONCTIONS TESTS (PLAYWRIGHT) ====================
@@ -396,7 +485,7 @@ async function verifierCarteApparue(page) {
 // Export pour Node.js (tests) et browser (application)
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { 
-    formatDate,
+    formatDateAdp,
     groupTransmissionsByPersonAdp,
     createPersonCardAdp,
     displayCardsAdp,
@@ -411,8 +500,7 @@ if (typeof module !== 'undefined' && module.exports) {
     verifierCarteApparue 
   };
 } else {
-  // Rendre les fonctions disponibles globalement dans le navigateur
-  window.formatDate = formatDate;
+  window.formatDateAdp = formatDateAdp;
   window.groupTransmissionsByPersonAdp = groupTransmissionsByPersonAdp;
   window.createPersonCardAdp = createPersonCardAdp;
   window.displayCardsAdp = displayCardsAdp;

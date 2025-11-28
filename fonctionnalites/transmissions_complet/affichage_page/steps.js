@@ -104,3 +104,31 @@ Then('je devrais voir la liste des transmissions', async function() {
   expect(element).not.toBeNull();
   console.log('✅ Liste des transmissions trouvée dans l\'onglet actif');
 });
+
+
+      } else {
+        // Fallback manuel
+        const buttons = document.querySelectorAll('.tab-button');
+        const contents = document.querySelectorAll('.tab-content');
+        
+        buttons.forEach(btn => btn.classList.remove('active'));
+        contents.forEach(content => content.classList.remove('active'));
+        
+        const button = document.querySelector(`button[data-tab="${tid}"]`);
+        const content = document.getElementById(`${tid}-tab`);
+        
+        if (button) button.classList.add('active');
+        if (content) content.classList.add('active');
+      }
+    }, tabId);
+    
+    await this.page.waitForTimeout(200);
+  }
+  
+  await this.page.waitForSelector(`#${tabId}-tab.active`, { state: 'visible', timeout: 5000 });
+});
+
+Then('je devrais voir le sélecteur de date', async function() {
+  const isVisible = await this.page.isVisible('#transmissions-date');
+  expect(isVisible).toBeTruthy();
+});

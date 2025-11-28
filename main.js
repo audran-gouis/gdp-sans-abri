@@ -16,7 +16,8 @@ function createWindow() {
     icon: path.join(__dirname, 'assets', 'icon.png')
   });
 
-  mainWindow.loadFile('index.html');
+  // Charger directement depuis la racine (pas besoin de build pour Electron)
+  mainWindow.loadFile(path.join(__dirname, 'index.html'));
   
   // Maximiser la fenêtre au démarrage
   mainWindow.maximize();

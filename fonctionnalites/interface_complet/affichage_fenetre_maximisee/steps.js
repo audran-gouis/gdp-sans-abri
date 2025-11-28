@@ -59,3 +59,23 @@ Then('la fenêtre devrait avoir une hauteur minimale de {int}px', async function
   expect(actualHeight).toBeGreaterThanOrEqual(marginHeight);
   console.log(`✅ Hauteur ${actualHeight}px >= ${marginHeight}px (marge 5%)`);
 });
+
+
+    const size = await this.page.viewportSize();
+    expect(size.width).toBeGreaterThan(800);
+    expect(size.height).toBeGreaterThan(600);
+  }
+  console.log('✅ Fenêtre maximisée');
+});
+
+Then('la fenêtre devrait avoir une largeur minimale de {int}px', async function(largeur) {
+  const size = await this.page.viewportSize();
+  if (size) {
+    expect(size.width).toBeGreaterThanOrEqual(largeur);
+  } else {
+    // Vérifier via evaluate si viewportSize n'est pas disponible
+    const width = await this.page.evaluate(() => window.innerWidth);
+    expect(width).toBeGreaterThanOrEqual(largeur);
+  }
+  console.log(`✅ Largeur >= ${largeur}px`);
+});
