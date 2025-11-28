@@ -15,7 +15,7 @@ window.addEventListener('html-modules-loaded', async () => {
 document.addEventListener('DOMContentLoaded', () => {
   if (document.querySelector('.tab-button')) {
     console.log('✅ DOM déjà prêt, initialisation directe...');
-    initApp();
+      initApp();
   }
 });
 
@@ -28,7 +28,7 @@ async function initApp() {
   try {
     // Initialiser les bases de données
     if (typeof window.initDB === 'function') {
-      await window.initDB();
+    await window.initDB();
       console.log('✅ Base de données Transmissions initialisée');
     }
     
@@ -39,12 +39,12 @@ async function initApp() {
     
     // Initialiser la navigation par onglets
     if (typeof window.initTabs === 'function') {
-      window.initTabs();
+    window.initTabs();
     }
     
     // Initialiser les sélecteurs de date (Transmissions)
     if (typeof window.initDateSelectors === 'function') {
-      window.initDateSelectors();
+    window.initDateSelectors();
     }
     
     // Initialiser le sélecteur de date ADP
@@ -52,12 +52,17 @@ async function initApp() {
     
     // Initialiser le formulaire Transmissions
     if (typeof window.initTransmissionsForm === 'function') {
-      window.initTransmissionsForm();
+    window.initTransmissionsForm();
     }
     
     // Initialiser le formulaire ADP
     if (typeof window.initAdpForm === 'function') {
-      window.initAdpForm();
+    window.initAdpForm();
+    }
+    
+    // Initialiser les filtres ADP
+    if (typeof window.initAdpFilters === 'function') {
+      window.initAdpFilters();
     }
     
     // Initialiser les boutons d'agrandissement des modales
@@ -77,7 +82,7 @@ async function initApp() {
     
     // Charger les données initiales
     if (typeof window.loadAndDisplayCards === 'function') {
-      await window.loadAndDisplayCards();
+    await window.loadAndDisplayCards();
       console.log('✅ Cartes Transmissions chargées');
     }
     
@@ -113,9 +118,9 @@ function initAdpDateSelector() {
     dateInput.addEventListener('change', () => {
       if (typeof window.loadAndDisplayCardsAdp === 'function') {
         window.loadAndDisplayCardsAdp();
-      }
+  }
     });
-    
+  
     console.log('Sélecteur de date ADP initialisé');
   }
 }

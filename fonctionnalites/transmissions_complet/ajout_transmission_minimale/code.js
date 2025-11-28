@@ -104,7 +104,7 @@ async function editTransmission(id) {
     // Ouvrir la modal
     const modal = document.getElementById('modal-ajout');
     if (modal) {
-      modal.classList.add('show');
+    modal.classList.add('show');
     }
   } catch (error) {
     console.error('Erreur lors du chargement:', error);
@@ -128,13 +128,13 @@ async function deletePersonCard(personId) {
     
     for (const transmission of personTransmissions) {
       await window.deleteTransmission(transmission.id);
-    }
-    
+}
+
     await window.loadAndDisplayCards();
     console.log('Personne supprimée');
   } catch (error) {
     console.error('Erreur lors de la suppression:', error);
-    alert('Erreur lors de la suppression');
+      alert('Erreur lors de la suppression');
   }
 }
 

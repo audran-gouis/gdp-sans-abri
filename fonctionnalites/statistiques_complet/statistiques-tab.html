@@ -2,17 +2,19 @@
 <div id="statistiques-tab" class="tab-content">
     <div class="content-card">
         <h2>Statistiques</h2>
+        <p>Analyse des données de maraudes et ADP</p>
         
-        <!-- Sélecteur de source de données -->
+        <!-- Sélecteur de source -->
         <div class="stats-source-selector">
-            <label for="stats-source">Source :</label>
+            <label for="stats-source">Source des données :</label>
             <select id="stats-source" class="stats-select">
-                <option value="all">Tous</option>
-                <option value="transmissions">Transmissions Quotidiennes</option>
-                <option value="adp">ADP</option>
+                <option value="all">Toutes les sources</option>
+                <option value="transmissions">Transmissions uniquement</option>
+                <option value="adp">ADP uniquement</option>
             </select>
         </div>
         
+        <!-- Sélecteur de période -->
         <div class="stats-date-selector">
             <div class="stats-selector-group">
                 <label for="stats-period-type">Période :</label>
@@ -25,25 +27,25 @@
             </div>
             
             <!-- Jour précis -->
-            <div id="stats-day-selector" class="stats-date-option active" style="display: flex;">
+            <div id="stats-day-selector" class="stats-date-option active">
                 <label for="stats-specific-day">Date :</label>
                 <input type="date" id="stats-specific-day" class="date-input">
             </div>
             
             <!-- Mois -->
-            <div id="stats-month-selector" class="stats-date-option" style="display: none;">
+            <div id="stats-month-selector" class="stats-date-option">
                 <label for="stats-month">Mois :</label>
                 <input type="month" id="stats-month" class="date-input">
             </div>
             
             <!-- Année -->
-            <div id="stats-year-selector" class="stats-date-option" style="display: none;">
+            <div id="stats-year-selector" class="stats-date-option">
                 <label for="stats-year">Année :</label>
                 <input type="number" id="stats-year" class="date-input" min="2000" max="2100" placeholder="AAAA">
             </div>
             
             <!-- Plage de dates -->
-            <div id="stats-range-selector" class="stats-date-option" style="display: none;">
+            <div id="stats-range-selector" class="stats-date-option">
                 <div class="stats-range-group">
                     <div>
                         <label for="stats-date-start">Du :</label>
@@ -59,59 +61,50 @@
         
         <!-- Filtres détaillés -->
         <div class="stats-filters">
-            <h3>Filtres</h3>
+            <h3>Filtres détaillés</h3>
             
             <div class="stats-filters-grid">
-                <!-- Informations Personnelles -->
+                <!-- Filtres texte -->
                 <div class="stats-filter-section">
-                    <h4>Informations Personnelles</h4>
-                    
+                    <h4>Recherche</h4>
                     <div class="stats-filter-group">
                         <label for="stats-filter-nom">Nom :</label>
-                        <input type="text" id="stats-filter-nom" class="filter-input" placeholder="Filtrer par nom">
+                        <input type="text" id="stats-filter-nom" class="filter-input" placeholder="Rechercher par nom">
                     </div>
-                    
                     <div class="stats-filter-group">
                         <label for="stats-filter-prenom">Prénom :</label>
-                        <input type="text" id="stats-filter-prenom" class="filter-input" placeholder="Filtrer par prénom">
+                        <input type="text" id="stats-filter-prenom" class="filter-input" placeholder="Rechercher par prénom">
                     </div>
-                    
                     <div class="stats-filter-group">
                         <label for="stats-filter-ville">Ville :</label>
-                        <input type="text" id="stats-filter-ville" class="filter-input" placeholder="Filtrer par ville">
+                        <input type="text" id="stats-filter-ville" class="filter-input" placeholder="Rechercher par ville">
                     </div>
                 </div>
                 
                 <!-- Type d'intervention -->
                 <div class="stats-filter-section">
                     <h4>Type d'intervention</h4>
-                    
                     <div class="stats-checkbox-group">
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-premier-contact" class="stats-checkbox">
                             <span>1er contact</span>
                         </label>
-                        
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-personne-presente" class="stats-checkbox">
                             <span>Personne présente</span>
                         </label>
-                        
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-pnt" class="stats-checkbox">
                             <span>PNT</span>
                         </label>
-                        
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-maraude" class="stats-checkbox">
                             <span>Maraude</span>
                         </label>
-                        
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-veille" class="stats-checkbox">
                             <span>Veille</span>
                         </label>
-                        
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-refus-contact" class="stats-checkbox">
                             <span>Refus de contact</span>
@@ -122,33 +115,27 @@
                 <!-- Accompagnement -->
                 <div class="stats-filter-section">
                     <h4>Accompagnement</h4>
-                    
                     <div class="stats-checkbox-group">
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-accomp-ecoute" class="stats-checkbox">
                             <span>Écoute</span>
                         </label>
-                        
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-accomp-orientation" class="stats-checkbox">
                             <span>Orientation</span>
                         </label>
-                        
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-accomp-admin" class="stats-checkbox">
-                            <span>Démarche administrative</span>
+                            <span>Administratif</span>
                         </label>
-                        
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-accomp-medical" class="stats-checkbox">
                             <span>Médical</span>
                         </label>
-                        
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-accomp-hebergement" class="stats-checkbox">
                             <span>Hébergement</span>
                         </label>
-                        
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-accomp-autre" class="stats-checkbox">
                             <span>Autre</span>
@@ -159,33 +146,27 @@
                 <!-- Distribution -->
                 <div class="stats-filter-section">
                     <h4>Distribution</h4>
-                    
                     <div class="stats-checkbox-group">
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-distrib-alimentaire" class="stats-checkbox">
                             <span>Alimentaire</span>
                         </label>
-                        
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-distrib-vestimentaire" class="stats-checkbox">
                             <span>Vestimentaire</span>
                         </label>
-                        
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-distrib-hygiene" class="stats-checkbox">
                             <span>Hygiène</span>
                         </label>
-                        
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-distrib-couvertures" class="stats-checkbox">
                             <span>Couvertures</span>
                         </label>
-                        
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-distrib-duvet" class="stats-checkbox">
                             <span>Duvet</span>
                         </label>
-                        
                         <label class="stats-checkbox-label">
                             <input type="checkbox" id="stats-filter-distrib-autre" class="stats-checkbox">
                             <span>Autre</span>
@@ -194,27 +175,31 @@
                 </div>
             </div>
             
+            <!-- Actions des filtres -->
             <div class="stats-filter-actions">
                 <button id="stats-reset-filters" class="btn-secondary">Réinitialiser</button>
-                <button id="stats-apply-filter" class="btn-add">Appliquer</button>
-                <button id="stats-show-cards" class="btn-secondary" style="background: #17a2b8;">Afficher les cartes</button>
+                <button id="stats-apply-filter" class="btn-add">Appliquer les filtres</button>
             </div>
         </div>
         
+        <!-- Contenu des statistiques -->
         <div id="stats-content">
             <p>Sélectionnez une période et des filtres pour afficher les statistiques.</p>
         </div>
         
-        <!-- Cartes des personnes filtrées -->
-        <div id="stats-cards-section" style="display: none; margin-top: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3 style="color: #667eea; margin: 0;">Cartes des personnes concernées</h3>
+        <!-- Section des cartes filtrées -->
+        <div id="stats-cards-section" style="display: none;">
+            <div class="stats-cards-header">
+                <h3>Personnes correspondantes</h3>
                 <button id="stats-hide-cards" class="btn-secondary">Masquer</button>
             </div>
-            <div id="stats-cards-list" class="transmissions-container">
-            </div>
+            <div id="stats-cards-list" class="transmissions-container"></div>
+        </div>
+        
+        <!-- Bouton pour afficher les cartes -->
+        <div class="stats-filter-actions" style="margin-top: 1rem;">
+            <button id="stats-show-cards" class="btn-add">Afficher les personnes</button>
         </div>
     </div>
 </div>
-
 

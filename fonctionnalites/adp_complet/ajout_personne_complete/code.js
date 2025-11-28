@@ -207,6 +207,66 @@ function displayCardsAdp(persons, selectedDate, containerId, handlers) {
 // ==================== CHARGEMENT ET AFFICHAGE ====================
 
 /**
+ * Applique les filtres ADP sur la liste des personnes
+ */
+function applyAdpFilters(persons) {
+  let filtered = persons;
+  
+  // Filtre par nom
+  const filterNom = document.getElementById('adp-filter-nom')?.value?.toLowerCase();
+  if (filterNom) {
+    filtered = filtered.filter(person => person.nom?.toLowerCase().includes(filterNom));
+  }
+  
+  // Filtre par prénom
+  const filterPrenom = document.getElementById('adp-filter-prenom')?.value?.toLowerCase();
+  if (filterPrenom) {
+    filtered = filtered.filter(person => person.prenom?.toLowerCase().includes(filterPrenom));
+  }
+  
+  // Filtre par date de naissance
+  const filterDdn = document.getElementById('adp-filter-ddn')?.value;
+  if (filterDdn) {
+    filtered = filtered.filter(person => person.dateNaissance === filterDdn);
+  }
+  
+  // Filtre par inconnu
+  const filterInconnu = document.getElementById('adp-filter-inconnu')?.checked;
+  if (filterInconnu) {
+    filtered = filtered.filter(person => person.inconnu === true);
+  }
+  
+  // Filtre par description physique
+  const filterDescription = document.getElementById('adp-filter-description')?.value?.toLowerCase();
+  if (filterDescription) {
+    filtered = filtered.filter(person => person.descriptionPhysique?.toLowerCase().includes(filterDescription));
+  }
+  
+  return filtered;
+}
+
+/**
+ * Initialise les écouteurs d'événements pour les filtres ADP
+ */
+function initAdpFilters() {
+  const filterIds = ['adp-filter-nom', 'adp-filter-prenom', 'adp-filter-ddn', 'adp-filter-inconnu', 'adp-filter-description'];
+  
+  filterIds.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      const eventType = element.type === 'checkbox' ? 'change' : 'input';
+      element.addEventListener(eventType, () => {
+        if (typeof window.loadAndDisplayCardsAdp === 'function') {
+          window.loadAndDisplayCardsAdp();
+        }
+      });
+    }
+  });
+  
+  console.log('Filtres ADP initialisés');
+}
+
+/**
  * Charge les transmissions ADP depuis IndexedDB et les affiche
  */
 async function loadAndDisplayCardsAdp() {
@@ -216,14 +276,17 @@ async function loadAndDisplayCardsAdp() {
     const transmissions = await window.getAllTransmissionsAdp();
     console.log(transmissions.length + ' transmission(s) ADP chargée(s)');
     
-    const persons = groupTransmissionsByPersonAdp(transmissions);
+    let persons = groupTransmissionsByPersonAdp(transmissions);
+    
+    // Appliquer les filtres
+    persons = applyAdpFilters(persons);
     
     displayCardsAdp(persons, selectedDate, 'adp-list', {
       onEdit: editTransmissionAdp,
       onDelete: deletePersonCardAdp
     });
     
-    console.log(persons.length + ' personne(s) ADP affichée(s)');
+    console.log(persons.length + ' personne(s) ADP affichée(s) (après filtrage)');
   } catch (error) {
     console.error('Erreur lors du chargement des cartes ADP:', error);
   }
@@ -493,6 +556,8 @@ if (typeof module !== 'undefined' && module.exports) {
     editTransmissionAdp,
     deletePersonCardAdp,
     initAdpForm,
+    initAdpFilters,
+    applyAdpFilters,
     naviguerVersOnglet, 
     ouvrirFormulaire, 
     remplirChamp, 
@@ -508,4 +573,6 @@ if (typeof module !== 'undefined' && module.exports) {
   window.editTransmissionAdp = editTransmissionAdp;
   window.deletePersonCardAdp = deletePersonCardAdp;
   window.initAdpForm = initAdpForm;
+  window.initAdpFilters = initAdpFilters;
+  window.applyAdpFilters = applyAdpFilters;
 }

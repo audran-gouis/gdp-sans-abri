@@ -46,6 +46,44 @@
     color: #aaa;
 }
 
+/* Style pour les groupes de filtres avec checkbox */
+.filter-group-checkbox {
+    min-width: 120px;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+}
+
+.filter-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.6rem 1rem;
+    background: #f8f9fa;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    color: #555;
+}
+
+.filter-checkbox-label:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.filter-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.filter-checkbox:checked + span {
+    color: #667eea;
+}
+
+
 
 
 
