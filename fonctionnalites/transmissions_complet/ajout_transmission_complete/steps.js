@@ -123,8 +123,9 @@ When('je sélectionne le type de transmission {string}', async function(type) {
 });
 
 When('je sélectionne la ville {string}', async function(ville) {
-  await this.page.selectOption('#form-ville', { label: ville });
-  console.log(`✅ Ville sélectionnée: ${ville}`);
+  // La ville est un champ texte, pas un select
+  await this.page.fill('#form-ville', ville);
+  console.log(`✅ Ville remplie: ${ville}`);
 });
 
 When('je remplis l\'adresse avec {string}', async function(adresse) {

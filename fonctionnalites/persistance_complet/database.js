@@ -63,7 +63,8 @@
     });
   };
 
-  const addTransmission = (transmission) => {
+  const addTransmission = async (transmission) => {
+    await initDB(); // S'assurer que la DB est prête
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readwrite');
       const objectStore = transaction.objectStore(STORE_NAME);
@@ -78,7 +79,8 @@
     });
   };
 
-  const getAllTransmissions = () => {
+  const getAllTransmissions = async () => {
+    await initDB();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readonly');
       const objectStore = transaction.objectStore(STORE_NAME);
@@ -89,7 +91,8 @@
     });
   };
 
-  const updateTransmission = (transmission) => {
+  const updateTransmission = async (transmission) => {
+    await initDB();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readwrite');
       const objectStore = transaction.objectStore(STORE_NAME);
@@ -104,7 +107,8 @@
     });
   };
 
-  const deleteTransmission = (id) => {
+  const deleteTransmission = async (id) => {
+    await initDB();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readwrite');
       const objectStore = transaction.objectStore(STORE_NAME);
@@ -159,7 +163,8 @@
     });
   };
 
-  const addTransmissionAdp = (transmission) => {
+  const addTransmissionAdp = async (transmission) => {
+    await initDBADP();
     return new Promise((resolve, reject) => {
       const transaction = dbAdp.transaction([STORE_NAME_ADP], 'readwrite');
       const objectStore = transaction.objectStore(STORE_NAME_ADP);
@@ -174,7 +179,8 @@
     });
   };
 
-  const getAllTransmissionsAdp = () => {
+  const getAllTransmissionsAdp = async () => {
+    await initDBADP();
     return new Promise((resolve, reject) => {
       const transaction = dbAdp.transaction([STORE_NAME_ADP], 'readonly');
       const objectStore = transaction.objectStore(STORE_NAME_ADP);
@@ -185,7 +191,8 @@
     });
   };
 
-  const updateTransmissionAdp = (transmission) => {
+  const updateTransmissionAdp = async (transmission) => {
+    await initDBADP();
     return new Promise((resolve, reject) => {
       const transaction = dbAdp.transaction([STORE_NAME_ADP], 'readwrite');
       const objectStore = transaction.objectStore(STORE_NAME_ADP);
@@ -200,7 +207,8 @@
     });
   };
 
-  const deleteTransmissionAdp = (id) => {
+  const deleteTransmissionAdp = async (id) => {
+    await initDBADP();
     return new Promise((resolve, reject) => {
       const transaction = dbAdp.transaction([STORE_NAME_ADP], 'readwrite');
       const objectStore = transaction.objectStore(STORE_NAME_ADP);

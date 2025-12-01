@@ -117,8 +117,9 @@ When('je remplis {string} avec {string}', async function(champ, valeur) {
 });
 
 When('je sélectionne le département {string}', async function(departement) {
-  await this.page.selectOption('#adp-form-departement', { label: departement });
-  console.log(`✅ Département sélectionné: ${departement}`);
+  // Le département est un champ texte, pas un select
+  await this.page.fill('#adp-form-departement', departement);
+  console.log(`✅ Département rempli: ${departement}`);
 });
 
 When('je sélectionne la typologie {string}', async function(typologie) {
@@ -161,8 +162,9 @@ When('je remplis l\'adresse avec {string}', async function(adresse) {
 });
 
 When('je sélectionne la ville {string}', async function(ville) {
-  await this.page.selectOption('#adp-form-ville', { label: ville });
-  console.log(`✅ Ville sélectionnée: ${ville}`);
+  // La ville est un champ texte, pas un select
+  await this.page.fill('#adp-form-ville', ville);
+  console.log(`✅ Ville remplie: ${ville}`);
 });
 
 When('je coche {string} dans l\'accompagnement', async function(option) {

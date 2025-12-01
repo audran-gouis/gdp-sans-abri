@@ -44,18 +44,3 @@ Then('je devrais voir le contenu des transmissions quotidiennes', async function
   expect(isVisible).toBeTruthy();
   console.log('✅ Contenu des transmissions quotidiennes visible');
 });
-
-
-  };
-  
-  const tabId = ongletMap[onglet];
-  
-  // Vérifier que le bouton a la classe active
-  const buttonActive = await this.page.isVisible(`button[data-tab="${tabId}"].active`);
-  
-  // Vérifier que le contenu a la classe active
-  const contentActive = await this.page.isVisible(`#${tabId}-tab.active`);
-  
-  expect(buttonActive || contentActive).toBeTruthy();
-  console.log(`✅ Onglet "${onglet}" est actif`);
-});
