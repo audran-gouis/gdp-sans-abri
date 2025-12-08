@@ -40,6 +40,9 @@
     <link rel="stylesheet" href="fonctionnalites/statistiques_complet/selection_periode_jour/stats-date-selector.css">
     <link rel="stylesheet" href="fonctionnalites/statistiques_complet/filtrage_par_type_intervention/stats-filters.css">
     <link rel="stylesheet" href="fonctionnalites/statistiques_complet/filtrage_par_type_intervention/stats-checkbox.css">
+    
+    <!-- Badges sources -->
+    <link rel="stylesheet" href="fonctionnalites/utils/badges-sources.css">
 </head>
 <body>
     <div id="app">
@@ -52,6 +55,9 @@
 
             <!-- ADP : fonctionnalites/adp_complet/adp-tab.html -->
             <div id="adp-tab-container"></div>
+
+            <!-- Point Accueil : fonctionnalites/point_accueil_complet/point-accueil-tab.html -->
+            <div id="point-accueil-tab-container"></div>
 
             <!-- Statistiques : fonctionnalites/statistiques_complet/statistiques-tab.html -->
             <div id="statistiques-tab-container"></div>
@@ -68,18 +74,26 @@
     <!-- Modal ADP : fonctionnalites/adp_complet/modal-adp.html -->
     <div id="modal-adp-container"></div>
 
+    <!-- Modal Point Accueil : fonctionnalites/point_accueil_complet/modal-point-accueil.html -->
+    <div id="modal-point-accueil-container"></div>
+
     <!-- Chargeur de modules HTML -->
     <script src="fonctionnalites/html-loader.js"></script>
     
     <!-- Scripts fonctionnels -->
     <script src="fonctionnalites/persistance_complet/database.js"></script>
+    <script src="fonctionnalites/utils/gestionnaire-fiches.js"></script>
     <script src="fonctionnalites/transmissions_complet/affichage_page/code.js"></script>
     <script src="fonctionnalites/transmissions_complet/ajout_transmission_minimale/code.js"></script>
     <script src="fonctionnalites/adp_complet/ajout_personne_complete/code.js"></script>
+    <script src="fonctionnalites/point_accueil_complet/database-pa.js"></script>
+    <script src="fonctionnalites/point_accueil_complet/ajout_personne_complete/code.js"></script>
+    <script src="fonctionnalites/point_accueil_complet/point-accueil-init.js"></script>
     <script src="fonctionnalites/navigation_complet/affichage_onglet_par_defaut/code.js"></script>
     <script src="fonctionnalites/interface_complet/gestion_modales/modal-expand.js"></script>
     <script src="fonctionnalites/formulaires_complet/autocompletion_champs/typologie-autocomplete.js"></script>
     <script src="fonctionnalites/statistiques_complet/code.js"></script>
+    <script src="fonctionnalites/utils/vider-bdd.js"></script>
     
     <!-- Script principal -->
     <script src="renderer.js"></script>

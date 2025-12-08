@@ -37,6 +37,11 @@ async function initApp() {
       console.log('✅ Base de données ADP initialisée');
     }
     
+    if (typeof window.initDatabasePA === 'function') {
+      await window.initDatabasePA();
+      console.log('✅ Base de données Point Accueil initialisée');
+    }
+    
     // Initialiser la navigation par onglets
     if (typeof window.initTabs === 'function') {
     window.initTabs();
@@ -49,6 +54,9 @@ async function initApp() {
     
     // Initialiser le sélecteur de date ADP
     initAdpDateSelector();
+    
+    // Initialiser le sélecteur de date Point Accueil
+    initPADateSelector();
     
     // Initialiser le formulaire Transmissions
     if (typeof window.initTransmissionsForm === 'function') {
@@ -63,6 +71,16 @@ async function initApp() {
     // Initialiser les filtres ADP
     if (typeof window.initAdpFilters === 'function') {
       window.initAdpFilters();
+    }
+    
+    // Initialiser le formulaire Point Accueil
+    if (typeof window.initPointAccueilForm === 'function') {
+      window.initPointAccueilForm();
+    }
+    
+    // Initialiser les filtres Point Accueil
+    if (typeof window.initPAFilters === 'function') {
+      window.initPAFilters();
     }
     
     // Initialiser les boutons d'agrandissement des modales
@@ -80,15 +98,20 @@ async function initApp() {
       window.initStatistiques();
     }
     
-    // Charger les données initiales
-    if (typeof window.loadAndDisplayCards === 'function') {
-    await window.loadAndDisplayCards();
-      console.log('✅ Cartes Transmissions chargées');
+    // Charger les données initiales (TOUTES les fiches dans tous les onglets)
+    if (typeof window.afficherToutesFichesTransmissions === 'function') {
+    await window.afficherToutesFichesTransmissions();
+      console.log('✅ Toutes les fiches chargées dans Transmissions');
     }
     
-    if (typeof window.loadAndDisplayCardsAdp === 'function') {
-      await window.loadAndDisplayCardsAdp();
-      console.log('✅ Cartes ADP chargées');
+    if (typeof window.afficherToutesFichesADP === 'function') {
+      await window.afficherToutesFichesADP();
+      console.log('✅ Toutes les fiches chargées dans ADP');
+    }
+    
+    if (typeof window.afficherToutesFichesPA === 'function') {
+      await window.afficherToutesFichesPA();
+      console.log('✅ Toutes les fiches chargées dans Point Accueil');
     }
     
     console.log('🎉 Application prête');
@@ -116,8 +139,8 @@ function initAdpDateSelector() {
     
     dateInput.value = today.toISOString().split('T')[0];
     dateInput.addEventListener('change', () => {
-      if (typeof window.loadAndDisplayCardsAdp === 'function') {
-        window.loadAndDisplayCardsAdp();
+      if (typeof window.afficherToutesFichesADP === 'function') {
+        window.afficherToutesFichesADP();
   }
     });
   
@@ -125,6 +148,32 @@ function initAdpDateSelector() {
   }
 }
 
+/**
+ * Initialise le sélecteur de date Point Accueil (même comportement que ADP/Transmissions)
+ */
+function initPADateSelector() {
+  const dateInput = document.getElementById('pa-date');
+  if (dateInput) {
+    const today = new Date();
+    const currentHour = today.getHours();
+    
+    // Si entre 0h et 3h, utiliser la veille
+    if (currentHour >= 0 && currentHour < 3) {
+      today.setDate(today.getDate() - 1);
+    }
+    
+    dateInput.value = today.toISOString().split('T')[0];
+    dateInput.addEventListener('change', () => {
+      if (typeof window.afficherToutesFichesPA === 'function') {
+        window.afficherToutesFichesPA();
+      }
+    });
+    
+    console.log('Sélecteur de date Point Accueil initialisé');
+  }
+}
+
 // Exposer les fonctions globalement
 window.initApp = initApp;
 window.initAdpDateSelector = initAdpDateSelector;
+window.initPADateSelector = initPADateSelector;

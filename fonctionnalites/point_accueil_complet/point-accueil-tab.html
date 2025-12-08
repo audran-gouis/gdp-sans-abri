@@ -1,0 +1,47 @@
+<!-- Onglet Point Accueil -->
+<div id="point-accueil-tab" class="tab-content">
+  <div class="content-card">
+    <div class="date-selector-container">
+      <label for="pa-date">Date :</label>
+      <input type="date" id="pa-date" class="date-input">
+    </div>
+    
+    <div class="filters-container">
+      <div class="filter-group">
+        <label for="pa-filter-nom">Nom :</label>
+        <input type="text" id="pa-filter-nom" class="filter-input" placeholder="Rechercher par nom">
+      </div>
+      
+      <div class="filter-group">
+        <label for="pa-filter-prenom">Prénom :</label>
+        <input type="text" id="pa-filter-prenom" class="filter-input" placeholder="Rechercher par prénom">
+      </div>
+      
+      <div class="filter-group">
+        <label for="pa-filter-ddn">Date de Naissance :</label>
+        <input type="date" id="pa-filter-ddn" class="filter-input">
+      </div>
+      
+      <div class="filter-group filter-group-checkbox">
+        <label class="filter-checkbox-label">
+          <input type="checkbox" id="pa-filter-inconnu" class="filter-checkbox">
+          <span>Inconnu ?</span>
+        </label>
+      </div>
+      
+      <div class="filter-group">
+        <label for="pa-filter-description">Description physique :</label>
+        <input type="text" id="pa-filter-description" class="filter-input" placeholder="Rechercher par description">
+      </div>
+      
+      <button id="btn-ajouter-pa" class="btn-add">+ Ajouter une personne</button>
+    </div>
+    
+    <h2>Point d'Accueil</h2>
+    <p>Gestion des personnes accueillies au point d'accueil</p>
+    
+    <div id="point-accueil-list" class="transmissions-container">
+    </div>
+  </div>
+</div>
+

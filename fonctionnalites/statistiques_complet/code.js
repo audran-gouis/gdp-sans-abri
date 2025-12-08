@@ -96,10 +96,14 @@ async function applyFilters() {
     if (typeof window.initDBADP === 'function') {
       await window.initDBADP();
     }
+    if (typeof window.initDatabasePA === 'function') {
+      await window.initDatabasePA();
+    }
     
     // Récupérer les données selon la source
     let transmissionsRaw = [];
     let adpDataRaw = [];
+    let paDataRaw = [];
     
     if (source === 'all' || source === 'transmissions') {
       if (typeof window.getAllTransmissions === 'function') {
@@ -115,24 +119,34 @@ async function applyFilters() {
       }
     }
     
+    if (source === 'all' || source === 'pointAccueil') {
+      if (typeof recupererFichesPA === 'function') {
+        paDataRaw = await recupererFichesPA();
+        console.log('Point Accueil brutes récupérées:', paDataRaw.length);
+      }
+    }
+    
     // 1. D'ABORD filtrer par période
     let transmissionsFiltered = filterByPeriod(transmissionsRaw);
     let adpFiltered = filterByPeriod(adpDataRaw);
+    let paFiltered = filterByPeriod(paDataRaw, 'date'); // Point Accueil utilise 'date' au lieu de 'dateTransmission'
     
-    console.log('Après filtre période - Transmissions:', transmissionsFiltered.length, 'ADP:', adpFiltered.length);
+    console.log('Après filtre période - Transmissions:', transmissionsFiltered.length, 'ADP:', adpFiltered.length, 'PA:', paFiltered.length);
     
     // 2. ENSUITE dédoublonner : 1 seule entrée par personne par date par source
     // Marquer la source pour chaque entrée
     transmissionsFiltered = transmissionsFiltered.map(t => ({ ...t, _source: 'transmissions' }));
     adpFiltered = adpFiltered.map(t => ({ ...t, _source: 'adp' }));
+    paFiltered = paFiltered.map(t => ({ ...t, _source: 'pointAccueil' }));
     
     let transmissions = deduplicateByPersonDate(transmissionsFiltered);
     let adpData = deduplicateByPersonDate(adpFiltered);
+    let paData = deduplicateByPersonDate(paFiltered);
     
-    console.log('Après dédoublonnage - Transmissions:', transmissions.length, 'ADP:', adpData.length);
+    console.log('Après dédoublonnage - Transmissions:', transmissions.length, 'ADP:', adpData.length, 'PA:', paData.length);
     
     // 3. Combiner les données
-    let allData = [...transmissions, ...adpData];
+    let allData = [...transmissions, ...adpData, ...paData];
     
     // 4. Appliquer les autres filtres détaillés
     allData = applyDetailedFilters(allData);
@@ -144,7 +158,7 @@ async function applyFilters() {
     
     // Calculer et afficher les statistiques
     // Passer les comptages séparés
-    displayStatistics(allData, source, transmissions.length, adpData.length);
+    displayStatistics(allData, source, transmissions.length, adpData.length, paData.length);
     
   } catch (error) {
     console.error('Erreur lors de l\'application des filtres:', error);
@@ -180,11 +194,11 @@ function deduplicateByPersonDate(data) {
 /**
  * Filtre les données par période
  */
-function filterByPeriod(data) {
+function filterByPeriod(data, dateField = 'dateTransmission') {
   const periodType = document.getElementById('stats-period-type')?.value || 'day';
   
   return data.filter(item => {
-    const itemDate = item.dateTransmission;
+    const itemDate = item[dateField];
     if (!itemDate) return false;
     
     switch (periodType) {
@@ -279,7 +293,7 @@ function applyDetailedFilters(data) {
 /**
  * Affiche les statistiques calculées
  */
-function displayStatistics(data, source, transmissionsCount = 0, adpCount = 0) {
+function displayStatistics(data, source, transmissionsCount = 0, adpCount = 0, paCount = 0) {
   const container = document.getElementById('stats-content');
   if (!container) return;
   
@@ -377,17 +391,21 @@ function displayStatistics(data, source, transmissionsCount = 0, adpCount = 0) {
     totalMineurs += mineurs;
   });
   
-  const sourceLabel = source === 'all' ? 'Toutes sources' : source === 'transmissions' ? 'Transmissions' : 'ADP';
+  const sourceLabel = source === 'all' ? 'Toutes sources' : 
+                      source === 'transmissions' ? 'Transmissions' : 
+                      source === 'adp' ? 'ADP' : 'Point Accueil';
   
   // Compter par source (personnes distinctes)
   const transmissionsPersons = Array.from(uniquePersonsMap.values()).filter(d => d._source === 'transmissions');
   const adpPersons = Array.from(uniquePersonsMap.values()).filter(d => d._source === 'adp');
+  const paPersons = Array.from(uniquePersonsMap.values()).filter(d => d._source === 'pointAccueil');
   
   const detailBySource = source === 'all' ? `
     <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.3);">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.9rem;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; font-size: 0.9rem;">
         <div>Transmissions: <strong>${transmissionsPersons.length}</strong> personne(s)</div>
         <div>ADP: <strong>${adpPersons.length}</strong> personne(s)</div>
+        <div>Point Accueil: <strong>${paPersons.length}</strong> personne(s)</div>
       </div>
     </div>
   ` : '';
@@ -550,8 +568,14 @@ function showFilteredCards() {
     card.className = 'transmission-card';
     
     // Badge source
-    const sourceLabel = person._source === 'transmissions' ? 'Transmissions' : 'ADP';
-    const sourceColor = person._source === 'transmissions' ? '#667eea' : '#28a745';
+    const sourceMap = {
+      'transmissions': { label: 'Transmissions', color: '#667eea' },
+      'adp': { label: 'ADP', color: '#f5576c' },
+      'pointAccueil': { label: 'Point Accueil', color: '#00f2fe' }
+    };
+    const sourceInfo = sourceMap[person._source] || { label: 'Inconnu', color: '#999' };
+    const sourceLabel = sourceInfo.label;
+    const sourceColor = sourceInfo.color;
     
     // Nom affiché
     const displayName = person.inconnu ? 'Inconnu' : 

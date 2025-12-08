@@ -25,6 +25,11 @@
             insertMode: 'replace'
         },
         {
+            container: 'point-accueil-tab-container',
+            file: 'fonctionnalites/point_accueil_complet/point-accueil-tab.html',
+            insertMode: 'replace'
+        },
+        {
             container: 'statistiques-tab-container',
             file: 'fonctionnalites/statistiques_complet/statistiques-tab.html',
             insertMode: 'replace'
@@ -42,6 +47,11 @@
         {
             container: 'modal-adp-container',
             file: 'fonctionnalites/adp_complet/modal-adp.html',
+            insertMode: 'replace'
+        },
+        {
+            container: 'modal-point-accueil-container',
+            file: 'fonctionnalites/point_accueil_complet/modal-point-accueil.html',
             insertMode: 'replace'
         }
     ];

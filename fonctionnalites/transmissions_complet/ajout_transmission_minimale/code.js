@@ -153,11 +153,37 @@ function initTransmissionsForm() {
     return;
   }
   
+  /**
+   * Obtient la date à utiliser par défaut
+   * Si on est entre 00h00 et 03h00, on retourne la veille
+   * Sinon on retourne la date du jour
+   */
+  function getDateParDefaut() {
+    const maintenant = new Date();
+    const heures = maintenant.getHours();
+    
+    // Si on est entre minuit et 3h du matin, on prend la veille
+    if (heures >= 0 && heures < 3) {
+      maintenant.setDate(maintenant.getDate() - 1);
+    }
+    
+    // Formater en YYYY-MM-DD pour l'input date
+    return maintenant.toISOString().split('T')[0];
+  }
+  
   // Ouvrir la modal pour ajout
   btnAjouter.addEventListener('click', () => {
     form.reset();
     delete form.dataset.editId;
     delete form.dataset.personId;
+    
+    // Initialiser la date du sélecteur de transmission avec la date par défaut
+    const dateTransmission = document.getElementById('transmissions-date');
+    if (dateTransmission && !dateTransmission.value) {
+      dateTransmission.value = getDateParDefaut();
+      console.log('Date Transmissions initialisée à:', dateTransmission.value);
+    }
+    
     modal.classList.add('show');
   });
   
@@ -242,7 +268,11 @@ function initTransmissionsForm() {
       }
       
       closeModal();
-      await window.loadAndDisplayCards();
+      if (typeof window.afficherToutesFichesTransmissions === 'function') {
+        await window.afficherToutesFichesTransmissions();
+      } else {
+        await window.loadAndDisplayCards();
+      }
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement:', error);
       alert('Erreur lors de l\'enregistrement');

@@ -1,0 +1,260 @@
+<!-- Modal Point Accueil -->
+<div id="modal-point-accueil" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Ajouter / Modifier une personne Point d'Accueil</h2>
+            <div class="modal-actions">
+                <button type="button" class="modal-expand" id="pa-btn-expand" title="Agrandir">⛶</button>
+                <button type="button" class="modal-close pa-modal-close">&times;</button>
+            </div>
+        </div>
+        
+        <form id="form-point-accueil" class="modal-body">
+            <!-- Section Informations Personnelles -->
+            <div class="form-section">
+                <h3>Informations Personnelles</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="form-pa-nom">Nom :</label>
+                        <input type="text" id="form-pa-nom" class="form-input" name="nom">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="form-pa-prenom">Prénom :</label>
+                        <input type="text" id="form-pa-prenom" class="form-input" name="prenom">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="form-pa-ddn">Date de Naissance :</label>
+                        <input type="date" id="form-pa-ddn" class="form-input" name="dateNaissance">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="form-pa-description">Description physique :</label>
+                        <textarea id="form-pa-description" class="form-textarea" name="description" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="form-pa-inconnu" class="form-checkbox" name="inconnu">
+                            <span>Personne inconnue</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section Situation -->
+            <div class="form-section">
+                <h3>Situation</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="form-pa-departement">Département d'origine :</label>
+                        <input type="text" id="form-pa-departement" class="form-input" name="departement">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="form-pa-typologie">Typologie de Ménages :</label>
+                        <select id="form-pa-typologie" class="form-input" name="typologie">
+                            <option value="">Sélectionner...</option>
+                            <option value="homme-seul">Homme Seul</option>
+                            <option value="femme-seule">Femme seule</option>
+                            <option value="femme-seule-avec-enfants">Femme seule avec enfant(s)</option>
+                            <option value="homme-seul-avec-enfants">Homme seul avec enfant(s)</option>
+                            <option value="groupe-adultes-avec-enfants">Groupe d'adultes avec enfant(s)</option>
+                            <option value="groupe-adultes-sans-enfant">Groupe d'adultes sans enfant</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="form-pa-nb-personnes">Nombre de Personnes :</label>
+                        <select id="form-pa-nb-personnes" class="form-input" name="nbPersonnes">
+                            <option value="">Sélectionner...</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6+">6+</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="form-pa-mineurs">dont Mineurs :</label>
+                        <select id="form-pa-mineurs" class="form-input" name="mineurs">
+                            <option value="">Sélectionner...</option>
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4+">4+</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section Données de Transmission -->
+            <div class="form-section">
+                <h3>Données de Transmission</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="form-pa-type-transmission">Type de Transmission :</label>
+                        <select id="form-pa-type-transmission" class="form-input" name="typeTransmission">
+                            <option value="">Sélectionner...</option>
+                            <option value="jour">Jour</option>
+                            <option value="nuit">Nuit</option>
+                            <option value="information">Information</option>
+                            <option value="signalement">Signalement</option>
+                            <option value="suivi">Suivi</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="form-pa-date">Date :</label>
+                        <input type="date" id="form-pa-date" class="form-input" name="date">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="form-pa-adresse">Adresse :</label>
+                        <input type="text" id="form-pa-adresse" class="form-input" name="adresse">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="form-pa-ville">Ville :</label>
+                        <input type="text" id="form-pa-ville" class="form-input" name="ville">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="form-pa-signalement">Signalement :</label>
+                        <select id="form-pa-signalement" class="form-input" name="signalement">
+                            <option value="">Sélectionner...</option>
+                            <option value="115">115</option>
+                            <option value="siao">SIAO</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section Type d'intervention -->
+            <div class="form-section">
+                <h3>Type d'intervention</h3>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-premier-contact" class="form-checkbox">
+                                <span>1er contact</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-personne-presente" class="form-checkbox">
+                                <span>Personne présente</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-pnt" class="form-checkbox">
+                                <span>PNT</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-maraude" class="form-checkbox">
+                                <span>Maraude</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-veille" class="form-checkbox">
+                                <span>Veille</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-refus-contact" class="form-checkbox">
+                                <span>Refus de contact</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section Accompagnement -->
+            <div class="form-section">
+                <h3>Accompagnement</h3>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-accomp-ecoute" class="form-checkbox">
+                                <span>Écoute</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-accomp-orientation" class="form-checkbox">
+                                <span>Orientation</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-accomp-admin" class="form-checkbox">
+                                <span>Démarche administrative</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-accomp-medical" class="form-checkbox">
+                                <span>Médical</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-accomp-hebergement" class="form-checkbox">
+                                <span>Hébergement</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-accomp-autre" class="form-checkbox">
+                                <span>Autre</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section Distribution -->
+            <div class="form-section">
+                <h3>Distribution</h3>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-distrib-alimentaire" class="form-checkbox">
+                                <span>Alimentaire</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-distrib-vestimentaire" class="form-checkbox">
+                                <span>Vestimentaire</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-distrib-hygiene" class="form-checkbox">
+                                <span>Hygiène</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-distrib-couvertures" class="form-checkbox">
+                                <span>Couvertures</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-distrib-duvet" class="form-checkbox">
+                                <span>Duvet</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-distrib-autre" class="form-checkbox">
+                                <span>Autre</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section Contenu -->
+            <div class="form-section">
+                <h3>Contenu de la transmission</h3>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label for="form-pa-transmission">Commentaires :</label>
+                        <textarea id="form-pa-transmission" class="form-textarea" rows="4"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="pa-btn-annuler">Annuler</button>
+                <button type="submit" class="btn-primary">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>

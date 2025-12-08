@@ -251,15 +251,19 @@ function applyAdpFilters(persons) {
 function initAdpFilters() {
   const filterIds = ['adp-filter-nom', 'adp-filter-prenom', 'adp-filter-ddn', 'adp-filter-inconnu', 'adp-filter-description'];
   
+  const rechargerFiches = () => {
+    if (typeof window.afficherToutesFichesADP === 'function') {
+      window.afficherToutesFichesADP();
+    } else if (typeof window.loadAndDisplayCardsAdp === 'function') {
+      window.loadAndDisplayCardsAdp();
+    }
+  };
+  
   filterIds.forEach(id => {
     const element = document.getElementById(id);
     if (element) {
       const eventType = element.type === 'checkbox' ? 'change' : 'input';
-      element.addEventListener(eventType, () => {
-        if (typeof window.loadAndDisplayCardsAdp === 'function') {
-          window.loadAndDisplayCardsAdp();
-        }
-      });
+      element.addEventListener(eventType, rechargerFiches);
     }
   });
   
@@ -388,10 +392,14 @@ async function deletePersonCardAdp(personId) {
       );
       
       for (const transmission of personTransmissions) {
-        await window.deleteTransmissionAdp(transmission.id);
+      await window.deleteTransmissionAdp(transmission.id);
+    }
+    
+      if (typeof window.afficherToutesFichesADP === 'function') {
+        await window.afficherToutesFichesADP();
+      } else {
+        await loadAndDisplayCardsAdp();
       }
-      
-      await loadAndDisplayCardsAdp();
       console.log('Personne ADP supprimée');
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
@@ -401,6 +409,24 @@ async function deletePersonCardAdp(personId) {
 }
 
 // ==================== INITIALISATION FORMULAIRE ADP ====================
+
+/**
+ * Obtient la date à utiliser par défaut
+ * Si on est entre 00h00 et 03h00, on retourne la veille
+ * Sinon on retourne la date du jour
+ */
+function getDateParDefaut() {
+  const maintenant = new Date();
+  const heures = maintenant.getHours();
+  
+  // Si on est entre minuit et 3h du matin, on prend la veille
+  if (heures >= 0 && heures < 3) {
+    maintenant.setDate(maintenant.getDate() - 1);
+  }
+  
+  // Formater en YYYY-MM-DD pour l'input date
+  return maintenant.toISOString().split('T')[0];
+}
 
 /**
  * Initialise le formulaire ADP
@@ -420,6 +446,17 @@ function initAdpForm() {
   btnAjouter.addEventListener('click', () => {
     modal.classList.add('show');
     formAdp.reset();
+    
+    // Initialiser la date par défaut (date du jour ou veille si avant 3h)
+    const dateFields = ['adp-form-date-transmission'];
+    dateFields.forEach(fieldId => {
+      const dateInput = document.getElementById(fieldId);
+      if (dateInput) {
+        dateInput.value = getDateParDefaut();
+        console.log('Date ADP initialisée à:', dateInput.value);
+      }
+    });
+    
     delete formAdp.dataset.editId;
     delete formAdp.dataset.personId;
   });
@@ -501,7 +538,11 @@ function initAdpForm() {
       }
       
       closeModal();
-      await loadAndDisplayCardsAdp();
+      if (typeof window.afficherToutesFichesADP === 'function') {
+        await window.afficherToutesFichesADP();
+      } else {
+        await loadAndDisplayCardsAdp();
+      }
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement ADP:', error);
       alert('Erreur lors de l\'enregistrement');

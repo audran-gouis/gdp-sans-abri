@@ -273,11 +273,21 @@ function initDateSelectors() {
     }
     
     dateInput.value = today.toISOString().split('T')[0];
-    dateInput.addEventListener('change', loadAndDisplayCards);
     
-    document.getElementById('filter-nom')?.addEventListener('input', loadAndDisplayCards);
-    document.getElementById('filter-prenom')?.addEventListener('input', loadAndDisplayCards);
-    document.getElementById('filter-ddn')?.addEventListener('change', loadAndDisplayCards);
+    // Utiliser la nouvelle fonction d'affichage centralisée
+    const rechargerFiches = () => {
+      if (typeof window.afficherToutesFichesTransmissions === 'function') {
+        window.afficherToutesFichesTransmissions();
+      } else {
+        loadAndDisplayCards();
+      }
+    };
+    
+    dateInput.addEventListener('change', rechargerFiches);
+    
+    document.getElementById('filter-nom')?.addEventListener('input', rechargerFiches);
+    document.getElementById('filter-prenom')?.addEventListener('input', rechargerFiches);
+    document.getElementById('filter-ddn')?.addEventListener('change', rechargerFiches);
   }
   
   console.log('Sélecteurs de date initialisés');

@@ -1,0 +1,89 @@
+/* Badges pour identifier les sources des fiches */
+
+.card-badges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 12px;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Badges de sources */
+.badge-transmissions {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.badge-adp {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.badge-pa {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* Badges de comptage de transmissions */
+.badge-has-today {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  font-size: 13px;
+  padding: 4px 10px;
+}
+
+.badge-no-transmission {
+  background: linear-gradient(135deg, #666 0%, #999 100%);
+  opacity: 0.7;
+}
+
+.badge-other-dates {
+  background: linear-gradient(135deg, #f09819 0%, #edde5d 100%);
+  color: #333;
+}
+
+/* Animation au survol */
+.badge:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+/* Message d'absence de transmission */
+.no-transmission-notice {
+  color: #dc3545;
+  font-style: italic;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  background: #ffe6e6;
+  border-left: 3px solid #dc3545;
+  border-radius: 4px;
+}
+
+/* Ajustement du header de carte pour inclure les badges */
+.transmission-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.transmission-card .card-header h3 {
+  flex: 1;
+  margin: 0;
+}
+
+.transmission-card .card-date {
+  font-size: 14px;
+  color: #666;
+  margin-right: 8px;
+}
+
