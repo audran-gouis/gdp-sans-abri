@@ -86,17 +86,11 @@
     console.log(`✅ ${successCount}/3 boutons expand initialisés avec succès`);
   }
   
-  // Essayer d'initialiser maintenant, et réessayer après le DOMContentLoaded
-  if (document.readyState === 'loading') {
-    console.log('⏳ DOM en cours de chargement, attente...');
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('✅ DOM chargé, initialisation des boutons expand');
-      initAllExpandButtons();
-    });
-  } else {
-    console.log('✅ DOM déjà chargé, initialisation immédiate');
+  // Écouter l'événement custom de html-loader
+  window.addEventListener('html-modules-loaded', function() {
+    console.log('✅ Modules HTML chargés, initialisation des boutons expand...');
     initAllExpandButtons();
-  }
+  });
   
   // Exposer globalement si besoin
   if (typeof window !== 'undefined') {
