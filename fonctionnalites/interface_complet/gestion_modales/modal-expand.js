@@ -5,6 +5,8 @@
 (function() {
   'use strict';
   
+  console.log('🔄 Chargement modal-expand.js...');
+  
   /**
    * Initialise le bouton d'agrandissement pour une modale
    * @param {string} modalId - ID de la modale
@@ -14,18 +16,26 @@
     const modal = document.getElementById(modalId);
     const btnExpand = document.getElementById(btnExpandId);
     
+    console.log(`🔍 Recherche éléments pour ${modalId}:`, {
+      modal: modal ? 'trouvé' : 'NON TROUVÉ',
+      btnExpand: btnExpand ? 'trouvé' : 'NON TROUVÉ'
+    });
+    
     if (!modal || !btnExpand) {
-      console.warn(`Elements non trouvés pour expand: modal=${modalId}, btn=${btnExpandId}`);
-      return;
+      console.warn(`⚠️ Elements non trouvés pour expand: modal=${modalId}, btn=${btnExpandId}`);
+      return false;
     }
     
     let isExpanded = false;
     
-    btnExpand.addEventListener('click', function() {
+    btnExpand.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
       const modalContent = modal.querySelector('.modal-content');
       
       if (!modalContent) {
-        console.warn('modal-content non trouvé');
+        console.warn('⚠️ modal-content non trouvé dans', modalId);
         return;
       }
       
@@ -47,28 +57,44 @@
     });
     
     console.log(`✅ Bouton expand initialisé pour ${modalId}`);
+    return true;
   }
   
   /**
    * Initialise tous les boutons d'agrandissement au chargement de la page
    */
   function initAllExpandButtons() {
+    console.log('🚀 Initialisation de tous les boutons expand...');
+    
+    let successCount = 0;
+    
     // Transmission
-    initExpandButton('modal-ajout', 'btn-expand');
+    if (initExpandButton('modal-ajout', 'btn-expand')) {
+      successCount++;
+    }
     
     // ADP
-    initExpandButton('modal-adp', 'adp-btn-expand');
+    if (initExpandButton('modal-adp', 'adp-btn-expand')) {
+      successCount++;
+    }
     
     // Point Accueil
-    initExpandButton('modal-point-accueil', 'pa-btn-expand');
+    if (initExpandButton('modal-point-accueil', 'pa-btn-expand')) {
+      successCount++;
+    }
     
-    console.log('✅ Tous les boutons expand initialisés');
+    console.log(`✅ ${successCount}/3 boutons expand initialisés avec succès`);
   }
   
-  // Initialiser au chargement du DOM
+  // Essayer d'initialiser maintenant, et réessayer après le DOMContentLoaded
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAllExpandButtons);
+    console.log('⏳ DOM en cours de chargement, attente...');
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('✅ DOM chargé, initialisation des boutons expand');
+      initAllExpandButtons();
+    });
   } else {
+    console.log('✅ DOM déjà chargé, initialisation immédiate');
     initAllExpandButtons();
   }
   
@@ -80,5 +106,5 @@
   
 })();
 
-console.log('✅ Module modal-expand chargé');
+console.log('✅ Module modal-expand.js chargé');
 
