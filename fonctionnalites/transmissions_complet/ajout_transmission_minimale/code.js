@@ -1,92 +1,101 @@
 /**
- * Code métier - Transmissions : Ajout transmission minimale
- * Fonctions pour tests ET application
+ * Code métier - Transmissions : Formulaire avec base centralisée
+ * NOUVELLE VERSION - Compatible avec database-personnes.js
  */
 
 // ==================== FONCTIONS APPLICATION ====================
 
 /**
- * Trouve une transmission par personId et date
+ * Trouve une transmission par personneId et date
  */
-async function findTransmissionByPersonAndDate(personId, dateTransmission) {
+async function findTransmissionByPersonAndDate(personneId, dateTransmission) {
   const allTransmissions = await window.getAllTransmissions();
-  return allTransmissions.find(t => 
-    String(t.personId) === String(personId) && t.dateTransmission === dateTransmission
+  console.log('🔍 Recherche transmission pour personneId:', personneId, 'date:', dateTransmission);
+  const found = allTransmissions.find(t => 
+    t.personneId === personneId && t.dateTransmission === dateTransmission
   );
+  console.log('🔍 Transmission trouvée:', found ? `ID ${found.id}` : 'Aucune');
+  return found;
 }
 
 /**
- * Édite une transmission existante
+ * Édite une transmission pour une personne
+ * @param {number} personneId - L'ID de la personne dans la DB centrale
  */
-async function editTransmission(id) {
-  console.log('Compléter la transmission pour ID:', id);
+async function editTransmission(personneId) {
+  console.log('📝 Compléter la transmission pour personne ID:', personneId);
   
   try {
-    const allTransmissions = await window.getAllTransmissions();
-    const baseTransmission = allTransmissions.find(t => String(t.id) === String(id));
+    // Charger la personne depuis la DB centrale
+    const personne = await window.getPersonneById(personneId);
     
-    if (!baseTransmission) {
-      console.error('Transmission non trouvée pour ID:', id);
+    if (!personne) {
+      console.error('❌ Personne non trouvée pour ID:', personneId);
       alert('Erreur lors du chargement des données');
       return;
     }
     
+    console.log('✅ Personne trouvée:', personne);
     const selectedDate = document.getElementById('transmissions-date')?.value;
-    const existingTransmissionForDate = await findTransmissionByPersonAndDate(
-      baseTransmission.personId || id,
-      selectedDate
-    );
+    console.log('📅 Date sélectionnée:', selectedDate);
     
-    const transmission = existingTransmissionForDate || baseTransmission;
+    // Chercher si une transmission existe pour cette personne à cette date
+    const existingTransmission = await findTransmissionByPersonAndDate(personneId, selectedDate);
     
-    // Remplir les champs du formulaire
-    document.getElementById('form-nom').value = transmission.nom || '';
-    document.getElementById('form-prenom').value = transmission.prenom || '';
-    document.getElementById('form-ddn').value = transmission.dateNaissance || '';
-    document.getElementById('form-typologie').value = transmission.typologie || '';
-    document.getElementById('form-nb-personnes').value = transmission.nbPersonnes || '';
-    document.getElementById('form-mineurs').value = transmission.mineurs || '';
+    console.log('📋 Transmission existante:', existingTransmission ? `ID ${existingTransmission.id}` : 'Aucune');
     
-    if (existingTransmissionForDate) {
-      document.getElementById('form-type-transmission').value = transmission.typeTransmission || '';
-      document.getElementById('form-adresse').value = transmission.adresse || '';
-      document.getElementById('form-ville').value = transmission.ville || '';
-      document.getElementById('form-signalement').value = transmission.signalement || '';
-      document.getElementById('form-transmission').value = transmission.transmission || '';
+    // Remplir les champs avec les infos de la personne
+    document.getElementById('form-nom').value = personne.nom || '';
+    document.getElementById('form-prenom').value = personne.prenom || '';
+    document.getElementById('form-ddn').value = personne.dateNaissance || '';
+    document.getElementById('form-typologie').value = personne.typologie || '';
+    document.getElementById('form-nb-personnes').value = personne.nbPersonnes || '';
+    document.getElementById('form-mineurs').value = personne.mineurs || '';
+    
+    if (existingTransmission) {
+      // MODE ÉDITION : charger toutes les données de la transmission
+      console.log('✅ Transmission existante pour cette date - MODE ÉDITION');
+      document.getElementById('form-type-transmission').value = existingTransmission.typeTransmission || '';
+      document.getElementById('form-adresse').value = existingTransmission.adresse || '';
+      document.getElementById('form-ville').value = existingTransmission.ville || '';
+      document.getElementById('form-signalement').value = existingTransmission.signalement || '';
+      document.getElementById('form-transmission').value = existingTransmission.transmission || '';
       
       // Checkboxes Orly
-      if (transmission.orly) {
-        document.getElementById('form-premier-contact').checked = transmission.orly.premierContact || false;
-        document.getElementById('form-personne-presente').checked = transmission.orly.personnePresente || false;
-        document.getElementById('form-pnt').checked = transmission.orly.pnt || false;
-        document.getElementById('form-maraude').checked = transmission.orly.maraude || false;
-        document.getElementById('form-veille').checked = transmission.orly.veille || false;
-        document.getElementById('form-refus-contact').checked = transmission.orly.refusContact || false;
+      if (existingTransmission.orly) {
+        document.getElementById('form-premier-contact').checked = existingTransmission.orly.premierContact || false;
+        document.getElementById('form-personne-presente').checked = existingTransmission.orly.personnePresente || false;
+        document.getElementById('form-pnt').checked = existingTransmission.orly.pnt || false;
+        document.getElementById('form-maraude').checked = existingTransmission.orly.maraude || false;
+        document.getElementById('form-veille').checked = existingTransmission.orly.veille || false;
+        document.getElementById('form-refus-contact').checked = existingTransmission.orly.refusContact || false;
       }
       
       // Checkboxes Accompagnement
-      if (transmission.accompagnement) {
-        document.getElementById('form-accomp-ecoute').checked = transmission.accompagnement.ecoute || false;
-        document.getElementById('form-accomp-orientation').checked = transmission.accompagnement.orientation || false;
-        document.getElementById('form-accomp-admin').checked = transmission.accompagnement.admin || false;
-        document.getElementById('form-accomp-medical').checked = transmission.accompagnement.medical || false;
-        document.getElementById('form-accomp-hebergement').checked = transmission.accompagnement.hebergement || false;
-        document.getElementById('form-accomp-autre').checked = transmission.accompagnement.autre || false;
+      if (existingTransmission.accompagnement) {
+        document.getElementById('form-accomp-ecoute').checked = existingTransmission.accompagnement.ecoute || false;
+        document.getElementById('form-accomp-orientation').checked = existingTransmission.accompagnement.orientation || false;
+        document.getElementById('form-accomp-admin').checked = existingTransmission.accompagnement.admin || false;
+        document.getElementById('form-accomp-medical').checked = existingTransmission.accompagnement.medical || false;
+        document.getElementById('form-accomp-hebergement').checked = existingTransmission.accompagnement.hebergement || false;
+        document.getElementById('form-accomp-autre').checked = existingTransmission.accompagnement.autre || false;
       }
       
       // Checkboxes Distribution
-      if (transmission.distribution) {
-        document.getElementById('form-distrib-alimentaire').checked = transmission.distribution.alimentaire || false;
-        document.getElementById('form-distrib-vestimentaire').checked = transmission.distribution.vestimentaire || false;
-        document.getElementById('form-distrib-hygiene').checked = transmission.distribution.hygiene || false;
-        document.getElementById('form-distrib-couvertures').checked = transmission.distribution.couvertures || false;
-        document.getElementById('form-distrib-duvet').checked = transmission.distribution.duvet || false;
-        document.getElementById('form-distrib-autre').checked = transmission.distribution.autre || false;
+      if (existingTransmission.distribution) {
+        document.getElementById('form-distrib-alimentaire').checked = existingTransmission.distribution.alimentaire || false;
+        document.getElementById('form-distrib-vestimentaire').checked = existingTransmission.distribution.vestimentaire || false;
+        document.getElementById('form-distrib-hygiene').checked = existingTransmission.distribution.hygiene || false;
+        document.getElementById('form-distrib-couvertures').checked = existingTransmission.distribution.couvertures || false;
+        document.getElementById('form-distrib-duvet').checked = existingTransmission.distribution.duvet || false;
+        document.getElementById('form-distrib-autre').checked = existingTransmission.distribution.autre || false;
       }
       
-      document.getElementById('form-modal-transmission').dataset.editId = transmission.id;
+      document.getElementById('form-modal-transmission').dataset.editId = existingTransmission.id;
+      console.log('🔖 editId défini à:', existingTransmission.id);
     } else {
-      // Nouvelle transmission pour cette date - réinitialiser les champs de transmission
+      // MODE CRÉATION : réinitialiser les champs de transmission
+      console.log('➕ Pas de transmission pour cette date - MODE CRÉATION');
       document.getElementById('form-type-transmission').value = '';
       document.getElementById('form-adresse').value = '';
       document.getElementById('form-ville').value = '';
@@ -97,14 +106,16 @@ async function editTransmission(id) {
       document.querySelectorAll('#modal-ajout input[type="checkbox"]').forEach(cb => cb.checked = false);
       
       delete document.getElementById('form-modal-transmission').dataset.editId;
+      console.log('🔖 editId supprimé - création nouvelle transmission');
     }
     
-    document.getElementById('form-modal-transmission').dataset.personId = baseTransmission.personId || id;
+    document.getElementById('form-modal-transmission').dataset.personneId = personneId;
+    console.log('🔖 personneId défini à:', personneId);
     
     // Ouvrir la modal
     const modal = document.getElementById('modal-ajout');
     if (modal) {
-    modal.classList.add('show');
+      modal.classList.add('show');
     }
   } catch (error) {
     console.error('Erreur lors du chargement:', error);
@@ -115,26 +126,25 @@ async function editTransmission(id) {
 /**
  * Supprime une personne (toutes ses transmissions)
  */
-async function deletePersonCard(personId) {
+async function deletePersonCard(personneId) {
   if (!confirm('Êtes-vous sûr de vouloir supprimer cette personne et toutes ses transmissions ?')) {
     return;
   }
   
   try {
     const allTransmissions = await window.getAllTransmissions();
-    const personTransmissions = allTransmissions.filter(t => 
-      String(t.personId || t.id) === String(personId)
-    );
+    const personTransmissions = allTransmissions.filter(t => t.personneId === personneId);
     
     for (const transmission of personTransmissions) {
       await window.deleteTransmission(transmission.id);
-}
-
-    await window.loadAndDisplayCards();
+    }
+    
+    await window.deletePersonne(personneId);
+    await window.afficherToutesLesPersonnesTransmissions();
     console.log('Personne supprimée');
   } catch (error) {
     console.error('Erreur lors de la suppression:', error);
-      alert('Erreur lors de la suppression');
+    alert('Erreur lors de la suppression');
   }
 }
 
@@ -155,19 +165,15 @@ function initTransmissionsForm() {
   
   /**
    * Obtient la date à utiliser par défaut
-   * Si on est entre 00h00 et 03h00, on retourne la veille
-   * Sinon on retourne la date du jour
    */
   function getDateParDefaut() {
     const maintenant = new Date();
     const heures = maintenant.getHours();
     
-    // Si on est entre minuit et 3h du matin, on prend la veille
     if (heures >= 0 && heures < 3) {
       maintenant.setDate(maintenant.getDate() - 1);
     }
     
-    // Formater en YYYY-MM-DD pour l'input date
     return maintenant.toISOString().split('T')[0];
   }
   
@@ -175,9 +181,8 @@ function initTransmissionsForm() {
   btnAjouter.addEventListener('click', () => {
     form.reset();
     delete form.dataset.editId;
-    delete form.dataset.personId;
+    delete form.dataset.personneId;
     
-    // Initialiser la date du sélecteur de transmission avec la date par défaut
     const dateTransmission = document.getElementById('transmissions-date');
     if (dateTransmission && !dateTransmission.value) {
       dateTransmission.value = getDateParDefaut();
@@ -192,7 +197,7 @@ function initTransmissionsForm() {
     modal.classList.remove('show');
     form.reset();
     delete form.dataset.editId;
-    delete form.dataset.personId;
+    delete form.dataset.personneId;
   };
   
   btnAnnuler?.addEventListener('click', closeModal);
@@ -203,16 +208,23 @@ function initTransmissionsForm() {
     e.preventDefault();
     
     const editId = form.dataset.editId;
-    const personId = form.dataset.personId;
+    const personneId = form.dataset.personneId;
     const selectedDate = document.getElementById('transmissions-date')?.value || new Date().toISOString().split('T')[0];
     
-    const formData = {
+    console.log('💾 Soumission formulaire - editId:', editId, 'personneId:', personneId, 'date:', selectedDate);
+    
+    // Données de la personne
+    const personneData = {
       nom: document.getElementById('form-nom').value,
       prenom: document.getElementById('form-prenom').value,
       dateNaissance: document.getElementById('form-ddn').value,
       typologie: document.getElementById('form-typologie').value,
       nbPersonnes: document.getElementById('form-nb-personnes').value,
-      mineurs: document.getElementById('form-mineurs').value,
+      mineurs: document.getElementById('form-mineurs').value
+    };
+    
+    // Données de la transmission
+    const transmissionData = {
       typeTransmission: document.getElementById('form-type-transmission').value,
       adresse: document.getElementById('form-adresse').value,
       ville: document.getElementById('form-ville').value,
@@ -246,32 +258,38 @@ function initTransmissionsForm() {
     };
     
     try {
-      if (editId) {
-        // Mise à jour
-        formData.id = parseInt(editId);
-        formData.personId = parseInt(personId);
-        await window.updateTransmission(formData);
-        console.log('Transmission mise à jour');
-      } else if (personId) {
-        // Nouvelle transmission pour une personne existante
-        formData.personId = parseInt(personId);
-        await window.addTransmission(formData);
-        console.log('Nouvelle transmission ajoutée pour personne existante');
+      let finalPersonneId = personneId;
+      
+      // Créer ou récupérer la personne dans la DB centrale
+      if (!personneId) {
+        finalPersonneId = await window.creerOuRecupererPersonne(personneData);
+        console.log('✅ Personne créée/récupérée, ID:', finalPersonneId);
       } else {
-        // Nouvelle personne
-        const newId = await window.addTransmission(formData);
-        // Mettre à jour avec le personId
-        formData.id = newId;
-        formData.personId = newId;
-        await window.updateTransmission(formData);
-        console.log('Nouvelle personne créée');
+        // Mettre à jour les infos de la personne si elles ont changé
+        await window.updatePersonne(parseInt(personneId), personneData);
+        finalPersonneId = parseInt(personneId);
+        console.log('✅ Infos personne mises à jour');
+      }
+      
+      // Ajouter le personneId à la transmission
+      transmissionData.personneId = finalPersonneId;
+      
+      if (editId) {
+        // Mise à jour de la transmission existante
+        console.log('🔄 Mise à jour transmission existante ID:', editId);
+        transmissionData.id = parseInt(editId);
+        await window.updateTransmission(transmissionData);
+        console.log('✅ Transmission mise à jour');
+      } else {
+        // Nouvelle transmission
+        console.log('➕ Création nouvelle transmission pour personne ID:', finalPersonneId);
+        await window.addTransmission(transmissionData);
+        console.log('✅ Nouvelle transmission ajoutée');
       }
       
       closeModal();
-      if (typeof window.afficherToutesFichesTransmissions === 'function') {
-        await window.afficherToutesFichesTransmissions();
-      } else {
-        await window.loadAndDisplayCards();
+      if (typeof window.afficherToutesLesPersonnesTransmissions === 'function') {
+        await window.afficherToutesLesPersonnesTransmissions();
       }
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement:', error);
@@ -300,4 +318,4 @@ if (typeof module !== 'undefined' && module.exports) {
   window.initTransmissionsForm = initTransmissionsForm;
 }
 
-console.log('✅ Module ajout_transmission_minimale chargé');
+console.log('✅ Module ajout_transmission_minimale chargé (base centralisée)');

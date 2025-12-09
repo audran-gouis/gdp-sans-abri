@@ -252,10 +252,8 @@ function initAdpFilters() {
   const filterIds = ['adp-filter-nom', 'adp-filter-prenom', 'adp-filter-ddn', 'adp-filter-inconnu', 'adp-filter-description'];
   
   const rechargerFiches = () => {
-    if (typeof window.afficherToutesFichesADP === 'function') {
-      window.afficherToutesFichesADP();
-    } else if (typeof window.loadAndDisplayCardsAdp === 'function') {
-      window.loadAndDisplayCardsAdp();
+    if (typeof window.afficherToutesLesPersonnesADP === 'function') {
+      window.afficherToutesLesPersonnesADP();
     }
   };
   
@@ -297,23 +295,43 @@ async function loadAndDisplayCardsAdp() {
 }
 
 /**
- * Fonction pour éditer une transmission ADP
+ * Trouve une transmission ADP par personneId et date
  */
-async function editTransmissionAdp(id) {
-  console.log('Compléter la transmission ADP pour ID:', id, 'type:', typeof id);
+async function findTransmissionAdpByPersonAndDate(personneId, dateTransmission) {
+  const allTransmissions = await window.getAllTransmissionsAdp();
+  console.log('🔍 Recherche transmission ADP pour personneId:', personneId, 'date:', dateTransmission);
+  const found = allTransmissions.find(t => 
+    t.personneId === personneId && t.dateTransmission === dateTransmission
+  );
+  console.log('🔍 Transmission ADP trouvée:', found ? `ID ${found.id}` : 'Aucune');
+  return found;
+}
+
+/**
+ * Édite une transmission ADP pour une personne
+ * @param {number} personneId - L'ID de la personne dans la DB centrale
+ */
+async function editTransmissionAdp(personneId) {
+  console.log('📝 Compléter la transmission ADP pour personne ID:', personneId);
   
   try {
-    const allTransmissions = await window.getAllTransmissionsAdp();
-    console.log('Transmissions ADP trouvées:', allTransmissions.length);
+    // Charger la personne depuis la DB centrale
+    const personne = await window.getPersonneById(personneId);
     
-    // Comparaison robuste (convertir en string pour éviter les problèmes de type)
-    const baseTransmission = allTransmissions.find(t => String(t.id) === String(id));
-    
-    if (!baseTransmission) {
-      console.error('Transmission ADP non trouvée');
+    if (!personne) {
+      console.error('❌ Personne non trouvée pour ID:', personneId);
       alert('Erreur lors du chargement des données');
       return;
     }
+    
+    console.log('✅ Personne trouvée:', personne);
+    const selectedDate = document.getElementById('adp-date')?.value;
+    console.log('📅 Date sélectionnée:', selectedDate);
+    
+    // Chercher si une transmission ADP existe pour cette personne à cette date
+    const existingTransmission = await findTransmissionAdpByPersonAndDate(personneId, selectedDate);
+    
+    console.log('📋 Transmission ADP existante:', existingTransmission ? `ID ${existingTransmission.id}` : 'Aucune');
     
     const modal = document.getElementById('modal-adp');
     const formAdp = document.getElementById('form-adp');
@@ -323,53 +341,75 @@ async function editTransmissionAdp(id) {
       return;
     }
     
-    // Remplir le formulaire avec les données existantes
-    document.getElementById('adp-form-nom').value = baseTransmission.nom || '';
-    document.getElementById('adp-form-prenom').value = baseTransmission.prenom || '';
-    document.getElementById('adp-form-ddn').value = baseTransmission.dateNaissance || '';
-    document.getElementById('adp-form-description').value = baseTransmission.descriptionPhysique || '';
-    document.getElementById('adp-form-inconnu').checked = baseTransmission.inconnu || false;
-    document.getElementById('adp-form-departement').value = baseTransmission.departementOrigine || '';
-    document.getElementById('adp-form-typologie').value = baseTransmission.typologie || '';
-    document.getElementById('adp-form-nb-personnes').value = baseTransmission.nbPersonnes || '';
-    document.getElementById('adp-form-mineurs').value = baseTransmission.mineurs || '';
-    document.getElementById('adp-form-type-transmission').value = baseTransmission.typeTransmission || '';
-    document.getElementById('adp-form-point-accueil').checked = baseTransmission.pointAccueil || false;
-    document.getElementById('adp-form-adresse').value = baseTransmission.adresse || '';
-    document.getElementById('adp-form-ville').value = baseTransmission.ville || '';
-    document.getElementById('adp-form-signalement').value = baseTransmission.signalement || '';
-    document.getElementById('adp-form-transmission').value = baseTransmission.transmission || '';
+    // Remplir le formulaire avec les infos de la personne
+    document.getElementById('adp-form-nom').value = personne.nom || '';
+    document.getElementById('adp-form-prenom').value = personne.prenom || '';
+    document.getElementById('adp-form-ddn').value = personne.dateNaissance || '';
+    document.getElementById('adp-form-description').value = personne.descriptionPhysique || '';
+    document.getElementById('adp-form-inconnu').checked = personne.inconnu || false;
+    document.getElementById('adp-form-departement').value = personne.departement || '';
+    document.getElementById('adp-form-typologie').value = personne.typologie || '';
+    document.getElementById('adp-form-nb-personnes').value = personne.nbPersonnes || '';
+    document.getElementById('adp-form-mineurs').value = personne.mineurs || '';
     
-    // Remplir les checkboxes Orly
-    if (baseTransmission.orly) {
-      const orlyFields = ['premier-contact', 'personne-presente', 'pnt', 'maraude', 'veille', 'refus-contact'];
-      orlyFields.forEach(field => {
-        const el = document.getElementById('adp-form-' + field);
-        if (el) el.checked = baseTransmission.orly[field.replace(/-/g, '')] || false;
-      });
+    if (existingTransmission) {
+      // MODE ÉDITION : charger toutes les données de la transmission
+      console.log('✅ Transmission existante pour cette date - MODE ÉDITION');
+      document.getElementById('adp-form-type-transmission').value = existingTransmission.typeTransmission || '';
+      document.getElementById('adp-form-point-accueil').checked = existingTransmission.pointAccueil || false;
+      document.getElementById('adp-form-adresse').value = existingTransmission.adresse || '';
+      document.getElementById('adp-form-ville').value = existingTransmission.ville || '';
+      document.getElementById('adp-form-signalement').value = existingTransmission.signalement || '';
+      document.getElementById('adp-form-transmission').value = existingTransmission.transmission || '';
+      
+      // Remplir les checkboxes Orly
+      if (existingTransmission.orly) {
+        const orlyFields = ['premiercontact', 'personnepresente', 'pnt', 'maraude', 'veille', 'refuscontact'];
+        orlyFields.forEach(field => {
+          const el = document.getElementById(`adp-form-${field.replace(/([A-Z])/g, '-$1').toLowerCase()}`);
+          if (el) el.checked = existingTransmission.orly[field] || false;
+        });
+      }
+      
+      // Remplir les checkboxes Accompagnement
+      if (existingTransmission.accompagnement) {
+        const accompFields = ['ecoute', 'orientation', 'admin', 'medical', 'hebergement', 'autre'];
+        accompFields.forEach(field => {
+          const el = document.getElementById('adp-form-accomp-' + field);
+          if (el) el.checked = existingTransmission.accompagnement[field] || false;
+        });
+      }
+      
+      // Remplir les checkboxes Distribution
+      if (existingTransmission.distribution) {
+        const distribFields = ['alimentaire', 'vestimentaire', 'hygiene', 'couvertures', 'duvet', 'autre'];
+        distribFields.forEach(field => {
+          const el = document.getElementById('adp-form-distrib-' + field);
+          if (el) el.checked = existingTransmission.distribution[field] || false;
+        });
+      }
+      
+      formAdp.dataset.editId = existingTransmission.id;
+      console.log('🔖 editId défini à:', existingTransmission.id);
+    } else {
+      // MODE CRÉATION : réinitialiser les champs de transmission
+      console.log('➕ Pas de transmission pour cette date - MODE CRÉATION');
+      document.getElementById('adp-form-type-transmission').value = '';
+      document.getElementById('adp-form-point-accueil').checked = false;
+      document.getElementById('adp-form-adresse').value = '';
+      document.getElementById('adp-form-ville').value = '';
+      document.getElementById('adp-form-signalement').value = '';
+      document.getElementById('adp-form-transmission').value = '';
+      
+      // Décocher toutes les checkboxes sauf inconnu
+      document.querySelectorAll('#modal-adp input[type="checkbox"]:not(#adp-form-inconnu)').forEach(cb => cb.checked = false);
+      
+      delete formAdp.dataset.editId;
+      console.log('🔖 editId supprimé - création nouvelle transmission');
     }
     
-    // Remplir les checkboxes Accompagnement
-    if (baseTransmission.accompagnement) {
-      const accompFields = ['ecoute', 'orientation', 'admin', 'medical', 'hebergement', 'autre'];
-      accompFields.forEach(field => {
-        const el = document.getElementById('adp-form-accomp-' + field);
-        if (el) el.checked = baseTransmission.accompagnement[field] || false;
-      });
-    }
-    
-    // Remplir les checkboxes Distribution
-    if (baseTransmission.distribution) {
-      const distribFields = ['alimentaire', 'vestimentaire', 'hygiene', 'couvertures', 'duvet', 'autre'];
-      distribFields.forEach(field => {
-        const el = document.getElementById('adp-form-distrib-' + field);
-        if (el) el.checked = baseTransmission.distribution[field] || false;
-      });
-    }
-    
-    // Stocker l'ID pour la mise à jour
-    formAdp.dataset.editId = baseTransmission.id;
-    formAdp.dataset.personId = baseTransmission.personId || baseTransmission.id;
+    formAdp.dataset.personneId = personneId;
+    console.log('🔖 personneId défini à:', personneId);
     
     // Ouvrir le modal
     modal.classList.add('show');
@@ -395,10 +435,8 @@ async function deletePersonCardAdp(personId) {
       await window.deleteTransmissionAdp(transmission.id);
     }
     
-      if (typeof window.afficherToutesFichesADP === 'function') {
-        await window.afficherToutesFichesADP();
-      } else {
-        await loadAndDisplayCardsAdp();
+      if (typeof window.afficherToutesLesPersonnesADP === 'function') {
+        await window.afficherToutesLesPersonnesADP();
       }
       console.log('Personne ADP supprimée');
     } catch (error) {
@@ -474,25 +512,36 @@ function initAdpForm() {
   formAdp.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const formData = {
+    const editId = formAdp.dataset.editId;
+    const personneId = formAdp.dataset.personneId;
+    const selectedDate = document.getElementById('adp-date')?.value || new Date().toISOString().split('T')[0];
+    
+    console.log('💾 Soumission formulaire ADP - editId:', editId, 'personneId:', personneId, 'date:', selectedDate);
+    
+    // Données de la personne
+    const personneData = {
       nom: document.getElementById('adp-form-nom').value,
       prenom: document.getElementById('adp-form-prenom').value,
       dateNaissance: document.getElementById('adp-form-ddn').value,
       descriptionPhysique: document.getElementById('adp-form-description').value,
       inconnu: document.getElementById('adp-form-inconnu').checked,
-      departementOrigine: document.getElementById('adp-form-departement').value,
+      departement: document.getElementById('adp-form-departement').value,
       typologie: document.getElementById('adp-form-typologie').value,
       nbPersonnes: document.getElementById('adp-form-nb-personnes').value,
-      mineurs: document.getElementById('adp-form-mineurs').value,
+      mineurs: document.getElementById('adp-form-mineurs').value
+    };
+    
+    // Données de la transmission ADP
+    const transmissionData = {
       typeTransmission: document.getElementById('adp-form-type-transmission').value,
       pointAccueil: document.getElementById('adp-form-point-accueil').checked,
       adresse: document.getElementById('adp-form-adresse').value,
       ville: document.getElementById('adp-form-ville').value,
       signalement: document.getElementById('adp-form-signalement').value,
-      dateTransmission: document.getElementById('adp-date').value,
+      dateTransmission: selectedDate,
       transmission: document.getElementById('adp-form-transmission').value,
       orly: {
-        premierContact: document.getElementById('adp-form-premier-contact').checked,
+        premierContact: document.getElementById('adp-form-premier-contact')?.checked || false,
         personnePresente: document.getElementById('adp-form-personne-presente')?.checked || false,
         pnt: document.getElementById('adp-form-pnt')?.checked || false,
         maraude: document.getElementById('adp-form-maraude')?.checked || false,
@@ -518,30 +567,38 @@ function initAdpForm() {
     };
     
     try {
-      const editId = formAdp.dataset.editId;
-      const personId = formAdp.dataset.personId;
+      let finalPersonneId = personneId;
+      
+      // Créer ou récupérer la personne dans la DB centrale
+      if (!personneId) {
+        finalPersonneId = await window.creerOuRecupererPersonne(personneData);
+        console.log('✅ Personne créée/récupérée, ID:', finalPersonneId);
+      } else {
+        // Mettre à jour les infos de la personne si elles ont changé
+        await window.updatePersonne(parseInt(personneId), personneData);
+        finalPersonneId = parseInt(personneId);
+        console.log('✅ Infos personne mises à jour');
+      }
+      
+      // Ajouter le personneId à la transmission
+      transmissionData.personneId = finalPersonneId;
       
       if (editId) {
-        // Mode édition : mettre à jour
-        formData.id = parseInt(editId);
-        formData.personId = personId ? parseInt(personId) : parseInt(editId);
-        await window.updateTransmissionAdp(formData);
-        console.log('Personne ADP mise à jour');
+        // Mise à jour de la transmission ADP existante
+        console.log('🔄 Mise à jour transmission ADP existante ID:', editId);
+        transmissionData.id = parseInt(editId);
+        await window.updateTransmissionAdp(transmissionData);
+        console.log('✅ Transmission ADP mise à jour');
       } else {
-        // Mode ajout : créer
-        const id = await window.addTransmissionAdp(formData);
-        // Mettre à jour avec le personId
-        formData.id = id;
-        formData.personId = id;
-        await window.updateTransmissionAdp(formData);
-        console.log('Personne ADP enregistrée');
+        // Nouvelle transmission ADP
+        console.log('➕ Création nouvelle transmission ADP pour personne ID:', finalPersonneId);
+        await window.addTransmissionAdp(transmissionData);
+        console.log('✅ Nouvelle transmission ADP ajoutée');
       }
       
       closeModal();
-      if (typeof window.afficherToutesFichesADP === 'function') {
-        await window.afficherToutesFichesADP();
-      } else {
-        await loadAndDisplayCardsAdp();
+      if (typeof window.afficherToutesLesPersonnesADP === 'function') {
+        await window.afficherToutesLesPersonnesADP();
       }
     } catch (error) {
       console.error('Erreur lors de l\'enregistrement ADP:', error);
@@ -594,6 +651,7 @@ if (typeof module !== 'undefined' && module.exports) {
     createPersonCardAdp,
     displayCardsAdp,
     loadAndDisplayCardsAdp,
+    findTransmissionAdpByPersonAndDate,
     editTransmissionAdp,
     deletePersonCardAdp,
     initAdpForm,
@@ -611,6 +669,7 @@ if (typeof module !== 'undefined' && module.exports) {
   window.createPersonCardAdp = createPersonCardAdp;
   window.displayCardsAdp = displayCardsAdp;
   window.loadAndDisplayCardsAdp = loadAndDisplayCardsAdp;
+  window.findTransmissionAdpByPersonAndDate = findTransmissionAdpByPersonAndDate;
   window.editTransmissionAdp = editTransmissionAdp;
   window.deletePersonCardAdp = deletePersonCardAdp;
   window.initAdpForm = initAdpForm;

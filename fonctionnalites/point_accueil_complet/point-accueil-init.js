@@ -137,21 +137,90 @@ function initPointAccueilForm() {
     };
     
     try {
-      // Sauvegarder dans la base de données Point Accueil
-      if (typeof sauvegarderFichePA === 'function') {
-        await sauvegarderFichePA(formData);
-        console.log('✅ Fiche Point Accueil sauvegardée');
-        
-        // Recharger la liste
-        if (typeof window.afficherToutesFichesPA === 'function') {
-          await window.afficherToutesFichesPA();
-        } else {
-          await afficherFichesPA();
-        }
-        closeModal();
+      const editId = formPA.dataset.editId;
+      const personneId = formPA.dataset.personneId;
+      const selectedDate = document.getElementById('pa-date')?.value || formData.date;
+      
+      console.log('💾 Soumission formulaire PA - editId:', editId, 'personneId:', personneId, 'date:', selectedDate);
+      
+      // Données de la personne
+      const personneData = {
+        nom: formData.nom,
+        prenom: formData.prenom,
+        dateNaissance: formData.dateNaissance,
+        descriptionPhysique: formData.descriptionPhysique,
+        inconnu: formData.inconnu,
+        departement: formData.departement,
+        typologie: formData.typologie,
+        nbPersonnes: formData.nbPersonnes,
+        mineurs: formData.mineurs
+      };
+      
+      // Données spécifiques à la fiche PA
+      const ficheData = {
+        typeTransmission: formData.typeTransmission,
+        date: formData.date,
+        adresse: formData.adresse,
+        ville: formData.ville,
+        signalement: formData.signalement,
+        premierContact: formData.premierContact,
+        personnePresente: formData.personnePresente,
+        pnt: formData.pnt,
+        maraude: formData.maraude,
+        veille: formData.veille,
+        refusContact: formData.refusContact,
+        accompEcoute: formData.accompEcoute,
+        accompOrientation: formData.accompOrientation,
+        accompAdmin: formData.accompAdmin,
+        accompMedical: formData.accompMedical,
+        accompHebergement: formData.accompHebergement,
+        accompAutre: formData.accompAutre,
+        distribAlimentaire: formData.distribAlimentaire,
+        distribVestimentaire: formData.distribVestimentaire,
+        distribHygiene: formData.distribHygiene,
+        distribCouvertures: formData.distribCouvertures,
+        distribDuvet: formData.distribDuvet,
+        distribAutre: formData.distribAutre,
+        transmission: formData.transmission
+      };
+      
+      let finalPersonneId = personneId;
+      
+      // Créer ou récupérer la personne dans la DB centrale
+      if (!personneId) {
+        finalPersonneId = await window.creerOuRecupererPersonne(personneData);
+        console.log('✅ Personne créée/récupérée, ID:', finalPersonneId);
       } else {
-        console.error('Fonction sauvegarderFichePA non disponible');
+        // Mettre à jour les infos de la personne si elles ont changé
+        await window.updatePersonne(parseInt(personneId), personneData);
+        finalPersonneId = parseInt(personneId);
+        console.log('✅ Infos personne mises à jour');
       }
+      
+      // Ajouter le personneId à la fiche
+      ficheData.personneId = finalPersonneId;
+      
+      if (editId) {
+        // Mise à jour d'une fiche existante
+        console.log('🔄 Mise à jour fiche PA existante ID:', editId);
+        if (typeof mettreAJourFichePA === 'function') {
+          await mettreAJourFichePA(parseInt(editId), ficheData);
+          console.log('✅ Fiche Point Accueil mise à jour');
+        }
+      } else {
+        // Nouvelle fiche
+        console.log('➕ Création nouvelle fiche PA pour personne ID:', finalPersonneId);
+        if (typeof sauvegarderFichePA === 'function') {
+          await sauvegarderFichePA(ficheData);
+          console.log('✅ Fiche Point Accueil sauvegardée');
+        }
+      }
+      
+      // Recharger la liste
+      if (typeof window.afficherToutesLesPersonnesPA === 'function') {
+        await window.afficherToutesLesPersonnesPA();
+      }
+      closeModal();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
       alert('Erreur lors de l\'enregistrement de la fiche');
@@ -207,10 +276,8 @@ function initPAFilters() {
   const filterIds = ['pa-filter-nom', 'pa-filter-prenom', 'pa-filter-ddn', 'pa-filter-inconnu', 'pa-filter-description'];
   
   const rechargerFiches = () => {
-    if (typeof window.afficherToutesFichesPA === 'function') {
-      window.afficherToutesFichesPA();
-    } else {
-      afficherFichesPA();
+    if (typeof window.afficherToutesLesPersonnesPA === 'function') {
+      window.afficherToutesLesPersonnesPA();
     }
   };
   
@@ -303,13 +370,14 @@ function formatDatePA(dateString) {
 }
 
 /**
- * Modifie une fiche Point Accueil
+ * Modifie une fiche Point Accueil pour une personne
+ * @param {number} personneId - L'ID de la personne dans la DB centrale
  */
-async function modifierFichePA(id) {
+async function modifierFichePA(personneId) {
   const modal = document.getElementById('modal-point-accueil');
   const formPA = document.getElementById('form-point-accueil');
   
-  console.log('Modification fiche PA:', id);
+  console.log('📝 Compléter fiche PA pour personne ID:', personneId);
   
   if (!modal || !formPA) {
     console.error('Modal ou formulaire PA non trouvé');
@@ -317,46 +385,87 @@ async function modifierFichePA(id) {
   }
   
   try {
-    const fiche = await recupererFichePA(id);
-    console.log('Fiche chargée:', fiche);
+    // Charger la personne depuis la DB centrale
+    const personne = await window.getPersonneById(personneId);
     
-    // Remplir le formulaire avec les données existantes
-    document.getElementById('form-pa-nom').value = fiche.nom || '';
-    document.getElementById('form-pa-prenom').value = fiche.prenom || '';
-    document.getElementById('form-pa-ddn').value = fiche.dateNaissance || '';
-    document.getElementById('form-pa-description').value = fiche.descriptionPhysique || '';
-    document.getElementById('form-pa-inconnu').checked = fiche.inconnu || false;
-    document.getElementById('form-pa-departement').value = fiche.departement || '';
-    document.getElementById('form-pa-typologie').value = fiche.typologie || '';
-    document.getElementById('form-pa-nb-personnes').value = fiche.nbPersonnes || '';
-    document.getElementById('form-pa-mineurs').value = fiche.mineurs || '';
-    document.getElementById('form-pa-type-transmission').value = fiche.typeTransmission || '';
-    document.getElementById('form-pa-date').value = fiche.date || '';
-    document.getElementById('form-pa-adresse').value = fiche.adresse || '';
-    document.getElementById('form-pa-ville').value = fiche.ville || '';
-    document.getElementById('form-pa-signalement').value = fiche.signalement || '';
-    document.getElementById('form-pa-premier-contact').checked = fiche.premierContact || false;
-    document.getElementById('form-pa-personne-presente').checked = fiche.personnePresente || false;
-    document.getElementById('form-pa-pnt').checked = fiche.pnt || false;
-    document.getElementById('form-pa-maraude').checked = fiche.maraude || false;
-    document.getElementById('form-pa-veille').checked = fiche.veille || false;
-    document.getElementById('form-pa-refus-contact').checked = fiche.refusContact || false;
-    document.getElementById('form-pa-accomp-ecoute').checked = fiche.accompEcoute || false;
-    document.getElementById('form-pa-accomp-orientation').checked = fiche.accompOrientation || false;
-    document.getElementById('form-pa-accomp-admin').checked = fiche.accompAdmin || false;
-    document.getElementById('form-pa-accomp-medical').checked = fiche.accompMedical || false;
-    document.getElementById('form-pa-accomp-hebergement').checked = fiche.accompHebergement || false;
-    document.getElementById('form-pa-accomp-autre').checked = fiche.accompAutre || false;
-    document.getElementById('form-pa-distrib-alimentaire').checked = fiche.distribAlimentaire || false;
-    document.getElementById('form-pa-distrib-vestimentaire').checked = fiche.distribVestimentaire || false;
-    document.getElementById('form-pa-distrib-hygiene').checked = fiche.distribHygiene || false;
-    document.getElementById('form-pa-distrib-couvertures').checked = fiche.distribCouvertures || false;
-    document.getElementById('form-pa-distrib-duvet').checked = fiche.distribDuvet || false;
-    document.getElementById('form-pa-distrib-autre').checked = fiche.distribAutre || false;
-    document.getElementById('form-pa-transmission').value = fiche.transmission || '';
+    if (!personne) {
+      console.error('❌ Personne non trouvée pour ID:', personneId);
+      alert('Erreur lors du chargement des données');
+      return;
+    }
     
-    // Marquer comme édition
-    formPA.dataset.editId = id;
+    console.log('✅ Personne trouvée:', personne);
+    const selectedDate = document.getElementById('pa-date')?.value;
+    console.log('📅 Date sélectionnée:', selectedDate);
+    
+    // Chercher si une fiche PA existe pour cette personne à cette date
+    const allFiches = await recupererFichesPA();
+    const existingFiche = allFiches.find(f => 
+      f.personneId === personneId && f.date === selectedDate
+    );
+    
+    console.log('📋 Fiche PA existante:', existingFiche ? `ID ${existingFiche.id}` : 'Aucune');
+    
+    // Remplir le formulaire avec les infos de la personne
+    document.getElementById('form-pa-nom').value = personne.nom || '';
+    document.getElementById('form-pa-prenom').value = personne.prenom || '';
+    document.getElementById('form-pa-ddn').value = personne.dateNaissance || '';
+    document.getElementById('form-pa-description').value = personne.descriptionPhysique || '';
+    document.getElementById('form-pa-inconnu').checked = personne.inconnu || false;
+    document.getElementById('form-pa-departement').value = personne.departement || '';
+    document.getElementById('form-pa-typologie').value = personne.typologie || '';
+    document.getElementById('form-pa-nb-personnes').value = personne.nbPersonnes || '';
+    document.getElementById('form-pa-mineurs').value = personne.mineurs || '';
+    
+    if (existingFiche) {
+      // MODE ÉDITION : charger toutes les données de la fiche
+      console.log('✅ Fiche existante pour cette date - MODE ÉDITION');
+      document.getElementById('form-pa-type-transmission').value = existingFiche.typeTransmission || '';
+      document.getElementById('form-pa-date').value = existingFiche.date || '';
+      document.getElementById('form-pa-adresse').value = existingFiche.adresse || '';
+      document.getElementById('form-pa-ville').value = existingFiche.ville || '';
+      document.getElementById('form-pa-signalement').value = existingFiche.signalement || '';
+      document.getElementById('form-pa-premier-contact').checked = existingFiche.premierContact || false;
+      document.getElementById('form-pa-personne-presente').checked = existingFiche.personnePresente || false;
+      document.getElementById('form-pa-pnt').checked = existingFiche.pnt || false;
+      document.getElementById('form-pa-maraude').checked = existingFiche.maraude || false;
+      document.getElementById('form-pa-veille').checked = existingFiche.veille || false;
+      document.getElementById('form-pa-refus-contact').checked = existingFiche.refusContact || false;
+      document.getElementById('form-pa-accomp-ecoute').checked = existingFiche.accompEcoute || false;
+      document.getElementById('form-pa-accomp-orientation').checked = existingFiche.accompOrientation || false;
+      document.getElementById('form-pa-accomp-admin').checked = existingFiche.accompAdmin || false;
+      document.getElementById('form-pa-accomp-medical').checked = existingFiche.accompMedical || false;
+      document.getElementById('form-pa-accomp-hebergement').checked = existingFiche.accompHebergement || false;
+      document.getElementById('form-pa-accomp-autre').checked = existingFiche.accompAutre || false;
+      document.getElementById('form-pa-distrib-alimentaire').checked = existingFiche.distribAlimentaire || false;
+      document.getElementById('form-pa-distrib-vestimentaire').checked = existingFiche.distribVestimentaire || false;
+      document.getElementById('form-pa-distrib-hygiene').checked = existingFiche.distribHygiene || false;
+      document.getElementById('form-pa-distrib-couvertures').checked = existingFiche.distribCouvertures || false;
+      document.getElementById('form-pa-distrib-duvet').checked = existingFiche.distribDuvet || false;
+      document.getElementById('form-pa-distrib-autre').checked = existingFiche.distribAutre || false;
+      document.getElementById('form-pa-transmission').value = existingFiche.transmission || '';
+      
+      formPA.dataset.editId = existingFiche.id;
+      console.log('🔖 editId défini à:', existingFiche.id);
+    } else {
+      // MODE CRÉATION : réinitialiser les champs spécifiques
+      console.log('➕ Pas de fiche pour cette date - MODE CRÉATION');
+      document.getElementById('form-pa-type-transmission').value = '';
+      document.getElementById('form-pa-date').value = selectedDate || '';
+      document.getElementById('form-pa-adresse').value = '';
+      document.getElementById('form-pa-ville').value = '';
+      document.getElementById('form-pa-signalement').value = '';
+      document.getElementById('form-pa-transmission').value = '';
+      
+      // Décocher toutes les checkboxes sauf inconnu
+      document.querySelectorAll('#modal-point-accueil input[type="checkbox"]:not(#form-pa-inconnu)').forEach(cb => cb.checked = false);
+      
+      delete formPA.dataset.editId;
+      console.log('🔖 editId supprimé - création nouvelle fiche');
+    }
+    
+    formPA.dataset.personneId = personneId;
+    console.log('🔖 personneId défini à:', personneId);
     
     // Ouvrir la modale
     modal.classList.add('show');

@@ -276,10 +276,8 @@ function initDateSelectors() {
     
     // Utiliser la nouvelle fonction d'affichage centralisée
     const rechargerFiches = () => {
-      if (typeof window.afficherToutesFichesTransmissions === 'function') {
-        window.afficherToutesFichesTransmissions();
-      } else {
-        loadAndDisplayCards();
+      if (typeof window.afficherToutesLesPersonnesTransmissions === 'function') {
+        window.afficherToutesLesPersonnesTransmissions();
       }
     };
     

@@ -51,11 +51,9 @@
             autoIncrement: true 
           });
           
-          objectStore.createIndex('nom', 'nom', { unique: false });
-          objectStore.createIndex('prenom', 'prenom', { unique: false });
-          objectStore.createIndex('dateNaissance', 'dateNaissance', { unique: false });
+          // Index pour référencer la personne (clé étrangère)
+          objectStore.createIndex('personneId', 'personneId', { unique: false });
           objectStore.createIndex('dateTransmission', 'dateTransmission', { unique: false });
-          objectStore.createIndex('personId', 'personId', { unique: false });
           
           console.log('Object store Transmissions créé');
         }
@@ -150,12 +148,9 @@
             autoIncrement: true 
           });
           
-          objectStore.createIndex('nom', 'nom', { unique: false });
-          objectStore.createIndex('prenom', 'prenom', { unique: false });
-          objectStore.createIndex('dateNaissance', 'dateNaissance', { unique: false });
+          // Index pour référencer la personne (clé étrangère)
+          objectStore.createIndex('personneId', 'personneId', { unique: false });
           objectStore.createIndex('dateTransmission', 'dateTransmission', { unique: false });
-          objectStore.createIndex('personId', 'personId', { unique: false });
-          objectStore.createIndex('inconnu', 'inconnu', { unique: false });
           
           console.log('Object store ADP créé');
         }

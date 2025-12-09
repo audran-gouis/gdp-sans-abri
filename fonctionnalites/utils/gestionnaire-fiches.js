@@ -161,9 +161,9 @@ function applyTransmissionsFilters(fiches) {
 }
 
 /**
- * Compte le nombre de transmissions pour une personne sur une date donnée
+ * Compte le nombre de transmissions pour une personne sur une date ou période donnée
  */
-function compterTransmissionsParDate(fiche, selectedDate, source) {
+function compterTransmissionsParDate(fiche, selectedDate, source, periode = 'jour') {
   if (!selectedDate) return { count: 0, hasToday: false };
   
   let transmissions = [];
@@ -178,15 +178,32 @@ function compterTransmissionsParDate(fiche, selectedDate, source) {
     transmissions = transmissions.concat(fiche.pointAccueil || []);
   }
   
-  const hasToday = transmissions.some(t => {
+  // Filtrer selon la période
+  let transmissionsFiltered = transmissions.filter(t => {
     const tDate = t.dateTransmission || t.date;
-    return tDate === selectedDate;
+    if (!tDate) return false;
+    
+    if (periode === 'jour') {
+      return tDate === selectedDate;
+    } else if (periode === 'mois') {
+      // Format YYYY-MM
+      return tDate.startsWith(selectedDate);
+    } else if (periode === 'annee') {
+      // Format YYYY
+      return tDate.startsWith(selectedDate);
+    } else if (periode === 'plage') {
+      // selectedDate est un objet {start, end}
+      return tDate >= selectedDate.start && tDate <= selectedDate.end;
+    }
+    return false;
   });
   
+  const hasToday = transmissionsFiltered.length > 0;
+  
   return {
-    count: transmissions.length,
+    count: transmissionsFiltered.length,
     hasToday,
-    dates: transmissions.map(t => t.dateTransmission || t.date).filter(Boolean)
+    dates: transmissionsFiltered.map(t => t.dateTransmission || t.date).filter(Boolean)
   };
 }
 
@@ -199,10 +216,10 @@ function genererBadgeTransmissions(stats, selectedDate) {
   }
   
   if (stats.hasToday) {
-    return `<span class="badge badge-has-today" title="Transmission pour cette date">\u2714 ${stats.count}</span>`;
+    return `<span class="badge badge-has-today" title="${stats.count} transmission(s) sur la période">${stats.count}</span>`;
   }
   
-  return `<span class="badge badge-other-dates" title="${stats.count} transmission(s) à d'autres dates">${stats.count}</span>`;
+  return '<span class="badge badge-no-transmission" title="Aucune transmission">0</span>';
 }
 
 /**
@@ -229,6 +246,10 @@ async function afficherToutesFichesTransmissions() {
     const stats = compterTransmissionsParDate(fiche, selectedDate, 'transmissions');
     const badgeCount = genererBadgeTransmissions(stats, selectedDate);
     
+    // Déterminer l'ID à utiliser pour le bouton
+    const btnId = fiche.transmissions[0]?.id || 0;
+    const personId = fiche.personId;
+    
     return `
       <div class="transmission-card">
         <div class="card-header">
@@ -245,11 +266,27 @@ async function afficherToutesFichesTransmissions() {
             stats.hasToday ? '' : '<p class="no-transmission-notice">❌ Aucune transmission pour cette date</p>'}
         </div>
         <div class="card-actions">
-          <button class="btn-card btn-edit" onclick="window.editTransmission(${fiche.transmissions[0]?.id || 0})">Compléter</button>
+          <button class="btn-card btn-edit" data-id="${btnId}" data-person-id="${personId}" data-type="transmissions">Compléter</button>
         </div>
       </div>
     `;
   }).join('');
+  
+  // Ajouter les événements aux boutons
+  container.querySelectorAll('.btn-edit[data-type="transmissions"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = parseInt(btn.dataset.id);
+      const personId = btn.dataset.personId;
+      if (typeof window.editTransmission === 'function') {
+        // Si on a un ID de transmission, l'utiliser; sinon utiliser le personId
+        if (id) {
+          window.editTransmission(id);
+        } else if (personId) {
+          window.editTransmission(null, personId);
+        }
+      }
+    });
+  });
 }
 
 /**
@@ -275,6 +312,10 @@ async function afficherToutesFichesADP() {
     const stats = compterTransmissionsParDate(fiche, selectedDate, 'adp');
     const badgeCount = genererBadgeTransmissions(stats, selectedDate);
     
+    // Déterminer l'ID à utiliser pour le bouton
+    const btnId = fiche.adp[0]?.id || 0;
+    const personId = fiche.personId;
+    
     return `
       <div class="transmission-card">
         <div class="card-header">
@@ -291,11 +332,27 @@ async function afficherToutesFichesADP() {
           ${!stats.hasToday && selectedDate ? '<p class="no-transmission-notice">❌ Aucune transmission pour cette date</p>' : ''}
         </div>
         <div class="card-actions">
-          <button class="btn-card btn-edit" onclick="window.editTransmissionAdp(${fiche.adp[0]?.id || 0})">Compléter</button>
+          <button class="btn-card btn-edit" data-id="${btnId}" data-person-id="${personId}" data-type="adp">Compléter</button>
         </div>
       </div>
     `;
   }).join('');
+  
+  // Ajouter les événements aux boutons
+  container.querySelectorAll('.btn-edit[data-type="adp"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = parseInt(btn.dataset.id);
+      const personId = btn.dataset.personId;
+      if (typeof window.editTransmissionAdp === 'function') {
+        // Si on a un ID de transmission ADP, l'utiliser; sinon utiliser le personId
+        if (id) {
+          window.editTransmissionAdp(id);
+        } else if (personId) {
+          window.editTransmissionAdp(null, personId);
+        }
+      }
+    });
+  });
 }
 
 /**
@@ -321,6 +378,10 @@ async function afficherToutesFichesPA() {
     const stats = compterTransmissionsParDate(fiche, selectedDate, 'pointAccueil');
     const badgeCount = genererBadgeTransmissions(stats, selectedDate);
     
+    // Déterminer l'ID à utiliser pour le bouton
+    const btnId = fiche.pointAccueil[0]?.id || 0;
+    const personId = fiche.personId;
+    
     return `
       <div class="transmission-card">
         <div class="card-header">
@@ -337,7 +398,7 @@ async function afficherToutesFichesPA() {
           ${!stats.hasToday && selectedDate ? '<p class="no-transmission-notice">❌ Aucune transmission pour cette date</p>' : ''}
         </div>
         <div class="card-actions">
-          <button class="btn-card btn-edit" data-id="${fiche.pointAccueil[0]?.id || 0}">Compléter</button>
+          <button class="btn-card btn-edit" data-id="${btnId}" data-person-id="${personId}">Compléter</button>
         </div>
       </div>
     `;
@@ -347,8 +408,14 @@ async function afficherToutesFichesPA() {
   container.querySelectorAll('.btn-edit').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = parseInt(btn.dataset.id);
-      if (id && typeof modifierFichePA === 'function') {
-        modifierFichePA(id);
+      const personId = btn.dataset.personId;
+      if (typeof modifierFichePA === 'function') {
+        // Si on a un ID de fiche PA, l'utiliser; sinon utiliser le personId
+        if (id) {
+          modifierFichePA(id);
+        } else if (personId) {
+          modifierFichePA(null, personId);
+        }
       }
     });
   });

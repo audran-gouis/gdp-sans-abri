@@ -27,6 +27,11 @@ async function initApp() {
   
   try {
     // Initialiser les bases de données
+    if (typeof window.initDatabasePersonnes === 'function') {
+      await window.initDatabasePersonnes();
+      console.log('✅ Base de données Personnes initialisée');
+    }
+    
     if (typeof window.initDB === 'function') {
     await window.initDB();
       console.log('✅ Base de données Transmissions initialisée');
@@ -98,20 +103,20 @@ async function initApp() {
       window.initStatistiques();
     }
     
-    // Charger les données initiales (TOUTES les fiches dans tous les onglets)
-    if (typeof window.afficherToutesFichesTransmissions === 'function') {
-    await window.afficherToutesFichesTransmissions();
-      console.log('✅ Toutes les fiches chargées dans Transmissions');
+    // Charger les données initiales (TOUTES les personnes dans tous les onglets)
+    if (typeof window.afficherToutesLesPersonnesTransmissions === 'function') {
+      await window.afficherToutesLesPersonnesTransmissions();
+      console.log('✅ Toutes les personnes chargées dans Transmissions');
     }
     
-    if (typeof window.afficherToutesFichesADP === 'function') {
-      await window.afficherToutesFichesADP();
-      console.log('✅ Toutes les fiches chargées dans ADP');
+    if (typeof window.afficherToutesLesPersonnesADP === 'function') {
+      await window.afficherToutesLesPersonnesADP();
+      console.log('✅ Toutes les personnes chargées dans ADP');
     }
     
-    if (typeof window.afficherToutesFichesPA === 'function') {
-      await window.afficherToutesFichesPA();
-      console.log('✅ Toutes les fiches chargées dans Point Accueil');
+    if (typeof window.afficherToutesLesPersonnesPA === 'function') {
+      await window.afficherToutesLesPersonnesPA();
+      console.log('✅ Toutes les personnes chargées dans Point Accueil');
     }
     
     console.log('🎉 Application prête');
@@ -139,8 +144,8 @@ function initAdpDateSelector() {
     
     dateInput.value = today.toISOString().split('T')[0];
     dateInput.addEventListener('change', () => {
-      if (typeof window.afficherToutesFichesADP === 'function') {
-        window.afficherToutesFichesADP();
+      if (typeof window.afficherToutesLesPersonnesADP === 'function') {
+        window.afficherToutesLesPersonnesADP();
   }
     });
   
@@ -164,8 +169,8 @@ function initPADateSelector() {
     
     dateInput.value = today.toISOString().split('T')[0];
     dateInput.addEventListener('change', () => {
-      if (typeof window.afficherToutesFichesPA === 'function') {
-        window.afficherToutesFichesPA();
+      if (typeof window.afficherToutesLesPersonnesPA === 'function') {
+        window.afficherToutesLesPersonnesPA();
       }
     });
     

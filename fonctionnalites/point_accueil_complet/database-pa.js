@@ -31,11 +31,9 @@ async function initDatabasePA() {
           autoIncrement: true 
         });
         
-        // Index pour recherche par nom
-        objectStore.createIndex('nom', 'nom', { unique: false });
-        objectStore.createIndex('prenom', 'prenom', { unique: false });
+        // Index pour référencer la personne (clé étrangère)
+        objectStore.createIndex('personneId', 'personneId', { unique: false });
         objectStore.createIndex('date', 'date', { unique: false });
-        objectStore.createIndex('pointAccueil', 'pointAccueil', { unique: false });
         objectStore.createIndex('dateCreation', 'dateCreation', { unique: false });
       }
     };
@@ -146,16 +144,10 @@ async function rechercherFichesPA(criteres) {
   const fiches = await recupererFichesPA();
   
   return fiches.filter(fiche => {
-    if (criteres.nom && !fiche.nom?.toLowerCase().includes(criteres.nom.toLowerCase())) {
-      return false;
-    }
-    if (criteres.prenom && !fiche.prenom?.toLowerCase().includes(criteres.prenom.toLowerCase())) {
+    if (criteres.personneId && fiche.personneId !== criteres.personneId) {
       return false;
     }
     if (criteres.date && fiche.date !== criteres.date) {
-      return false;
-    }
-    if (criteres.pointAccueil && fiche.pointAccueil !== criteres.pointAccueil) {
       return false;
     }
     return true;
@@ -217,3 +209,18 @@ if (typeof module !== 'undefined' && module.exports) {
   };
 }
 
+// Export window pour l'application Electron
+if (typeof window !== 'undefined') {
+  window.initDatabasePA = initDatabasePA;
+  window.sauvegarderFichePA = sauvegarderFichePA;
+  window.recupererFichesPA = recupererFichesPA;
+  window.recupererFichePA = recupererFichePA;
+  window.mettreAJourFichePA = mettreAJourFichePA;
+  window.supprimerFichePA = supprimerFichePA;
+  window.rechercherFichesPA = rechercherFichesPA;
+  window.viderDatabasePA = viderDatabasePA;
+  window.exporterDonneesPA = exporterDonneesPA;
+  window.importerDonneesPA = importerDonneesPA;
+}
+
+console.log('✅ Module database-pa chargé');
