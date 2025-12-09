@@ -286,6 +286,8 @@ function initDateSelectors() {
     document.getElementById('filter-nom')?.addEventListener('input', rechargerFiches);
     document.getElementById('filter-prenom')?.addEventListener('input', rechargerFiches);
     document.getElementById('filter-ddn')?.addEventListener('change', rechargerFiches);
+    document.getElementById('filter-inconnu')?.addEventListener('change', rechargerFiches);
+    document.getElementById('filter-description')?.addEventListener('input', rechargerFiches);
   }
   
   console.log('Sélecteurs de date initialisés');

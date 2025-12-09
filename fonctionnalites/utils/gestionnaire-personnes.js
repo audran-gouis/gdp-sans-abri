@@ -108,6 +108,18 @@ function applyTransmissionsFilters(personnes) {
     filtered = filtered.filter(p => p.dateNaissance === filterDdn);
   }
   
+  // Filtre par "Inconnu"
+  const filterInconnu = document.getElementById('filter-inconnu')?.checked;
+  if (filterInconnu) {
+    filtered = filtered.filter(p => p.inconnu === true);
+  }
+  
+  // Filtre par description physique
+  const filterDescription = document.getElementById('filter-description')?.value?.toLowerCase();
+  if (filterDescription) {
+    filtered = filtered.filter(p => p.descriptionPhysique?.toLowerCase().includes(filterDescription));
+  }
+
   return filtered;
 }
 
@@ -137,6 +149,11 @@ function applyAdpFilters(personnes) {
     filtered = filtered.filter(p => p.inconnu === true);
   }
   
+  const filterDescription = document.getElementById('adp-filter-description')?.value?.toLowerCase();
+  if (filterDescription) {
+    filtered = filtered.filter(p => p.descriptionPhysique?.toLowerCase().includes(filterDescription));
+  }
+  
   return filtered;
 }
 
@@ -164,6 +181,11 @@ function applyPAFilters(personnes) {
   const filterInconnu = document.getElementById('pa-filter-inconnu')?.checked;
   if (filterInconnu) {
     filtered = filtered.filter(p => p.inconnu === true);
+  }
+  
+  const filterDescription = document.getElementById('pa-filter-description')?.value?.toLowerCase();
+  if (filterDescription) {
+    filtered = filtered.filter(p => p.descriptionPhysique?.toLowerCase().includes(filterDescription));
   }
   
   return filtered;
