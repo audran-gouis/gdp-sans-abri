@@ -48,6 +48,9 @@ async function editTransmission(personneId) {
     document.getElementById('form-nom').value = personne.nom || '';
     document.getElementById('form-prenom').value = personne.prenom || '';
     document.getElementById('form-ddn').value = personne.dateNaissance || '';
+    document.getElementById('form-description').value = personne.descriptionPhysique || '';
+    document.getElementById('form-inconnu').checked = personne.inconnu || false;
+    document.getElementById('form-departement').value = personne.departement || '';
     document.getElementById('form-typologie').value = personne.typologie || '';
     document.getElementById('form-nb-personnes').value = personne.nbPersonnes || '';
     document.getElementById('form-mineurs').value = personne.mineurs || '';
@@ -218,6 +221,9 @@ function initTransmissionsForm() {
       nom: document.getElementById('form-nom').value,
       prenom: document.getElementById('form-prenom').value,
       dateNaissance: document.getElementById('form-ddn').value,
+      descriptionPhysique: document.getElementById('form-description').value,
+      inconnu: document.getElementById('form-inconnu').checked,
+      departement: document.getElementById('form-departement').value,
       typologie: document.getElementById('form-typologie').value,
       nbPersonnes: document.getElementById('form-nb-personnes').value,
       mineurs: document.getElementById('form-mineurs').value

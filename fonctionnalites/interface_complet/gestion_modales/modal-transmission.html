@@ -33,6 +33,29 @@
                     </div>
                     
                     <div class="form-group">
+                        <label for="form-description">Description physique :</label>
+                        <textarea id="form-description" class="form-textarea" name="description" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="form-inconnu" class="form-checkbox" name="inconnu">
+                            <span>Personne inconnue</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section Situation -->
+            <div class="form-section">
+                <h3>Situation</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="form-departement">Département d'origine :</label>
+                        <input type="text" id="form-departement" class="form-input" name="departement">
+                    </div>
+                    
+                    <div class="form-group">
                         <label for="form-typologie">Typologie de Ménages :</label>
                         <select id="form-typologie" class="form-input">
                             <option value="">Sélectionner...</option>
@@ -82,8 +105,15 @@
                             <option value="">Sélectionner...</option>
                             <option value="jour">Jour</option>
                             <option value="nuit">Nuit</option>
-                            <option value="coordination">Coordination</option>
+                            <option value="information">Information</option>
+                            <option value="signalement">Signalement</option>
+                            <option value="suivi">Suivi</option>
                         </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="form-date">Date :</label>
+                        <input type="date" id="form-date" class="form-input" name="date">
                     </div>
                     
                     <div class="form-group">
@@ -101,10 +131,7 @@
                         <select id="form-signalement" class="form-input">
                             <option value="">Sélectionner...</option>
                             <option value="115">115</option>
-                            <option value="mairie">Mairie</option>
-                            <option value="police">Police</option>
-                            <option value="association">Association</option>
-                            <option value="particulier">Particulier</option>
+                            <option value="siao">SIAO</option>
                             <option value="autre">Autre</option>
                         </select>
                     </div>
