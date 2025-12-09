@@ -206,6 +206,12 @@ function initTransmissionsForm() {
   btnAnnuler?.addEventListener('click', closeModal);
   modalClose?.addEventListener('click', closeModal);
   
+  // Initialiser l'auto-complétion de la typologie
+  if (typeof window.initTypologieAutoComplete === 'function') {
+    window.initTypologieAutoComplete('form-typologie', 'form-nb-personnes', 'form-mineurs');
+    console.log('✅ Auto-complétion typologie initialisée pour Transmissions');
+  }
+  
   // Soumettre le formulaire
   form.addEventListener('submit', async (e) => {
     e.preventDefault();

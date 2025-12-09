@@ -509,6 +509,12 @@ function initAdpForm() {
   btnAnnuler?.addEventListener('click', closeModal);
   modalClose?.addEventListener('click', closeModal);
   
+  // Initialiser l'auto-complétion de la typologie
+  if (typeof window.initTypologieAutoComplete === 'function') {
+    window.initTypologieAutoComplete('adp-form-typologie', 'adp-form-nb-personnes', 'adp-form-mineurs');
+    console.log('✅ Auto-complétion typologie initialisée pour ADP');
+  }
+  
   formAdp.addEventListener('submit', async (e) => {
     e.preventDefault();
     

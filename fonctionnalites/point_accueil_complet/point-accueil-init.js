@@ -71,6 +71,12 @@ function initPointAccueilForm() {
   btnAnnuler?.addEventListener('click', closeModal);
   modalClose?.addEventListener('click', closeModal);
   
+  // Initialiser l'auto-complétion de la typologie
+  if (typeof window.initTypologieAutoComplete === 'function') {
+    window.initTypologieAutoComplete('form-pa-typologie', 'form-pa-nb-personnes', 'form-pa-mineurs');
+    console.log('✅ Auto-complétion typologie initialisée pour Point Accueil');
+  }
+  
   // Gestion de la case "Inconnu"
   const checkboxInconnu = document.getElementById('form-pa-inconnu');
   const inputNom = document.getElementById('form-pa-nom');
