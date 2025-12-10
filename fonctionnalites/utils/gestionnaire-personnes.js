@@ -191,8 +191,10 @@ function applyTransmissionsFilters(personnes) {
     filtered = filtered.filter(p => p.dateNaissance === filterDdn);
   }
   
-  const filterInconnu = document.getElementById('filter-inconnu')?.checked;
-  if (filterInconnu) {
+  const filterInconnu = document.getElementById('filter-inconnu')?.value;
+  if (filterInconnu === 'connus') {
+    filtered = filtered.filter(p => p.inconnu === false || !p.inconnu);
+  } else if (filterInconnu === 'inconnus') {
     filtered = filtered.filter(p => p.inconnu === true);
   }
   
@@ -225,8 +227,10 @@ function applyAdpFilters(personnes) {
     filtered = filtered.filter(p => p.dateNaissance === filterDdn);
   }
   
-  const filterInconnu = document.getElementById('adp-filter-inconnu')?.checked;
-  if (filterInconnu) {
+  const filterInconnu = document.getElementById('adp-filter-inconnu')?.value;
+  if (filterInconnu === 'connus') {
+    filtered = filtered.filter(p => p.inconnu === false || !p.inconnu);
+  } else if (filterInconnu === 'inconnus') {
     filtered = filtered.filter(p => p.inconnu === true);
   }
   
@@ -259,8 +263,10 @@ function applyPAFilters(personnes) {
     filtered = filtered.filter(p => p.dateNaissance === filterDdn);
   }
   
-  const filterInconnu = document.getElementById('pa-filter-inconnu')?.checked;
-  if (filterInconnu) {
+  const filterInconnu = document.getElementById('pa-filter-inconnu')?.value;
+  if (filterInconnu === 'connus') {
+    filtered = filtered.filter(p => p.inconnu === false || !p.inconnu);
+  } else if (filterInconnu === 'inconnus') {
     filtered = filtered.filter(p => p.inconnu === true);
   }
   
@@ -376,7 +382,7 @@ async function afficherToutesLesPersonnesADP() {
           ${personne.dateNaissance ? `<p><strong>Date de naissance:</strong> ${new Date(personne.dateNaissance).toLocaleDateString('fr-FR')}</p>` : ''}
           ${personne.departement ? `<p><strong>Département:</strong> ${personne.departement}</p>` : ''}
           ${personne.typologie ? `<p><strong>Typologie:</strong> ${personne.typologie}</p>` : ''}
-          ${!hasAdpToday && selectedDate ? '<p class="no-transmission-notice">Pas de maraude quotidienne pour ce jour</p>' : ''}
+          ${!hasAdpToday && selectedDate ? '<p class="no-transmission-notice">Pas de maraude ADP pour ce jour</p>' : ''}
         </div>
         <div class="card-actions">
           <button class="btn-card ${btnClass}" data-personne-id="${personne.id}" data-type="adp">${btnText}</button>
