@@ -1,20 +1,21 @@
 <!-- Onglet Statistiques -->
 <div id="statistiques-tab" class="tab-content">
     <div class="content-card">
-        <!-- Sélecteur de source -->
-        <div class="stats-source-selector">
-            <label for="stats-source">Source des données :</label>
-            <select id="stats-source" class="stats-select">
-                <option value="all">Toutes les sources</option>
-                <option value="transmissions">Transmissions uniquement</option>
-                <option value="adp">ADP uniquement</option>
-                <option value="pointAccueil">Point Accueil uniquement</option>
-            </select>
-        </div>
-        
-        <!-- Sélecteur de période -->
-        <div class="stats-date-selector">
-            <div class="stats-selector-group">
+        <!-- Sélecteurs en ligne : Source + Période + Date -->
+        <div class="stats-inline-selectors">
+            <!-- Sélecteur de source -->
+            <div class="stats-selector-item">
+                <label for="stats-source">Source des données :</label>
+                <select id="stats-source" class="stats-select">
+                    <option value="all">Toutes les sources</option>
+                    <option value="transmissions">Transmissions uniquement</option>
+                    <option value="adp">ADP uniquement</option>
+                    <option value="pointAccueil">Point Accueil uniquement</option>
+                </select>
+            </div>
+            
+            <!-- Sélecteur de période -->
+            <div class="stats-selector-item">
                 <label for="stats-period-type">Période :</label>
                 <select id="stats-period-type" class="stats-select">
                     <option value="day">Jour précis</option>
@@ -25,155 +26,203 @@
             </div>
             
             <!-- Jour précis -->
-            <div id="stats-day-selector" class="stats-date-option active">
+            <div id="stats-day-selector" class="stats-selector-item stats-date-option active">
                 <label for="stats-specific-day">Date :</label>
                 <input type="date" id="stats-specific-day" class="date-input">
             </div>
             
             <!-- Mois -->
-            <div id="stats-month-selector" class="stats-date-option">
+            <div id="stats-month-selector" class="stats-selector-item stats-date-option">
                 <label for="stats-month">Mois :</label>
                 <input type="month" id="stats-month" class="date-input">
             </div>
             
             <!-- Année -->
-            <div id="stats-year-selector" class="stats-date-option">
+            <div id="stats-year-selector" class="stats-selector-item stats-date-option">
                 <label for="stats-year">Année :</label>
                 <input type="number" id="stats-year" class="date-input" min="2000" max="2100" placeholder="AAAA">
             </div>
             
             <!-- Plage de dates -->
-            <div id="stats-range-selector" class="stats-date-option">
-                <div class="stats-range-group">
-                    <div>
-                        <label for="stats-date-start">Du :</label>
-                        <input type="date" id="stats-date-start" class="date-input">
-                    </div>
-                    <div>
-                        <label for="stats-date-end">Au :</label>
-                        <input type="date" id="stats-date-end" class="date-input">
-                    </div>
+            <div id="stats-range-selector" class="stats-selector-range stats-date-option">
+                <div class="stats-selector-item">
+                    <label for="stats-date-start">Du :</label>
+                    <input type="date" id="stats-date-start" class="date-input">
+                </div>
+                <div class="stats-selector-item">
+                    <label for="stats-date-end">Au :</label>
+                    <input type="date" id="stats-date-end" class="date-input">
                 </div>
             </div>
         </div>
         
-        <!-- Filtres détaillés -->
-        <div class="stats-filters">
-            <h3>Filtres détaillés</h3>
-            
-            <div class="stats-filters-grid">
-                <!-- Filtres texte -->
-                <div class="stats-filter-section">
-                    <h4>Recherche</h4>
-                    <div class="stats-filter-group">
+        <!-- Filtres organisés comme le formulaire -->
+        <div class="stats-filters-complete">
+            <!-- Section Informations Personnelles -->
+            <div class="stats-filter-section">
+                <h3>Informations Personnelles</h3>
+                <div class="filters-grid">
+                    <div class="filter-group">
                         <label for="stats-filter-nom">Nom :</label>
-                        <input type="text" id="stats-filter-nom" class="filter-input" placeholder="Rechercher par nom">
+                        <input type="text" id="stats-filter-nom" class="filter-input" placeholder="Rechercher">
                     </div>
-                    <div class="stats-filter-group">
+                    
+                    <div class="filter-group">
                         <label for="stats-filter-prenom">Prénom :</label>
-                        <input type="text" id="stats-filter-prenom" class="filter-input" placeholder="Rechercher par prénom">
+                        <input type="text" id="stats-filter-prenom" class="filter-input" placeholder="Rechercher">
                     </div>
-                    <div class="stats-filter-group">
-                        <label for="stats-filter-ville">Ville :</label>
-                        <input type="text" id="stats-filter-ville" class="filter-input" placeholder="Rechercher par ville">
+                    
+                    <div class="filter-group">
+                        <label for="stats-filter-ddn">Date de Naissance :</label>
+                        <input type="date" id="stats-filter-ddn" class="filter-input">
                     </div>
-                </div>
-                
-                <!-- Type d'intervention -->
-                <div class="stats-filter-section">
-                    <h4>Type d'intervention</h4>
-                    <div class="stats-checkbox-group">
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-premier-contact" class="stats-checkbox">
-                            <span>1er contact</span>
-                        </label>
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-personne-presente" class="stats-checkbox">
-                            <span>Personne présente</span>
-                        </label>
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-pnt" class="stats-checkbox">
-                            <span>PNT</span>
-                        </label>
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-maraude" class="stats-checkbox">
-                            <span>Maraude</span>
-                        </label>
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-veille" class="stats-checkbox">
-                            <span>Veille</span>
-                        </label>
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-refus-contact" class="stats-checkbox">
-                            <span>Refus de contact</span>
-                        </label>
+                    
+                    <div class="filter-group">
+                        <label for="stats-filter-description">Description physique :</label>
+                        <input type="text" id="stats-filter-description" class="filter-input" placeholder="Rechercher">
                     </div>
-                </div>
-                
-                <!-- Accompagnement -->
-                <div class="stats-filter-section">
-                    <h4>Accompagnement</h4>
-                    <div class="stats-checkbox-group">
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-accomp-ecoute" class="stats-checkbox">
-                            <span>Écoute</span>
-                        </label>
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-accomp-orientation" class="stats-checkbox">
-                            <span>Orientation</span>
-                        </label>
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-accomp-admin" class="stats-checkbox">
-                            <span>Administratif</span>
-                        </label>
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-accomp-medical" class="stats-checkbox">
-                            <span>Médical</span>
-                        </label>
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-accomp-hebergement" class="stats-checkbox">
-                            <span>Hébergement</span>
-                        </label>
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-accomp-autre" class="stats-checkbox">
-                            <span>Autre</span>
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- Distribution -->
-                <div class="stats-filter-section">
-                    <h4>Distribution</h4>
-                    <div class="stats-checkbox-group">
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-distrib-alimentaire" class="stats-checkbox">
-                            <span>Alimentaire</span>
-                        </label>
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-distrib-vestimentaire" class="stats-checkbox">
-                            <span>Vestimentaire</span>
-                        </label>
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-distrib-hygiene" class="stats-checkbox">
-                            <span>Hygiène</span>
-                        </label>
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-distrib-couvertures" class="stats-checkbox">
-                            <span>Couvertures</span>
-                        </label>
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-distrib-duvet" class="stats-checkbox">
-                            <span>Duvet</span>
-                        </label>
-                        <label class="stats-checkbox-label">
-                            <input type="checkbox" id="stats-filter-distrib-autre" class="stats-checkbox">
-                            <span>Autre</span>
-                        </label>
+                    
+                    <div class="filter-group">
+                        <label for="stats-filter-inconnu">Personne inconnue :</label>
+                        <select id="stats-filter-inconnu" class="filter-input">
+                            <option value="">Tous</option>
+                            <option value="connus">Connus</option>
+                            <option value="inconnus">Inconnus</option>
+                        </select>
                     </div>
                 </div>
             </div>
             
-            <!-- Actions des filtres -->
+            <!-- Section Situation -->
+            <div class="stats-filter-section">
+                <h3>Situation</h3>
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="stats-filter-departement">Département d'origine :</label>
+                        <input type="text" id="stats-filter-departement" class="filter-input" placeholder="Ex: 75, 93...">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="stats-filter-typologie">Typologie de Ménages :</label>
+                        <select id="stats-filter-typologie" class="filter-input">
+                            <option value="">Tous</option>
+                            <option value="homme-seul">Homme Seul</option>
+                            <option value="femme-seule">Femme seule</option>
+                            <option value="femme-seule-avec-enfants">Femme seule avec enfant(s)</option>
+                            <option value="homme-seul-avec-enfants">Homme seul avec enfant(s)</option>
+                            <option value="groupe-adultes-avec-enfants">Groupe d'adultes avec enfant(s)</option>
+                            <option value="groupe-adultes-sans-enfant">Groupe d'adultes sans enfant</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="stats-filter-nb-personnes">Nombre de Personnes :</label>
+                        <select id="stats-filter-nb-personnes" class="filter-input">
+                            <option value="">Tous</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6+">6+</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="stats-filter-mineurs">dont Mineurs :</label>
+                        <select id="stats-filter-mineurs" class="filter-input">
+                            <option value="">Tous</option>
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4+">4+</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section Données de Transmission -->
+            <div class="stats-filter-section">
+                <h3>Données de Transmission</h3>
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="stats-filter-type-transmission">Type de Transmission :</label>
+                        <select id="stats-filter-type-transmission" class="filter-input">
+                            <option value="">Tous</option>
+                            <option value="jour">Jour</option>
+                            <option value="nuit">Nuit</option>
+                            <option value="information">Information</option>
+                            <option value="signalement">Signalement</option>
+                            <option value="suivi">Suivi</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="stats-filter-adresse">Adresse :</label>
+                        <input type="text" id="stats-filter-adresse" class="filter-input" placeholder="Rechercher">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="stats-filter-ville">Ville :</label>
+                        <input type="text" id="stats-filter-ville" class="filter-input" placeholder="Rechercher">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="stats-filter-signalement">Signalement :</label>
+                        <select id="stats-filter-signalement" class="filter-input">
+                            <option value="">Tous</option>
+                            <option value="115">115</option>
+                            <option value="siao">SIAO</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section Type d'intervention, Accompagnement et Distribution -->
+            <div class="stats-filter-section">
+                <h3>Type d'intervention, Accompagnement et Distribution</h3>
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="stats-filter-type-intervention">Type d'intervention :</label>
+                        <select id="stats-filter-type-intervention" class="filter-input" multiple size="6">
+                            <option value="premier-contact">1er contact</option>
+                            <option value="personne-presente">Personne présente</option>
+                            <option value="pnt">PNT</option>
+                            <option value="maraude">Maraude</option>
+                            <option value="veille">Veille</option>
+                            <option value="refus-contact">Refus de contact</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="stats-filter-accompagnement">Accompagnement :</label>
+                        <select id="stats-filter-accompagnement" class="filter-input" multiple size="6">
+                            <option value="ecoute">Écoute</option>
+                            <option value="orientation">Orientation</option>
+                            <option value="admin">Démarche administrative</option>
+                            <option value="medical">Médical</option>
+                            <option value="hebergement">Hébergement</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="stats-filter-distribution">Distribution :</label>
+                        <select id="stats-filter-distribution" class="filter-input" multiple size="6">
+                            <option value="alimentaire">Alimentaire</option>
+                            <option value="vestimentaire">Vestimentaire</option>
+                            <option value="hygiene">Hygiène</option>
+                            <option value="couvertures">Couvertures</option>
+                            <option value="duvet">Duvet</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Boutons d'action -->
             <div class="stats-filter-actions">
                 <button id="stats-reset-filters" class="btn-secondary">Réinitialiser</button>
                 <button id="stats-apply-filter" class="btn-add">Appliquer les filtres</button>

@@ -191,6 +191,8 @@ function filterByPeriod(interventions) {
 function applyDetailedFilters(interventions) {
   let filtered = interventions;
   
+  // === FILTRES INFORMATIONS PERSONNELLES ===
+  
   // Filtre par nom
   const filterNom = document.getElementById('stats-filter-nom')?.value?.toLowerCase();
   if (filterNom) {
@@ -203,49 +205,126 @@ function applyDetailedFilters(interventions) {
     filtered = filtered.filter(item => item.personne?.prenom?.toLowerCase().includes(filterPrenom));
   }
   
+  // Filtre par date de naissance
+  const filterDdn = document.getElementById('stats-filter-ddn')?.value;
+  if (filterDdn) {
+    filtered = filtered.filter(item => item.personne?.dateNaissance === filterDdn);
+  }
+  
+  // Filtre par description physique
+  const filterDescription = document.getElementById('stats-filter-description')?.value?.toLowerCase();
+  if (filterDescription) {
+    filtered = filtered.filter(item => item.personne?.descriptionPhysique?.toLowerCase().includes(filterDescription));
+  }
+  
+  // Filtre inconnu (select: tous/connus/inconnus)
+  const filterInconnu = document.getElementById('stats-filter-inconnu')?.value;
+  if (filterInconnu === 'connus') {
+    filtered = filtered.filter(item => item.personne?.inconnu === false || !item.personne?.inconnu);
+  } else if (filterInconnu === 'inconnus') {
+    filtered = filtered.filter(item => item.personne?.inconnu === true);
+  }
+  // Si filterInconnu est vide ou "tous", on ne filtre pas
+  
+  // === FILTRES SITUATION ===
+  
+  // Filtre par département
+  const filterDepartement = document.getElementById('stats-filter-departement')?.value;
+  if (filterDepartement) {
+    filtered = filtered.filter(item => item.personne?.departement?.includes(filterDepartement));
+  }
+  
+  // Filtre par typologie
+  const filterTypologie = document.getElementById('stats-filter-typologie')?.value;
+  if (filterTypologie) {
+    filtered = filtered.filter(item => item.personne?.typologie === filterTypologie);
+  }
+  
+  // Filtre par nombre de personnes
+  const filterNbPersonnes = document.getElementById('stats-filter-nb-personnes')?.value;
+  if (filterNbPersonnes) {
+    filtered = filtered.filter(item => item.personne?.nbPersonnes === filterNbPersonnes);
+  }
+  
+  // Filtre par nombre de mineurs
+  const filterMineurs = document.getElementById('stats-filter-mineurs')?.value;
+  if (filterMineurs) {
+    filtered = filtered.filter(item => item.personne?.mineurs === filterMineurs);
+  }
+  
+  // === FILTRES DONNÉES DE TRANSMISSION ===
+  
+  // Filtre par type de transmission
+  const filterTypeTransmission = document.getElementById('stats-filter-type-transmission')?.value;
+  if (filterTypeTransmission) {
+    filtered = filtered.filter(item => item.typeTransmission === filterTypeTransmission);
+  }
+  
+  // Filtre par adresse
+  const filterAdresse = document.getElementById('stats-filter-adresse')?.value?.toLowerCase();
+  if (filterAdresse) {
+    filtered = filtered.filter(item => item.adresse?.toLowerCase().includes(filterAdresse));
+  }
+  
   // Filtre par ville
   const filterVille = document.getElementById('stats-filter-ville')?.value?.toLowerCase();
   if (filterVille) {
     filtered = filtered.filter(item => item.ville?.toLowerCase().includes(filterVille));
   }
   
-  // Filtres checkboxes - Type d'intervention
-  const interventionFilters = [
-    { id: 'stats-filter-premier-contact', field: 'orly.premierContact' },
-    { id: 'stats-filter-personne-presente', field: 'orly.personnePresente' },
-    { id: 'stats-filter-pnt', field: 'orly.pnt' },
-    { id: 'stats-filter-maraude', field: 'orly.maraude' },
-    { id: 'stats-filter-veille', field: 'orly.veille' },
-    { id: 'stats-filter-refus-contact', field: 'orly.refusContact' }
-  ];
+  // Filtre par signalement
+  const filterSignalement = document.getElementById('stats-filter-signalement')?.value;
+  if (filterSignalement) {
+    filtered = filtered.filter(item => item.signalement === filterSignalement);
+  }
   
-  interventionFilters.forEach(filter => {
-    const checkbox = document.getElementById(filter.id);
-    if (checkbox?.checked) {
+  // === FILTRES TYPE D'INTERVENTION (Select Multiple) ===
+  const typeInterventionSelect = document.getElementById('stats-filter-type-intervention');
+  if (typeInterventionSelect) {
+    const selectedValues = Array.from(typeInterventionSelect.selectedOptions).map(opt => opt.value);
+    if (selectedValues.length > 0) {
       filtered = filtered.filter(item => {
-        const [obj, prop] = filter.field.split('.');
-        return item[obj]?.[prop] === true;
+        if (!item.orly) return false;
+        // Mapper les valeurs du select aux champs de la base de données
+        const mapping = {
+          'premier-contact': 'premierContact',
+          'personne-presente': 'personnePresente',
+          'pnt': 'pnt',
+          'maraude': 'maraude',
+          'veille': 'veille',
+          'refus-contact': 'refusContact'
+        };
+        // Vérifier si au moins un des types sélectionnés est vrai
+        return selectedValues.some(value => item.orly[mapping[value]] === true);
       });
     }
-  });
+  }
   
-  // Filtres checkboxes - Accompagnement
-  const accompFilters = ['ecoute', 'orientation', 'admin', 'medical', 'hebergement', 'autre'];
-  accompFilters.forEach(field => {
-    const checkbox = document.getElementById('stats-filter-accomp-' + field);
-    if (checkbox?.checked) {
-      filtered = filtered.filter(item => item.accompagnement?.[field] === true);
+  // === FILTRES ACCOMPAGNEMENT (Select Multiple) ===
+  const accompagnementSelect = document.getElementById('stats-filter-accompagnement');
+  if (accompagnementSelect) {
+    const selectedValues = Array.from(accompagnementSelect.selectedOptions).map(opt => opt.value);
+    if (selectedValues.length > 0) {
+      filtered = filtered.filter(item => {
+        if (!item.accompagnement) return false;
+        // Vérifier si au moins un des accompagnements sélectionnés est vrai
+        return selectedValues.some(value => item.accompagnement[value] === true);
+      });
     }
-  });
+  }
   
-  // Filtres checkboxes - Distribution
-  const distribFilters = ['alimentaire', 'vestimentaire', 'hygiene', 'couvertures', 'duvet', 'autre'];
-  distribFilters.forEach(field => {
-    const checkbox = document.getElementById('stats-filter-distrib-' + field);
-    if (checkbox?.checked) {
-      filtered = filtered.filter(item => item.distribution?.[field] === true);
+  // === FILTRES DISTRIBUTION (Select Multiple) ===
+  const distributionSelect = document.getElementById('stats-filter-distribution');
+  if (distributionSelect) {
+    const selectedValues = Array.from(distributionSelect.selectedOptions).map(opt => opt.value);
+    if (selectedValues.length > 0) {
+      filtered = filtered.filter(item => {
+        if (!item.distribution) return false;
+        // Vérifier si au moins une des distributions sélectionnées est vraie
+        return selectedValues.some(value => item.distribution[value] === true);
+      });
     }
-  });
+  }
   
   return filtered;
 }
@@ -406,7 +485,7 @@ function displayStatistics(interventions, source) {
 
   container.innerHTML = `
     <div class="stats-results" style="display: grid; gap: 1.5rem;">
-      <div class="stats-summary" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 1.5rem; border-radius: 12px;">
+      <div class="stats-summary" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
         <h3 style="margin: 0 0 1rem 0;">Résumé (${sourceLabel})</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
           <div style="text-align: center;">
@@ -430,14 +509,14 @@ function displayStatistics(interventions, source) {
       </div>
       
       <div class="stats-details" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
-        <div class="stats-card" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #dc2626;">
+        <div class="stats-card" style="background: white; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #dc2626; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
           <h4 style="margin: 0 0 0.5rem 0; color: #dc2626;">Typologie de ménages</h4>
           <ul style="list-style: none; padding: 0; margin: 0;">
             ${typologieHtml}
           </ul>
         </div>
         
-        <div class="stats-card" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #2563eb;">
+        <div class="stats-card" style="background: white; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #2563eb; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
           <h4 style="margin: 0 0 0.5rem 0; color: #2563eb;">Type d'intervention</h4>
           <ul style="list-style: none; padding: 0; margin: 0;">
             <li>1er contact: <strong>${premierContact}</strong></li>
@@ -449,7 +528,7 @@ function displayStatistics(interventions, source) {
           </ul>
         </div>
         
-        <div class="stats-card" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #059669;">
+        <div class="stats-card" style="background: white; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #059669; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
           <h4 style="margin: 0 0 0.5rem 0; color: #059669;">Accompagnement</h4>
           <ul style="list-style: none; padding: 0; margin: 0;">
             <li>Écoute: <strong>${accompStats.ecoute}</strong></li>
@@ -461,7 +540,7 @@ function displayStatistics(interventions, source) {
           </ul>
         </div>
         
-        <div class="stats-card" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #d97706;">
+        <div class="stats-card" style="background: white; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #d97706; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
           <h4 style="margin: 0 0 0.5rem 0; color: #b45309;">Distribution</h4>
           <ul style="list-style: none; padding: 0; margin: 0;">
             <li>Alimentaire: <strong>${distribStats.alimentaire}</strong></li>
@@ -496,15 +575,51 @@ function resetFilters() {
     if (el) el.value = today;
   });
   
-  // Réinitialiser les champs texte
-  const textFields = ['stats-filter-nom', 'stats-filter-prenom', 'stats-filter-ville', 'stats-filter-adresse'];
+  // Réinitialiser tous les champs texte
+  const textFields = [
+    'stats-filter-nom', 
+    'stats-filter-prenom', 
+    'stats-filter-ddn',
+    'stats-filter-description',
+    'stats-filter-departement',
+    'stats-filter-adresse',
+    'stats-filter-ville'
+  ];
   textFields.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   
-  // Réinitialiser les checkboxes
-  document.querySelectorAll('.stats-filters input[type="checkbox"]').forEach(cb => {
+  // Réinitialiser tous les selects
+  const selectFields = [
+    'stats-filter-inconnu',
+    'stats-filter-typologie',
+    'stats-filter-nb-personnes',
+    'stats-filter-mineurs',
+    'stats-filter-type-transmission',
+    'stats-filter-signalement'
+  ];
+  selectFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  
+  // Réinitialiser les selects multiples
+  const multiSelectFields = [
+    'stats-filter-type-intervention',
+    'stats-filter-accompagnement',
+    'stats-filter-distribution'
+  ];
+  multiSelectFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      // Désélectionner toutes les options
+      Array.from(el.options).forEach(option => option.selected = false);
+    }
+  });
+  
+  // Réinitialiser toutes les checkboxes (s'il en reste)
+  document.querySelectorAll('.stats-filters-complete input[type="checkbox"]').forEach(cb => {
     cb.checked = false;
   });
   
