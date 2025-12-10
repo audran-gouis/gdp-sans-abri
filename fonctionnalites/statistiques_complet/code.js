@@ -234,30 +234,42 @@ function applyDetailedFilters(interventions) {
     filtered = filtered.filter(item => item.personne?.departement?.includes(filterDepartement));
   }
   
-  // Filtre par typologie
-  const filterTypologie = document.getElementById('stats-filter-typologie')?.value;
-  if (filterTypologie) {
-    filtered = filtered.filter(item => item.personne?.typologie === filterTypologie);
+  // Filtre par typologie (Select Multiple)
+  const filterTypologieSelect = document.getElementById('stats-filter-typologie');
+  if (filterTypologieSelect) {
+    const selectedValues = Array.from(filterTypologieSelect.selectedOptions).map(opt => opt.value);
+    if (selectedValues.length > 0) {
+      filtered = filtered.filter(item => selectedValues.includes(item.personne?.typologie));
+    }
   }
   
-  // Filtre par nombre de personnes
-  const filterNbPersonnes = document.getElementById('stats-filter-nb-personnes')?.value;
-  if (filterNbPersonnes) {
-    filtered = filtered.filter(item => item.personne?.nbPersonnes === filterNbPersonnes);
+  // Filtre par nombre de personnes (Select Multiple)
+  const filterNbPersonnesSelect = document.getElementById('stats-filter-nb-personnes');
+  if (filterNbPersonnesSelect) {
+    const selectedValues = Array.from(filterNbPersonnesSelect.selectedOptions).map(opt => opt.value);
+    if (selectedValues.length > 0) {
+      filtered = filtered.filter(item => selectedValues.includes(item.personne?.nbPersonnes));
+    }
   }
   
-  // Filtre par nombre de mineurs
-  const filterMineurs = document.getElementById('stats-filter-mineurs')?.value;
-  if (filterMineurs) {
-    filtered = filtered.filter(item => item.personne?.mineurs === filterMineurs);
+  // Filtre par nombre de mineurs (Select Multiple)
+  const filterMineursSelect = document.getElementById('stats-filter-mineurs');
+  if (filterMineursSelect) {
+    const selectedValues = Array.from(filterMineursSelect.selectedOptions).map(opt => opt.value);
+    if (selectedValues.length > 0) {
+      filtered = filtered.filter(item => selectedValues.includes(item.personne?.mineurs));
+    }
   }
   
   // === FILTRES DONNÉES DE TRANSMISSION ===
   
-  // Filtre par type de transmission
-  const filterTypeTransmission = document.getElementById('stats-filter-type-transmission')?.value;
-  if (filterTypeTransmission) {
-    filtered = filtered.filter(item => item.typeTransmission === filterTypeTransmission);
+  // Filtre par type de transmission (Select Multiple)
+  const filterTypeTransmissionSelect = document.getElementById('stats-filter-type-transmission');
+  if (filterTypeTransmissionSelect) {
+    const selectedValues = Array.from(filterTypeTransmissionSelect.selectedOptions).map(opt => opt.value);
+    if (selectedValues.length > 0) {
+      filtered = filtered.filter(item => selectedValues.includes(item.typeTransmission));
+    }
   }
   
   // Filtre par adresse
@@ -272,10 +284,13 @@ function applyDetailedFilters(interventions) {
     filtered = filtered.filter(item => item.ville?.toLowerCase().includes(filterVille));
   }
   
-  // Filtre par signalement
-  const filterSignalement = document.getElementById('stats-filter-signalement')?.value;
-  if (filterSignalement) {
-    filtered = filtered.filter(item => item.signalement === filterSignalement);
+  // Filtre par signalement (Select Multiple)
+  const filterSignalementSelect = document.getElementById('stats-filter-signalement');
+  if (filterSignalementSelect) {
+    const selectedValues = Array.from(filterSignalementSelect.selectedOptions).map(opt => opt.value);
+    if (selectedValues.length > 0) {
+      filtered = filtered.filter(item => selectedValues.includes(item.signalement));
+    }
   }
   
   // === FILTRES TYPE D'INTERVENTION (Select Multiple) ===
@@ -590,14 +605,9 @@ function resetFilters() {
     if (el) el.value = '';
   });
   
-  // Réinitialiser tous les selects
+  // Réinitialiser tous les selects simples (ceux qui restent en single)
   const selectFields = [
-    'stats-filter-inconnu',
-    'stats-filter-typologie',
-    'stats-filter-nb-personnes',
-    'stats-filter-mineurs',
-    'stats-filter-type-transmission',
-    'stats-filter-signalement'
+    'stats-filter-inconnu'
   ];
   selectFields.forEach(id => {
     const el = document.getElementById(id);
@@ -606,6 +616,11 @@ function resetFilters() {
   
   // Réinitialiser les selects multiples
   const multiSelectFields = [
+    'stats-filter-typologie',
+    'stats-filter-nb-personnes',
+    'stats-filter-mineurs',
+    'stats-filter-type-transmission',
+    'stats-filter-signalement',
     'stats-filter-type-intervention',
     'stats-filter-accompagnement',
     'stats-filter-distribution'

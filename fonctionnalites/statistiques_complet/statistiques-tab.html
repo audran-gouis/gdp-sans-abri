@@ -104,8 +104,7 @@
                     
                     <div class="filter-group">
                         <label for="stats-filter-typologie">Typologie de Ménages :</label>
-                        <select id="stats-filter-typologie" class="filter-input">
-                            <option value="">Tous</option>
+                        <select id="stats-filter-typologie" class="filter-input" multiple size="6">
                             <option value="homme-seul">Homme Seul</option>
                             <option value="femme-seule">Femme seule</option>
                             <option value="femme-seule-avec-enfants">Femme seule avec enfant(s)</option>
@@ -117,8 +116,7 @@
                     
                     <div class="filter-group">
                         <label for="stats-filter-nb-personnes">Nombre de Personnes :</label>
-                        <select id="stats-filter-nb-personnes" class="filter-input">
-                            <option value="">Tous</option>
+                        <select id="stats-filter-nb-personnes" class="filter-input" multiple size="6">
                             <option value="1">1</option>
                             <option value="2">2</option>
                             <option value="3">3</option>
@@ -130,8 +128,7 @@
                     
                     <div class="filter-group">
                         <label for="stats-filter-mineurs">dont Mineurs :</label>
-                        <select id="stats-filter-mineurs" class="filter-input">
-                            <option value="">Tous</option>
+                        <select id="stats-filter-mineurs" class="filter-input" multiple size="5">
                             <option value="0">0</option>
                             <option value="1">1</option>
                             <option value="2">2</option>
@@ -148,8 +145,7 @@
                 <div class="filters-grid">
                     <div class="filter-group">
                         <label for="stats-filter-type-transmission">Type de Transmission :</label>
-                        <select id="stats-filter-type-transmission" class="filter-input">
-                            <option value="">Tous</option>
+                        <select id="stats-filter-type-transmission" class="filter-input" multiple size="5">
                             <option value="jour">Jour</option>
                             <option value="nuit">Nuit</option>
                             <option value="information">Information</option>
@@ -170,11 +166,9 @@
                     
                     <div class="filter-group">
                         <label for="stats-filter-signalement">Signalement :</label>
-                        <select id="stats-filter-signalement" class="filter-input">
-                            <option value="">Tous</option>
+                        <select id="stats-filter-signalement" class="filter-input" multiple size="2">
                             <option value="115">115</option>
-                            <option value="siao">SIAO</option>
-                            <option value="autre">Autre</option>
+                            <option value="partenaires">Partenaires</option>
                         </select>
                     </div>
                 </div>
@@ -249,11 +243,3 @@
         </div>
     </div>
 </div>
-
-
-
-
-
-
-
-

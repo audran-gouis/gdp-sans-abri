@@ -11,9 +11,12 @@
         
         <form id="form-adp" class="modal-body">
             <!-- Section Informations Personnelles -->
-            <div class="form-section">
-                <h3>Informations Personnelles</h3>
-                <div class="form-grid">
+            <div class="form-section" id="adp-section-info-perso">
+                <h3 class="collapsible">
+                    Informations Personnelles
+                    <span class="collapse-toggle">▼</span>
+                </h3>
+                <div class="form-grid collapsible-content" id="adp-grid-info-perso">
                     <div class="form-group">
                         <label for="adp-form-nom">Nom :</label>
                         <input type="text" id="adp-form-nom" class="form-input" name="nom">
@@ -233,8 +236,7 @@
                         <select id="adp-form-signalement" class="form-input" name="signalement">
                             <option value="">Sélectionner...</option>
                             <option value="115">115</option>
-                            <option value="siao">SIAO</option>
-                            <option value="autre">Autre</option>
+                            <option value="partenaires">Partenaires</option>
                         </select>
                     </div>
                 </div>
