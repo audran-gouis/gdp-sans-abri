@@ -1,12 +1,13 @@
 /* Styles pour le sélecteur de dates des statistiques */
 .stats-date-selector {
-    background: #f8f9fa;
+    background: white;
     padding: 1.5rem;
     border-radius: 10px;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .stats-selector-group {
@@ -17,7 +18,7 @@
 
 .stats-selector-group label {
     font-weight: 600;
-    color: #667eea;
+    color: #2563eb;
     font-size: 1.1rem;
     min-width: 80px;
 }
@@ -35,13 +36,13 @@
 }
 
 .stats-select:hover {
-    border-color: #667eea;
+    border-color: #2563eb;
 }
 
 .stats-select:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .stats-date-option {
@@ -84,10 +85,11 @@
 }
 
 #stats-content {
-    padding: 2rem;
-    background: #f8f9fa;
+    padding: 1.5rem;
+    background: white;
     border-radius: 10px;
     min-height: 200px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 

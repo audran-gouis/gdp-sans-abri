@@ -21,14 +21,14 @@
 }
 
 .tab-button:hover {
-    color: #667eea;
-    background: rgba(102, 126, 234, 0.05);
+    color: #2563eb;
+    background: rgba(37, 99, 235, 0.05);
 }
 
 .tab-button.active {
-    color: #667eea;
-    border-bottom-color: #667eea;
-    background: rgba(102, 126, 234, 0.1);
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+    background: rgba(37, 99, 235, 0.1);
 }
 
 .tab-content {

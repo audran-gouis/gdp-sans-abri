@@ -33,13 +33,13 @@
 }
 
 .filter-input:hover {
-    border-color: #667eea;
+    border-color: #2563eb;
 }
 
 .filter-input:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .filter-input::placeholder {
@@ -68,19 +68,19 @@
 }
 
 .filter-checkbox-label:hover {
-    border-color: #667eea;
-    background: rgba(102, 126, 234, 0.05);
+    border-color: #2563eb;
+    background: rgba(37, 99, 235, 0.05);
 }
 
 .filter-checkbox {
     width: 18px;
     height: 18px;
     cursor: pointer;
-    accent-color: #667eea;
+    accent-color: #2563eb;
 }
 
 .filter-checkbox:checked + span {
-    color: #667eea;
+    color: #2563eb;
 }
 
 

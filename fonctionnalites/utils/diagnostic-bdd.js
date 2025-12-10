@@ -111,3 +111,4 @@ if (typeof window !== 'undefined') {
 console.log('✅ Script de diagnostic chargé');
 console.log('Pour lancer le diagnostic, tapez dans la console: diagnostiquerBDD()');
 
+

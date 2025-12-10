@@ -1,6 +1,7 @@
 /**
  * Code métier - Statistiques
  * Gestion des filtres et affichage des statistiques
+ * Utilise la BASE DE DONNÉES UNIFIÉE
  */
 
 /**
@@ -48,7 +49,7 @@ function initStatistiques() {
   const dateEnd = document.getElementById('stats-date-end');
   if (dateEnd) dateEnd.value = today;
   
-  console.log('Module Statistiques initialisé');
+  console.log('Module Statistiques initialisé (Base Unifiée)');
 }
 
 /**
@@ -82,123 +83,82 @@ function handlePeriodTypeChange() {
  * Applique les filtres et affiche les statistiques
  */
 async function applyFilters() {
-  console.log('=== APPLICATION DES FILTRES ===');
+  console.log('=== APPLICATION DES FILTRES (BASE UNIFIÉE) ===');
   
   try {
     // Récupérer la source de données
     const source = document.getElementById('stats-source')?.value || 'all';
     console.log('Source sélectionnée:', source);
     
-    // S'assurer que les bases de données sont initialisées
-    if (typeof window.initDB === 'function') {
-      await window.initDB();
-    }
-    if (typeof window.initDBADP === 'function') {
-      await window.initDBADP();
-    }
-    if (typeof window.initDatabasePA === 'function') {
-      await window.initDatabasePA();
+    // S'assurer que la base de données est initialisée
+    if (typeof window.initDatabaseUnified === 'function') {
+      await window.initDatabaseUnified();
+    } else {
+      throw new Error('Base de données unifiée non disponible');
     }
     
-    // Récupérer les données selon la source
-    let transmissionsRaw = [];
-    let adpDataRaw = [];
-    let paDataRaw = [];
+    // Charger toutes les personnes
+    const personnes = await window.getAllPersonnes();
+    console.log('📋 Personnes chargées:', personnes.length);
     
-    if (source === 'all' || source === 'transmissions') {
-      if (typeof window.getAllTransmissions === 'function') {
-        transmissionsRaw = await window.getAllTransmissions();
-        console.log('Transmissions brutes récupérées:', transmissionsRaw.length);
-      }
+    // Charger toutes les interventions
+    let interventions = await window.getAllInterventions();
+    console.log('📋 Interventions chargées:', interventions.length);
+    
+    // Filtrer les interventions par source si nécessaire
+    if (source !== 'all') {
+      const sourceMap = {
+        'transmissions': 'transmissions',
+        'adp': 'adp',
+        'pointAccueil': 'pointAccueil'
+      };
+      interventions = interventions.filter(i => i.type === sourceMap[source]);
+      console.log(`📋 Interventions filtrées par source ${source}:`, interventions.length);
     }
     
-    if (source === 'all' || source === 'adp') {
-      if (typeof window.getAllTransmissionsAdp === 'function') {
-        adpDataRaw = await window.getAllTransmissionsAdp();
-        console.log('ADP brutes récupérées:', adpDataRaw.length);
-      }
-    }
+    // Filtrer les interventions par période
+    interventions = filterByPeriod(interventions);
+    console.log('📋 Après filtre période:', interventions.length);
     
-    if (source === 'all' || source === 'pointAccueil') {
-      if (typeof recupererFichesPA === 'function') {
-        paDataRaw = await recupererFichesPA();
-        console.log('Point Accueil brutes récupérées:', paDataRaw.length);
-      }
-    }
+    // Créer un Map des personnes par ID
+    const personnesMap = new Map();
+    personnes.forEach(p => personnesMap.set(p.id, p));
     
-    // 1. D'ABORD filtrer par période
-    let transmissionsFiltered = filterByPeriod(transmissionsRaw);
-    let adpFiltered = filterByPeriod(adpDataRaw);
-    let paFiltered = filterByPeriod(paDataRaw, 'date'); // Point Accueil utilise 'date' au lieu de 'dateTransmission'
+    // Enrichir les interventions avec les infos des personnes
+    const interventionsEnrichies = interventions.map(intervention => {
+      const personne = personnesMap.get(intervention.personneId);
+      return {
+        ...intervention,
+        personne: personne || {}
+      };
+    }).filter(i => i.personne.id); // Ne garder que celles avec une personne valide
     
-    console.log('Après filtre période - Transmissions:', transmissionsFiltered.length, 'ADP:', adpFiltered.length, 'PA:', paFiltered.length);
+    console.log('📋 Interventions enrichies:', interventionsEnrichies.length);
     
-    // 2. ENSUITE dédoublonner : 1 seule entrée par personne par date par source
-    // Marquer la source pour chaque entrée
-    transmissionsFiltered = transmissionsFiltered.map(t => ({ ...t, _source: 'transmissions' }));
-    adpFiltered = adpFiltered.map(t => ({ ...t, _source: 'adp' }));
-    paFiltered = paFiltered.map(t => ({ ...t, _source: 'pointAccueil' }));
-    
-    let transmissions = deduplicateByPersonDate(transmissionsFiltered);
-    let adpData = deduplicateByPersonDate(adpFiltered);
-    let paData = deduplicateByPersonDate(paFiltered);
-    
-    console.log('Après dédoublonnage - Transmissions:', transmissions.length, 'ADP:', adpData.length, 'PA:', paData.length);
-    
-    // 3. Combiner les données
-    let allData = [...transmissions, ...adpData, ...paData];
-    
-    // 4. Appliquer les autres filtres détaillés
-    allData = applyDetailedFilters(allData);
-    
-    console.log('Total après tous les filtres:', allData.length);
+    // Appliquer les filtres détaillés
+    const interventionsFiltrees = applyDetailedFilters(interventionsEnrichies);
+    console.log('📋 Après filtres détaillés:', interventionsFiltrees.length);
     
     // Stocker les données filtrées pour affichage des cartes
-    window.filteredStatsData = allData;
+    window.filteredStatsData = interventionsFiltrees;
     
     // Calculer et afficher les statistiques
-    // Passer les comptages séparés
-    displayStatistics(allData, source, transmissions.length, adpData.length, paData.length);
+    displayStatistics(interventionsFiltrees, source);
     
   } catch (error) {
-    console.error('Erreur lors de l\'application des filtres:', error);
+    console.error('❌ Erreur lors de l\'application des filtres:', error);
     document.getElementById('stats-content').innerHTML = '<p style="color: red;">Erreur lors du chargement des données.</p>';
   }
 }
 
 /**
- * Dédoublonne les données : 1 seule entrée par personne par date
- * Une personne est identifiée par personId (ou id si pas de personId)
- */
-function deduplicateByPersonDate(data) {
-  const seen = new Map();
-  
-  data.forEach(item => {
-    // Créer une clé unique pour la personne
-    // Utiliser personId si disponible, sinon utiliser id
-    const personKey = item.personId ? String(item.personId) : String(item.id);
-    
-    // Créer une clé unique personne + date
-    const dateKey = item.dateTransmission || 'no-date';
-    const uniqueKey = `${personKey}_${dateKey}`;
-    
-    // Ne garder que la première occurrence (évite les doublons)
-    if (!seen.has(uniqueKey)) {
-      seen.set(uniqueKey, item);
-    }
-  });
-  
-  return Array.from(seen.values());
-}
-
-/**
  * Filtre les données par période
  */
-function filterByPeriod(data, dateField = 'dateTransmission') {
+function filterByPeriod(interventions) {
   const periodType = document.getElementById('stats-period-type')?.value || 'day';
   
-  return data.filter(item => {
-    const itemDate = item[dateField];
+  return interventions.filter(intervention => {
+    const itemDate = intervention.date;
     if (!itemDate) return false;
     
     switch (periodType) {
@@ -228,19 +188,19 @@ function filterByPeriod(data, dateField = 'dateTransmission') {
 /**
  * Applique les filtres détaillés
  */
-function applyDetailedFilters(data) {
-  let filtered = data;
+function applyDetailedFilters(interventions) {
+  let filtered = interventions;
   
   // Filtre par nom
   const filterNom = document.getElementById('stats-filter-nom')?.value?.toLowerCase();
   if (filterNom) {
-    filtered = filtered.filter(item => item.nom?.toLowerCase().includes(filterNom));
+    filtered = filtered.filter(item => item.personne?.nom?.toLowerCase().includes(filterNom));
   }
   
   // Filtre par prénom
   const filterPrenom = document.getElementById('stats-filter-prenom')?.value?.toLowerCase();
   if (filterPrenom) {
-    filtered = filtered.filter(item => item.prenom?.toLowerCase().includes(filterPrenom));
+    filtered = filtered.filter(item => item.personne?.prenom?.toLowerCase().includes(filterPrenom));
   }
   
   // Filtre par ville
@@ -293,31 +253,48 @@ function applyDetailedFilters(data) {
 /**
  * Affiche les statistiques calculées
  */
-function displayStatistics(data, source, transmissionsCount = 0, adpCount = 0, paCount = 0) {
+function displayStatistics(interventions, source) {
   const container = document.getElementById('stats-content');
   if (!container) return;
   
-  // Regrouper par personne DISTINCTE (source + personId)
-  // Chaque personne a un compteur de passages (nombre de dates différentes)
+  // Regrouper par personne DISTINCTE
   const uniquePersonsMap = new Map();
-  data.forEach(d => {
-    const personKey = d.personId ? String(d.personId) : String(d.id);
-    const sourceKey = d._source || 'unknown';
-    const fullKey = `${sourceKey}_${personKey}`;
+  interventions.forEach(intervention => {
+    const personneId = intervention.personneId;
     
-    if (!uniquePersonsMap.has(fullKey)) {
-      uniquePersonsMap.set(fullKey, {
-        ...d,
+    if (!uniquePersonsMap.has(personneId)) {
+      uniquePersonsMap.set(personneId, {
+        personne: intervention.personne,
+        interventions: [intervention],
         _passages: 1,
-        _dates: [d.dateTransmission]
+        _dates: [intervention.date],
+        _types: new Set([intervention.type]),
+        _typesParDate: new Map([[intervention.date, new Set([intervention.type])]])
       });
     } else {
-      const existing = uniquePersonsMap.get(fullKey);
-      existing._passages++;
-      if (d.dateTransmission && !existing._dates.includes(d.dateTransmission)) {
-        existing._dates.push(d.dateTransmission);
+      const existing = uniquePersonsMap.get(personneId);
+      existing.interventions.push(intervention);
+      
+      // Compter les passages : max 1 par type par date
+      if (!existing._typesParDate.has(intervention.date)) {
+        existing._typesParDate.set(intervention.date, new Set([intervention.type]));
+      } else {
+        existing._typesParDate.get(intervention.date).add(intervention.type);
       }
+      
+      if (!existing._dates.includes(intervention.date)) {
+        existing._dates.push(intervention.date);
+      }
+      existing._types.add(intervention.type);
     }
+  });
+  
+  // Calculer le nombre total de passages (max 1 par type par date par personne)
+  let totalPassages = 0;
+  uniquePersonsMap.forEach(entry => {
+    entry._typesParDate.forEach(typesSet => {
+      totalPassages += typesSet.size; // Nombre de types différents pour cette date
+    });
   });
   
   // Stocker les personnes distinctes pour l'affichage des cartes
@@ -325,13 +302,25 @@ function displayStatistics(data, source, transmissionsCount = 0, adpCount = 0, p
   
   const totalPersonnesDistinctes = uniquePersonsMap.size;
   
-  // Nombre de passages = nombre total de transmissions (1 par personne par date)
-  const totalPassages = data.length;
+  // Compter le nombre total de personnes et mineurs basé sur personnes DISTINCTES
+  let totalNbPersonnes = 0;
+  let totalMineurs = 0;
+  
+  uniquePersonsMap.forEach(entry => {
+    const personne = entry.personne;
+    let nbStr = String(personne.nbPersonnes || '1').replace('+', '');
+    const nbPersonnes = parseInt(nbStr) || 1;
+    totalNbPersonnes += nbPersonnes;
+    
+    let minStr = String(personne.mineurs || '0').replace('+', '');
+    const mineurs = parseInt(minStr) || 0;
+    totalMineurs += mineurs;
+  });
   
   // Compter les types d'intervention
   let premierContact = 0, personnePresente = 0, pnt = 0, maraude = 0, veille = 0, refusContact = 0;
   
-  data.forEach(item => {
+  interventions.forEach(item => {
     if (item.orly) {
       if (item.orly.premierContact) premierContact++;
       if (item.orly.personnePresente) personnePresente++;
@@ -344,7 +333,7 @@ function displayStatistics(data, source, transmissionsCount = 0, adpCount = 0, p
   
   // Compter les accompagnements
   let accompStats = { ecoute: 0, orientation: 0, admin: 0, medical: 0, hebergement: 0, autre: 0 };
-  data.forEach(item => {
+  interventions.forEach(item => {
     if (item.accompagnement) {
       Object.keys(accompStats).forEach(key => {
         if (item.accompagnement[key]) accompStats[key]++;
@@ -354,7 +343,7 @@ function displayStatistics(data, source, transmissionsCount = 0, adpCount = 0, p
   
   // Compter les distributions
   let distribStats = { alimentaire: 0, vestimentaire: 0, hygiene: 0, couvertures: 0, duvet: 0, autre: 0 };
-  data.forEach(item => {
+  interventions.forEach(item => {
     if (item.distribution) {
       Object.keys(distribStats).forEach(key => {
         if (item.distribution[key]) distribStats[key]++;
@@ -373,22 +362,12 @@ function displayStatistics(data, source, transmissionsCount = 0, adpCount = 0, p
     'groupe-adultes-sans-enfant': 'Groupe adultes sans enfant'
   };
   
-  // Compter le nombre total de personnes (nbPersonnes) et mineurs basé sur personnes DISTINCTES
-  let totalNbPersonnes = 0;
-  let totalMineurs = 0;
-  
-  uniquePersonsMap.forEach(person => {
-    const typo = person.typologie || 'non-renseigne';
-    // Compter le nombre de personnes pour cette typologie
-    let nbStr = String(person.nbPersonnes || '1').replace('+', '');
+  uniquePersonsMap.forEach(entry => {
+    const personne = entry.personne;
+    const typo = personne.typologie || 'non-renseigne';
+    let nbStr = String(personne.nbPersonnes || '1').replace('+', '');
     const nbPersonnes = parseInt(nbStr) || 1;
     typologieStats[typo] = (typologieStats[typo] || 0) + nbPersonnes;
-    
-    // Total personnes et mineurs
-    let minStr = String(person.mineurs || '0').replace('+', '');
-    const mineurs = parseInt(minStr) || 0;
-    totalNbPersonnes += nbPersonnes;
-    totalMineurs += mineurs;
   });
   
   const sourceLabel = source === 'all' ? 'Toutes sources' : 
@@ -396,9 +375,9 @@ function displayStatistics(data, source, transmissionsCount = 0, adpCount = 0, p
                       source === 'adp' ? 'ADP' : 'Point Accueil';
   
   // Compter par source (personnes distinctes)
-  const transmissionsPersons = Array.from(uniquePersonsMap.values()).filter(d => d._source === 'transmissions');
-  const adpPersons = Array.from(uniquePersonsMap.values()).filter(d => d._source === 'adp');
-  const paPersons = Array.from(uniquePersonsMap.values()).filter(d => d._source === 'pointAccueil');
+  const transmissionsPersons = Array.from(uniquePersonsMap.values()).filter(entry => entry._types.has('transmissions'));
+  const adpPersons = Array.from(uniquePersonsMap.values()).filter(entry => entry._types.has('adp'));
+  const paPersons = Array.from(uniquePersonsMap.values()).filter(entry => entry._types.has('pointAccueil'));
   
   const detailBySource = source === 'all' ? `
     <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.3);">
@@ -427,7 +406,7 @@ function displayStatistics(data, source, transmissionsCount = 0, adpCount = 0, p
 
   container.innerHTML = `
     <div class="stats-results" style="display: grid; gap: 1.5rem;">
-      <div class="stats-summary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px;">
+      <div class="stats-summary" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 1.5rem; border-radius: 12px;">
         <h3 style="margin: 0 0 1rem 0;">Résumé (${sourceLabel})</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
           <div style="text-align: center;">
@@ -451,15 +430,15 @@ function displayStatistics(data, source, transmissionsCount = 0, adpCount = 0, p
       </div>
       
       <div class="stats-details" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
-        <div class="stats-card" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #e91e63;">
-          <h4 style="margin: 0 0 0.5rem 0; color: #e91e63;">Typologie de ménages</h4>
+        <div class="stats-card" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #dc2626;">
+          <h4 style="margin: 0 0 0.5rem 0; color: #dc2626;">Typologie de ménages</h4>
           <ul style="list-style: none; padding: 0; margin: 0;">
             ${typologieHtml}
           </ul>
         </div>
         
-        <div class="stats-card" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #667eea;">
-          <h4 style="margin: 0 0 0.5rem 0; color: #667eea;">Type d'intervention</h4>
+        <div class="stats-card" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #2563eb;">
+          <h4 style="margin: 0 0 0.5rem 0; color: #2563eb;">Type d'intervention</h4>
           <ul style="list-style: none; padding: 0; margin: 0;">
             <li>1er contact: <strong>${premierContact}</strong></li>
             <li>Personne présente: <strong>${personnePresente}</strong></li>
@@ -470,8 +449,8 @@ function displayStatistics(data, source, transmissionsCount = 0, adpCount = 0, p
           </ul>
         </div>
         
-        <div class="stats-card" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #28a745;">
-          <h4 style="margin: 0 0 0.5rem 0; color: #28a745;">Accompagnement</h4>
+        <div class="stats-card" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #059669;">
+          <h4 style="margin: 0 0 0.5rem 0; color: #059669;">Accompagnement</h4>
           <ul style="list-style: none; padding: 0; margin: 0;">
             <li>Écoute: <strong>${accompStats.ecoute}</strong></li>
             <li>Orientation: <strong>${accompStats.orientation}</strong></li>
@@ -482,8 +461,8 @@ function displayStatistics(data, source, transmissionsCount = 0, adpCount = 0, p
           </ul>
         </div>
         
-        <div class="stats-card" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #ffc107;">
-          <h4 style="margin: 0 0 0.5rem 0; color: #d39e00;">Distribution</h4>
+        <div class="stats-card" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #d97706;">
+          <h4 style="margin: 0 0 0.5rem 0; color: #b45309;">Distribution</h4>
           <ul style="list-style: none; padding: 0; margin: 0;">
             <li>Alimentaire: <strong>${distribStats.alimentaire}</strong></li>
             <li>Vestimentaire: <strong>${distribStats.vestimentaire}</strong></li>
@@ -497,7 +476,7 @@ function displayStatistics(data, source, transmissionsCount = 0, adpCount = 0, p
     </div>
   `;
   
-  console.log('Statistiques affichées: ' + totalPersonnesDistinctes + ' personnes distinctes, ' + totalPassages + ' passages');
+  console.log('✅ Statistiques affichées: ' + totalPersonnesDistinctes + ' personnes distinctes, ' + totalPassages + ' passages');
 }
 
 /**
@@ -542,7 +521,6 @@ function resetFilters() {
  * Affiche les cartes des personnes filtrées
  */
 function showFilteredCards() {
-  // Utiliser les personnes distinctes avec leur nombre de passages
   const persons = window.filteredStatsPersons || [];
   const container = document.getElementById('stats-cards-list');
   const section = document.getElementById('stats-cards-section');
@@ -563,38 +541,44 @@ function showFilteredCards() {
   container.innerHTML = '';
   
   // Afficher chaque personne DISTINCTE avec son nombre de passages
-  persons.forEach(person => {
+  persons.forEach(personEntry => {
+    const personne = personEntry.personne;
     const card = document.createElement('div');
     card.className = 'transmission-card';
     
-    // Badge source
-    const sourceMap = {
-      'transmissions': { label: 'Transmissions', color: '#667eea' },
-      'adp': { label: 'ADP', color: '#f5576c' },
-      'pointAccueil': { label: 'Point Accueil', color: '#00f2fe' }
+    // Badges pour les types d'intervention - Couleurs neutres
+    let typeBadges = '';
+    const typeMap = {
+      'transmissions': { label: 'MD', color: '#2563eb', title: 'Maraudes Départementales' },
+      'adp': { label: 'ADP', color: '#059669', title: 'ADP' },
+      'pointAccueil': { label: 'PA', color: '#0891b2', title: 'Point Accueil' }
     };
-    const sourceInfo = sourceMap[person._source] || { label: 'Inconnu', color: '#999' };
-    const sourceLabel = sourceInfo.label;
-    const sourceColor = sourceInfo.color;
+    
+    personEntry._types.forEach(type => {
+      const info = typeMap[type];
+      if (info) {
+        typeBadges += `<span class="badge" style="background: ${info.color}; color: white;" title="${info.title}">${info.label}</span>`;
+      }
+    });
     
     // Nom affiché
-    const displayName = person.inconnu ? 'Inconnu' : 
-      `${person.prenom || ''} ${person.nom || ''}`.trim() || 'Non renseigné';
+    const displayName = personne.inconnu ? 'Inconnu' : 
+      `${personne.prenom || ''} ${personne.nom || ''}`.trim() || 'Non renseigné';
     
-    // Nombre de passages
-    const passages = person._passages || 1;
+    // Nombre de passages (max 1 par type par date)
+    let passages = 0;
+    if (personEntry._typesParDate) {
+      personEntry._typesParDate.forEach(typesSet => {
+        passages += typesSet.size; // Nombre de types différents pour cette date
+      });
+    } else {
+      passages = 1; // Fallback
+    }
     const passagesLabel = passages > 1 ? `${passages} passages` : '1 passage';
     
-    // Badges pour les interventions
-    let badges = '';
-    if (person.pointAccueil) badges += '<span class="badge">Point Accueil</span>';
-    if (person.orly?.premierContact) badges += '<span class="badge">1er contact</span>';
-    if (person.orly?.maraude) badges += '<span class="badge">Maraude</span>';
-    if (person.orly?.veille) badges += '<span class="badge">Veille</span>';
-    
     // Liste des dates de passage
-    const datesHtml = person._dates && person._dates.length > 0 
-      ? person._dates.map(d => formatDateDisplay(d)).join(', ')
+    const datesHtml = personEntry._dates && personEntry._dates.length > 0 
+      ? personEntry._dates.map(d => formatDateDisplay(d)).join(', ')
       : '';
     
     card.innerHTML = `
@@ -602,53 +586,52 @@ function showFilteredCards() {
         <h3>${displayName}</h3>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
           <span class="badge" style="background: #dc3545; color: white;">${passagesLabel}</span>
-          <span class="badge" style="background: ${sourceColor}; color: white;">${sourceLabel}</span>
+          ${typeBadges}
         </div>
       </div>
       <div class="card-body">
         ${datesHtml ? `
           <div class="card-info">
-            <span class="card-label">Date${person._dates.length > 1 ? 's' : ''} :</span>
+            <span class="card-label">Date${personEntry._dates.length > 1 ? 's' : ''} :</span>
             <span class="card-value">${datesHtml}</span>
           </div>
         ` : ''}
-        ${person.dateNaissance && !person.inconnu ? `
+        ${personne.dateNaissance && !personne.inconnu ? `
           <div class="card-info">
             <span class="card-label">Naissance :</span>
-            <span class="card-value">${formatDateDisplay(person.dateNaissance)}</span>
+            <span class="card-value">${formatDateDisplay(personne.dateNaissance)}</span>
           </div>
         ` : ''}
-        ${person.typologie ? `
+        ${personne.typologie ? `
           <div class="card-info">
             <span class="card-label">Typologie :</span>
-            <span class="card-value">${person.typologie}</span>
+            <span class="card-value">${personne.typologie}</span>
           </div>
         ` : ''}
-        ${person.nbPersonnes ? `
+        ${personne.nbPersonnes ? `
           <div class="card-info">
             <span class="card-label">Nb personnes :</span>
-            <span class="card-value">${person.nbPersonnes}</span>
+            <span class="card-value">${personne.nbPersonnes}</span>
           </div>
         ` : ''}
-        ${person.mineurs ? `
+        ${personne.mineurs ? `
           <div class="card-info">
             <span class="card-label">Dont mineurs :</span>
-            <span class="card-value">${person.mineurs}</span>
+            <span class="card-value">${personne.mineurs}</span>
           </div>
         ` : ''}
-        ${person.descriptionPhysique ? `
+        ${personne.descriptionPhysique ? `
           <div class="card-info">
             <span class="card-label">Description :</span>
-            <span class="card-value">${person.descriptionPhysique}</span>
+            <span class="card-value">${personne.descriptionPhysique}</span>
           </div>
         ` : ''}
-        ${person.ville ? `
+        ${personne.departement ? `
           <div class="card-info">
-            <span class="card-label">Ville :</span>
-            <span class="card-value">${person.ville}</span>
+            <span class="card-label">Département :</span>
+            <span class="card-value">${personne.departement}</span>
           </div>
         ` : ''}
-        ${badges ? `<div class="card-badges">${badges}</div>` : ''}
       </div>
     `;
     container.appendChild(card);
@@ -694,5 +677,3 @@ if (typeof module !== 'undefined' && module.exports) {
   window.showFilteredCards = showFilteredCards;
   window.hideCards = hideCards;
 }
-
-

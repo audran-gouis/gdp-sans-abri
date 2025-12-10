@@ -1,6 +1,6 @@
-/* Styles pour le bouton Ajouter */
+/* Styles pour le bouton Ajouter - Couleurs neutres */
 .btn-add {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #2563eb;
     color: white;
     border: none;
     padding: 0.6rem 2rem;
@@ -14,8 +14,9 @@
 }
 
 .btn-add:hover {
+    background: #1e40af;
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
 }
 
 .btn-add:active {

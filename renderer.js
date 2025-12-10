@@ -23,29 +23,19 @@ async function initApp() {
   if (window.APP_INITIALIZED) return;
   window.APP_INITIALIZED = true;
   
-  console.log('🚀 Démarrage de l\'initialisation...');
+  console.log('🚀 Démarrage de l\'initialisation (BASE UNIFIÉE)...');
   
   try {
-    // Initialiser les bases de données
-    if (typeof window.initDatabasePersonnes === 'function') {
-      await window.initDatabasePersonnes();
-      console.log('✅ Base de données Personnes initialisée');
+    // Initialiser la BASE DE DONNÉES UNIFIÉE
+    if (typeof window.initDatabaseUnified === 'function') {
+      await window.initDatabaseUnified();
+      console.log('✅ Base de données Unifiée initialisée');
+    } else {
+      console.error('❌ Base de données Unifiée non disponible !');
     }
     
-    if (typeof window.initDB === 'function') {
-    await window.initDB();
-      console.log('✅ Base de données Transmissions initialisée');
-    }
-    
-    if (typeof window.initDBADP === 'function') {
-      await window.initDBADP();
-      console.log('✅ Base de données ADP initialisée');
-    }
-    
-    if (typeof window.initDatabasePA === 'function') {
-      await window.initDatabasePA();
-      console.log('✅ Base de données Point Accueil initialisée');
-    }
+    // Les anciennes bases sont conservées temporairement pour la migration
+    // Elles seront supprimées après migration réussie
     
     // Initialiser la navigation par onglets
     if (typeof window.initTabs === 'function') {

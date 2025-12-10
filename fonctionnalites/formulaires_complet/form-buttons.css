@@ -1,6 +1,6 @@
-/* Boutons de formulaire */
+/* Boutons de formulaire - Couleurs neutres */
 .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #2563eb;
     color: white;
     border: none;
     padding: 0.7rem 2rem;
@@ -12,8 +12,9 @@
 }
 
 .btn-primary:hover {
+    background: #1e40af;
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
 }
 
 .btn-primary:active {
@@ -34,8 +35,8 @@
 
 .btn-secondary:hover {
     background: #f5f5f5;
-    border-color: #667eea;
-    color: #667eea;
+    border-color: #2563eb;
+    color: #2563eb;
 }
 
 .btn-secondary:active {

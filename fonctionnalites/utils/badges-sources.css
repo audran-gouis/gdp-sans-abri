@@ -19,28 +19,28 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-/* Badges de sources */
+/* Badges de sources - Couleurs neutres */
 .badge-transmissions {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #2563eb; /* Bleu */
 }
 
 .badge-adp {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: #059669; /* Vert sobre */
 }
 
 .badge-pa {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: #0891b2; /* Cyan sobre */
 }
 
 /* Badges de comptage de transmissions */
 .badge-has-today {
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  background: #059669; /* Vert sobre */
   font-size: 13px;
   padding: 4px 10px;
 }
 
 .badge-no-transmission {
-  background: linear-gradient(135deg, #666 0%, #999 100%);
+  background: #6b7280; /* Gris neutre */
   opacity: 0.7;
 }
 

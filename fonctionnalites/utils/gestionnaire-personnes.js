@@ -1,6 +1,6 @@
 /**
- * Gestionnaire centralisé des personnes avec base unique
- * Charge les personnes depuis la DB centrale et leurs interventions depuis les 3 sources
+ * Gestionnaire centralisé des personnes - BASE UNIFIÉE
+ * Charge les personnes et leurs interventions depuis la nouvelle base unifiée
  */
 
 /**
@@ -8,21 +8,17 @@
  */
 async function chargerToutesLesPersonnesAvecInterventions() {
   try {
-    // Charger toutes les personnes
-    const personnes = await window.getAllPersonnes();
-    console.log(`📋 ${personnes.length} personnes chargées`);
+    // Initialiser la base de données unifiée
+    if (typeof window.initDatabaseUnified === 'function') {
+      await window.initDatabaseUnified();
+    }
     
-    // Charger toutes les interventions
-    const [transmissions, adp, pa] = await Promise.all([
-      typeof window.getAllTransmissions === 'function' ? window.getAllTransmissions() : [],
-      typeof window.getAllTransmissionsAdp === 'function' ? window.getAllTransmissionsAdp() : [],
-      typeof recupererFichesPA === 'function' ? recupererFichesPA() : []
-    ]);
+    // Charger toutes les personnes avec leurs interventions
+    const personnesAvecInterventions = await window.getPersonnesAvecInterventions();
+    console.log(`📋 ${personnesAvecInterventions.length} personnes chargées avec leurs interventions`);
     
-    console.log(`📋 Interventions: ${transmissions.length} Transmissions, ${adp.length} ADP, ${pa.length} PA`);
-    
-    // Enrichir chaque personne avec ses interventions
-    const personnesEnrichies = personnes.map(personne => {
+    // Enrichir les personnes avec les sources
+    const personnesEnrichies = personnesAvecInterventions.map(personne => {
       const sources = new Set();
       const interventions = {
         transmissions: [],
@@ -30,58 +26,148 @@ async function chargerToutesLesPersonnesAvecInterventions() {
         pointAccueil: []
       };
       
-      // Trouver les transmissions de cette personne
-      const transPersonne = transmissions.filter(t => t.personneId === personne.id);
-      if (transPersonne.length > 0) {
-        sources.add('transmissions');
-        interventions.transmissions = transPersonne;
-      }
-      
-      // Trouver les ADP de cette personne
-      const adpPersonne = adp.filter(a => a.personneId === personne.id);
-      if (adpPersonne.length > 0) {
-        sources.add('adp');
-        interventions.adp = adpPersonne;
-      }
-      
-      // Trouver les PA de cette personne
-      const paPersonne = pa.filter(p => p.personneId === personne.id);
-      if (paPersonne.length > 0) {
-        sources.add('pointAccueil');
-        interventions.pointAccueil = paPersonne;
+      // Grouper les interventions par type
+      if (personne.interventions && personne.interventions.length > 0) {
+        personne.interventions.forEach(intervention => {
+          if (intervention.type === 'transmissions') {
+            sources.add('transmissions');
+            interventions.transmissions.push(intervention);
+          } else if (intervention.type === 'adp') {
+            sources.add('adp');
+            interventions.adp.push(intervention);
+          } else if (intervention.type === 'pointAccueil') {
+            sources.add('pointAccueil');
+            interventions.pointAccueil.push(intervention);
+          }
+        });
       }
       
       return {
         ...personne,
         sources,
-        ...interventions
+        transmissions: interventions.transmissions,
+        adp: interventions.adp,
+        pointAccueil: interventions.pointAccueil
       };
     });
     
     return personnesEnrichies;
   } catch (error) {
-    console.error('Erreur lors du chargement des personnes:', error);
+    console.error('❌ Erreur lors du chargement des personnes:', error);
     return [];
   }
 }
 
 /**
- * Génère le HTML des badges sources
+ * Génère le HTML des badges sources POUR UNE DATE DONNÉE
+ */
+function genererBadgesSourcesParDate(personne, selectedDate) {
+  let html = '';
+  
+  if (!selectedDate) {
+    // Si pas de date sélectionnée, afficher tous les badges
+    return genererBadgesSources(personne.sources);
+  }
+  
+  // Vérifier si la personne a des interventions pour cette date
+  const hasTransmissions = personne.transmissions && personne.transmissions.some(i => i.date === selectedDate);
+  const hasAdp = personne.adp && personne.adp.some(i => i.date === selectedDate);
+  const hasPA = personne.pointAccueil && personne.pointAccueil.some(i => i.date === selectedDate);
+  
+  if (hasTransmissions) {
+    html += '<span class="badge badge-transmissions" title="Maraudes Départementales">MD</span>';
+  }
+  if (hasAdp) {
+    html += '<span class="badge badge-adp" title="ADP">ADP</span>';
+  }
+  if (hasPA) {
+    html += '<span class="badge badge-pa" title="Point Accueil">PA</span>';
+  }
+  
+  return html;
+}
+
+/**
+ * Génère le HTML des badges sources (tous types, toutes dates)
  */
 function genererBadgesSources(sources) {
   let html = '';
   
   if (sources.has('transmissions')) {
-    html += '<span class="badge badge-transmissions" title="Présent dans Transmissions">T</span>';
+    html += '<span class="badge badge-transmissions" title="Maraudes Départementales">MD</span>';
   }
   if (sources.has('adp')) {
-    html += '<span class="badge badge-adp" title="Présent dans ADP">ADP</span>';
+    html += '<span class="badge badge-adp" title="ADP">ADP</span>';
   }
   if (sources.has('pointAccueil')) {
-    html += '<span class="badge badge-pa" title="Présent dans Point Accueil">PA</span>';
+    html += '<span class="badge badge-pa" title="Point Accueil">PA</span>';
   }
   
   return html;
+}
+
+/**
+ * Compte le nombre d'interventions pour une personne sur une date donnée
+ * Option B améliorée : Total tous modules confondus pour la date sélectionnée
+ * Maximum 1 intervention par type par jour (évite les doublons)
+ */
+function compterInterventionsParDate(personne, selectedDate, source) {
+  if (!selectedDate) return { count: 0, hasToday: false };
+
+  // Utiliser un Set pour compter les types d'interventions uniques
+  const typesPresents = new Set();
+  const dates = [];
+
+  // Vérifier les transmissions
+  if (personne.transmissions) {
+    const trans = personne.transmissions.filter(i => i.date === selectedDate);
+    if (trans.length > 0) {
+      typesPresents.add('transmissions');
+      dates.push(...trans.map(i => i.date));
+    }
+  }
+
+  // Vérifier les ADP
+  if (personne.adp) {
+    const adp = personne.adp.filter(i => i.date === selectedDate);
+    if (adp.length > 0) {
+      typesPresents.add('adp');
+      dates.push(...adp.map(i => i.date));
+    }
+  }
+
+  // Vérifier les Point Accueil
+  if (personne.pointAccueil) {
+    const pa = personne.pointAccueil.filter(i => i.date === selectedDate);
+    if (pa.length > 0) {
+      typesPresents.add('pointAccueil');
+      dates.push(...pa.map(i => i.date));
+    }
+  }
+
+  const count = typesPresents.size; // Nombre de types différents (max 3)
+  const hasToday = count > 0;
+
+  return {
+    count,
+    hasToday,
+    dates: dates.filter(Boolean)
+  };
+}
+
+/**
+ * Génère le badge du compteur d'interventions
+ */
+function genererBadgeInterventions(stats, selectedDate) {
+  if (!selectedDate || stats.count === 0) {
+    return '<span class="badge badge-no-transmission" title="Aucune intervention">0</span>';
+  }
+
+  if (stats.hasToday) {
+    return `<span class="badge badge-has-today" title="${stats.count} intervention(s) sur la période">${stats.count}</span>`;
+  }
+
+  return '<span class="badge badge-no-transmission" title="Aucune intervention">0</span>';
 }
 
 /**
@@ -90,41 +176,36 @@ function genererBadgesSources(sources) {
 function applyTransmissionsFilters(personnes) {
   let filtered = personnes;
   
-  // Filtre par nom
   const filterNom = document.getElementById('filter-nom')?.value?.toLowerCase();
   if (filterNom) {
     filtered = filtered.filter(p => p.nom?.toLowerCase().includes(filterNom));
   }
   
-  // Filtre par prénom
   const filterPrenom = document.getElementById('filter-prenom')?.value?.toLowerCase();
   if (filterPrenom) {
     filtered = filtered.filter(p => p.prenom?.toLowerCase().includes(filterPrenom));
   }
   
-  // Filtre par date de naissance
   const filterDdn = document.getElementById('filter-ddn')?.value;
   if (filterDdn) {
     filtered = filtered.filter(p => p.dateNaissance === filterDdn);
   }
   
-  // Filtre par "Inconnu"
   const filterInconnu = document.getElementById('filter-inconnu')?.checked;
   if (filterInconnu) {
     filtered = filtered.filter(p => p.inconnu === true);
   }
   
-  // Filtre par description physique
   const filterDescription = document.getElementById('filter-description')?.value?.toLowerCase();
   if (filterDescription) {
     filtered = filtered.filter(p => p.descriptionPhysique?.toLowerCase().includes(filterDescription));
   }
-
+  
   return filtered;
 }
 
 /**
- * Applique les filtres ADP
+ * Applique les filtres sur les personnes pour ADP
  */
 function applyAdpFilters(personnes) {
   let filtered = personnes;
@@ -158,7 +239,7 @@ function applyAdpFilters(personnes) {
 }
 
 /**
- * Applique les filtres Point Accueil
+ * Applique les filtres sur les personnes pour Point Accueil
  */
 function applyPAFilters(personnes) {
   let filtered = personnes;
@@ -192,74 +273,33 @@ function applyPAFilters(personnes) {
 }
 
 /**
- * Compte le nombre d'interventions pour une personne sur une date donnée
- */
-function compterInterventionsParDate(personne, selectedDate, source) {
-  if (!selectedDate) return { count: 0, hasToday: false };
-  
-  let interventions = [];
-  
-  if (source === 'transmissions' || source === 'all') {
-    interventions = interventions.concat(personne.transmissions || []);
-  }
-  if (source === 'adp' || source === 'all') {
-    interventions = interventions.concat(personne.adp || []);
-  }
-  if (source === 'pointAccueil' || source === 'all') {
-    interventions = interventions.concat(personne.pointAccueil || []);
-  }
-  
-  const interventionsFiltered = interventions.filter(i => {
-    const iDate = i.dateTransmission || i.date;
-    return iDate === selectedDate;
-  });
-  
-  return {
-    count: interventionsFiltered.length,
-    hasToday: interventionsFiltered.length > 0,
-    dates: interventionsFiltered.map(i => i.dateTransmission || i.date).filter(Boolean)
-  };
-}
-
-/**
- * Génère le badge du compteur d'interventions
- */
-function genererBadgeInterventions(stats, selectedDate) {
-  if (!selectedDate || stats.count === 0) {
-    return '<span class="badge badge-no-transmission" title="Aucune intervention">0</span>';
-  }
-  
-  if (stats.hasToday) {
-    return `<span class="badge badge-has-today" title="${stats.count} intervention(s) sur la période">${stats.count}</span>`;
-  }
-  
-  return '<span class="badge badge-no-transmission" title="Aucune intervention">0</span>';
-}
-
-/**
  * Affiche toutes les personnes pour Transmissions avec badges
  */
 async function afficherToutesLesPersonnesTransmissions() {
   const container = document.getElementById('transmissions-list');
   if (!container) return;
-  
+
   const personnes = await chargerToutesLesPersonnesAvecInterventions();
   const selectedDate = document.getElementById('transmissions-date')?.value;
-  
+
   // Appliquer les filtres
   const personnesFiltrees = applyTransmissionsFilters(personnes);
-  
+
   if (personnesFiltrees.length === 0) {
     container.innerHTML = '<p class="empty-message">Aucune personne pour le moment</p>';
     return;
   }
-  
+
   container.innerHTML = personnesFiltrees.map(personne => {
-    const badges = genererBadgesSources(personne.sources);
-    const intervention = personne.transmissions.find(t => t.dateTransmission === selectedDate);
+    const badges = genererBadgesSourcesParDate(personne, selectedDate);
     const stats = compterInterventionsParDate(personne, selectedDate, 'transmissions');
     const badgeCount = genererBadgeInterventions(stats, selectedDate);
     
+    // Vérifier si une transmission existe pour cette date
+    const hasTransmissionToday = personne.transmissions && personne.transmissions.some(i => i.date === selectedDate);
+    const btnText = hasTransmissionToday ? 'Modifier' : 'Compléter';
+    const btnClass = hasTransmissionToday ? 'btn-edit btn-modifier' : 'btn-edit btn-completer';
+
     return `
       <div class="transmission-card">
         <div class="card-header">
@@ -272,16 +312,17 @@ async function afficherToutesLesPersonnesTransmissions() {
         <div class="card-body">
           ${personne.descriptionPhysique ? `<p><strong>Description:</strong> ${personne.descriptionPhysique}</p>` : ''}
           ${personne.dateNaissance ? `<p><strong>Date de naissance:</strong> ${new Date(personne.dateNaissance).toLocaleDateString('fr-FR')}</p>` : ''}
-          ${intervention ? `<p>${intervention.transmission || ''}</p>` : 
-            stats.hasToday ? '' : '<p class="no-transmission-notice">❌ Aucune transmission pour cette date</p>'}
+          ${personne.departement ? `<p><strong>Département:</strong> ${personne.departement}</p>` : ''}
+          ${personne.typologie ? `<p><strong>Typologie:</strong> ${personne.typologie}</p>` : ''}
+          ${!hasTransmissionToday && selectedDate ? '<p class="no-transmission-notice">Pas de maraude départementale pour ce jour</p>' : ''}
         </div>
         <div class="card-actions">
-          <button class="btn-card btn-edit" data-personne-id="${personne.id}" data-type="transmissions">Compléter</button>
+          <button class="btn-card ${btnClass}" data-personne-id="${personne.id}" data-type="transmissions">${btnText}</button>
         </div>
       </div>
     `;
   }).join('');
-  
+
   // Ajouter les événements aux boutons
   container.querySelectorAll('.btn-edit[data-type="transmissions"]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -299,23 +340,28 @@ async function afficherToutesLesPersonnesTransmissions() {
 async function afficherToutesLesPersonnesADP() {
   const container = document.getElementById('adp-list');
   if (!container) return;
-  
+
   const personnes = await chargerToutesLesPersonnesAvecInterventions();
-  
+
   // Appliquer les filtres
   const personnesFiltrees = applyAdpFilters(personnes);
-  
+
   if (personnesFiltrees.length === 0) {
     container.innerHTML = '<p class="empty-message">Aucune personne pour le moment</p>';
     return;
   }
-  
+
   container.innerHTML = personnesFiltrees.map(personne => {
-    const badges = genererBadgesSources(personne.sources);
     const selectedDate = document.getElementById('adp-date')?.value;
+    const badges = genererBadgesSourcesParDate(personne, selectedDate);
     const stats = compterInterventionsParDate(personne, selectedDate, 'adp');
     const badgeCount = genererBadgeInterventions(stats, selectedDate);
     
+    // Vérifier si une ADP existe pour cette date
+    const hasAdpToday = personne.adp && personne.adp.some(i => i.date === selectedDate);
+    const btnText = hasAdpToday ? 'Modifier' : 'Compléter';
+    const btnClass = hasAdpToday ? 'btn-edit btn-modifier' : 'btn-edit btn-completer';
+
     return `
       <div class="transmission-card">
         <div class="card-header">
@@ -328,30 +374,23 @@ async function afficherToutesLesPersonnesADP() {
         <div class="card-body">
           ${personne.descriptionPhysique ? `<p><strong>Description:</strong> ${personne.descriptionPhysique}</p>` : ''}
           ${personne.dateNaissance ? `<p><strong>Date de naissance:</strong> ${new Date(personne.dateNaissance).toLocaleDateString('fr-FR')}</p>` : ''}
+          ${personne.departement ? `<p><strong>Département:</strong> ${personne.departement}</p>` : ''}
           ${personne.typologie ? `<p><strong>Typologie:</strong> ${personne.typologie}</p>` : ''}
-          ${!stats.hasToday && selectedDate ? '<p class="no-transmission-notice">❌ Aucune transmission pour cette date</p>' : ''}
+          ${!hasAdpToday && selectedDate ? '<p class="no-transmission-notice">Pas de maraude quotidienne pour ce jour</p>' : ''}
         </div>
         <div class="card-actions">
-          <button class="btn-card btn-edit" data-personne-id="${personne.id}" data-type="adp">Compléter</button>
+          <button class="btn-card ${btnClass}" data-personne-id="${personne.id}" data-type="adp">${btnText}</button>
         </div>
       </div>
     `;
   }).join('');
-  
+
   // Ajouter les événements aux boutons
   container.querySelectorAll('.btn-edit[data-type="adp"]').forEach(btn => {
     btn.addEventListener('click', () => {
       const personneId = parseInt(btn.dataset.personneId);
-      console.log('🖱️ Clic sur bouton ADP - personneId:', personneId);
-      console.log('🔍 window.editTransmissionAdp existe?', typeof window.editTransmissionAdp);
       if (personneId && typeof window.editTransmissionAdp === 'function') {
-        console.log('✅ Appel de editTransmissionAdp avec ID:', personneId);
         window.editTransmissionAdp(personneId);
-      } else {
-        console.error('❌ Impossible d\'appeler editTransmissionAdp:', {
-          personneId,
-          functionExists: typeof window.editTransmissionAdp
-        });
       }
     });
   });
@@ -363,23 +402,28 @@ async function afficherToutesLesPersonnesADP() {
 async function afficherToutesLesPersonnesPA() {
   const container = document.getElementById('point-accueil-list');
   if (!container) return;
-  
+
   const personnes = await chargerToutesLesPersonnesAvecInterventions();
-  
+
   // Appliquer les filtres
   const personnesFiltrees = applyPAFilters(personnes);
-  
+
   if (personnesFiltrees.length === 0) {
     container.innerHTML = '<p class="empty-message">Aucune personne pour le moment</p>';
     return;
   }
-  
+
   container.innerHTML = personnesFiltrees.map(personne => {
-    const badges = genererBadgesSources(personne.sources);
     const selectedDate = document.getElementById('pa-date')?.value;
+    const badges = genererBadgesSourcesParDate(personne, selectedDate);
     const stats = compterInterventionsParDate(personne, selectedDate, 'pointAccueil');
     const badgeCount = genererBadgeInterventions(stats, selectedDate);
     
+    // Vérifier si une fiche Point Accueil existe pour cette date
+    const hasPAToday = personne.pointAccueil && personne.pointAccueil.some(i => i.date === selectedDate);
+    const btnText = hasPAToday ? 'Modifier' : 'Compléter';
+    const btnClass = hasPAToday ? 'btn-edit btn-modifier' : 'btn-edit btn-completer';
+
     return `
       <div class="transmission-card">
         <div class="card-header">
@@ -392,18 +436,19 @@ async function afficherToutesLesPersonnesPA() {
         <div class="card-body">
           ${personne.descriptionPhysique ? `<p><strong>Description:</strong> ${personne.descriptionPhysique}</p>` : ''}
           ${personne.dateNaissance ? `<p><strong>Date de naissance:</strong> ${new Date(personne.dateNaissance).toLocaleDateString('fr-FR')}</p>` : ''}
+          ${personne.departement ? `<p><strong>Département:</strong> ${personne.departement}</p>` : ''}
           ${personne.typologie ? `<p><strong>Typologie:</strong> ${personne.typologie}</p>` : ''}
-          ${!stats.hasToday && selectedDate ? '<p class="no-transmission-notice">❌ Aucune transmission pour cette date</p>' : ''}
+          ${!hasPAToday && selectedDate ? '<p class="no-transmission-notice">Pas de point accueil pour ce jour</p>' : ''}
         </div>
         <div class="card-actions">
-          <button class="btn-card btn-edit" data-personne-id="${personne.id}">Compléter</button>
+          <button class="btn-card ${btnClass}" data-personne-id="${personne.id}" data-type="pointAccueil">${btnText}</button>
         </div>
       </div>
     `;
   }).join('');
-  
+
   // Ajouter les événements aux boutons
-  container.querySelectorAll('.btn-edit').forEach(btn => {
+  container.querySelectorAll('.btn-edit[data-type="pointAccueil"]').forEach(btn => {
     btn.addEventListener('click', () => {
       const personneId = parseInt(btn.dataset.personneId);
       if (personneId && typeof window.modifierFichePA === 'function') {
@@ -417,6 +462,7 @@ async function afficherToutesLesPersonnesPA() {
 if (typeof window !== 'undefined') {
   window.chargerToutesLesPersonnesAvecInterventions = chargerToutesLesPersonnesAvecInterventions;
   window.genererBadgesSources = genererBadgesSources;
+  window.genererBadgesSourcesParDate = genererBadgesSourcesParDate;
   window.compterInterventionsParDate = compterInterventionsParDate;
   window.genererBadgeInterventions = genererBadgeInterventions;
   window.applyTransmissionsFilters = applyTransmissionsFilters;
@@ -425,17 +471,13 @@ if (typeof window !== 'undefined') {
   window.afficherToutesLesPersonnesTransmissions = afficherToutesLesPersonnesTransmissions;
   window.afficherToutesLesPersonnesADP = afficherToutesLesPersonnesADP;
   window.afficherToutesLesPersonnesPA = afficherToutesLesPersonnesPA;
-  
-  // Alias pour compatibilité
-  window.afficherToutesFichesTransmissions = afficherToutesLesPersonnesTransmissions;
-  window.afficherToutesFichesADP = afficherToutesLesPersonnesADP;
-  window.afficherToutesFichesPA = afficherToutesLesPersonnesPA;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     chargerToutesLesPersonnesAvecInterventions,
     genererBadgesSources,
+    genererBadgesSourcesParDate,
     compterInterventionsParDate,
     genererBadgeInterventions,
     applyTransmissionsFilters,
@@ -447,5 +489,4 @@ if (typeof module !== 'undefined' && module.exports) {
   };
 }
 
-console.log('✅ Gestionnaire centralisé des personnes chargé');
-
+console.log('✅ Gestionnaire centralisé des personnes chargé (Base Unifiée)');

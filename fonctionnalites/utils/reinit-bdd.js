@@ -76,3 +76,4 @@ if (typeof window !== 'undefined') {
 console.log('✅ Script de réinitialisation chargé');
 console.log('Pour réinitialiser les bases, tapez dans la console: reinitialiserBases()');
 
+

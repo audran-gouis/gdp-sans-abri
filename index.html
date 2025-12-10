@@ -6,6 +6,9 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
     <title>App Finale Maraudes</title>
     
+    <!-- Variables de couleurs -->
+    <link rel="stylesheet" href="fonctionnalites/interface_complet/variables.css">
+    
     <!-- Styles de base -->
     <link rel="stylesheet" href="fonctionnalites/interface_complet/base.css">
     <link rel="stylesheet" href="fonctionnalites/interface_complet/content-card.css">
@@ -43,6 +46,9 @@
     
     <!-- Badges sources -->
     <link rel="stylesheet" href="fonctionnalites/utils/badges-sources.css">
+    
+    <!-- Boutons états (Compléter/Modifier) -->
+    <link rel="stylesheet" href="fonctionnalites/utils/btn-states.css">
 </head>
 <body>
     <div id="app">
@@ -81,13 +87,23 @@
     <script src="fonctionnalites/html-loader.js"></script>
     
     <!-- Scripts fonctionnels -->
-    <script src="fonctionnalites/persistance_complet/database.js"></script>
-    <script src="fonctionnalites/persistance_complet/database-personnes.js"></script>
+    <!-- NOUVELLE BASE DE DONNÉES UNIFIÉE -->
+    <script src="fonctionnalites/persistance_complet/database-unified.js"></script>
+    
+    <!-- Gestionnaire de personnes (utilise la base unifiée) -->
     <script src="fonctionnalites/utils/gestionnaire-personnes.js"></script>
+    
+    <!-- ANCIENNES BASES (commentées - ne plus utiliser) -->
+    <!-- <script src="fonctionnalites/persistance_complet/database.js"></script> -->
+    <!-- <script src="fonctionnalites/persistance_complet/database-personnes.js"></script> -->
+    <!-- <script src="fonctionnalites/point_accueil_complet/database-pa.js"></script> -->
+    
+    <!-- Script de migration (pour transférer anciennes données si besoin) -->
+    <!-- <script src="fonctionnalites/utils/migration-vers-base-unifiee.js"></script> -->
+    
     <script src="fonctionnalites/transmissions_complet/affichage_page/code.js"></script>
     <script src="fonctionnalites/transmissions_complet/ajout_transmission_minimale/code.js"></script>
     <script src="fonctionnalites/adp_complet/ajout_personne_complete/code.js"></script>
-    <script src="fonctionnalites/point_accueil_complet/database-pa.js"></script>
     <script src="fonctionnalites/point_accueil_complet/ajout_personne_complete/code.js"></script>
     <script src="fonctionnalites/point_accueil_complet/point-accueil-init.js"></script>
     <script src="fonctionnalites/navigation_complet/affichage_onglet_par_defaut/code.js"></script>

@@ -28,6 +28,51 @@ function activerOnglet(tabId) {
   
   if (button) button.classList.add('active');
   if (content) content.classList.add('active');
+  
+  // Recharger les données de l'onglet activé
+  rechargerDonneesOnglet(tabId);
+}
+
+/**
+ * Recharge les données pour un onglet spécifique
+ */
+async function rechargerDonneesOnglet(tabId) {
+  console.log('🔄 Rechargement des données pour:', tabId);
+  
+  try {
+    switch (tabId) {
+      case 'transmissions':
+        if (typeof window.afficherToutesLesPersonnesTransmissions === 'function') {
+          await window.afficherToutesLesPersonnesTransmissions();
+          console.log('✅ Transmissions rechargées');
+        }
+        break;
+        
+      case 'adp':
+        if (typeof window.afficherToutesLesPersonnesADP === 'function') {
+          await window.afficherToutesLesPersonnesADP();
+          console.log('✅ ADP rechargé');
+        }
+        break;
+        
+      case 'point-accueil':
+        if (typeof window.afficherToutesLesPersonnesPA === 'function') {
+          await window.afficherToutesLesPersonnesPA();
+          console.log('✅ Point Accueil rechargé');
+        }
+        break;
+        
+      case 'statistiques':
+        // Les statistiques se rechargent manuellement avec le bouton "Appliquer"
+        console.log('📊 Statistiques (pas de rechargement auto)');
+        break;
+        
+      default:
+        console.log('⚠️ Onglet inconnu:', tabId);
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors du rechargement:', error);
+  }
 }
 
 /**
@@ -85,9 +130,11 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = { 
     activerOnglet,
     initTabs,
+    rechargerDonneesOnglet,
     verifierOngletActif 
   };
 } else {
   window.activerOnglet = activerOnglet;
   window.initTabs = initTabs;
+  window.rechargerDonneesOnglet = rechargerDonneesOnglet;
 }

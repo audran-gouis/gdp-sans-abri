@@ -19,14 +19,14 @@
 }
 
 .checkbox-label:hover {
-    color: #667eea;
+    color: #2563eb;
 }
 
 .form-checkbox {
     width: 20px;
     height: 20px;
     cursor: pointer;
-    accent-color: #667eea;
+    accent-color: #2563eb;
 }
 
 .checkbox-label span {
@@ -46,7 +46,7 @@
 }
 
 .checkbox-label-inline:hover {
-    color: #667eea;
+    color: #2563eb;
 }
 
 .checkbox-label-inline .form-checkbox {

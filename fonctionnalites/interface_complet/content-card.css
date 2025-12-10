@@ -1,15 +1,13 @@
-/* Styles pour les conteneurs de contenu */
+/* Styles pour les conteneurs de contenu - Version légère sans conteneur */
 .content-card {
-    background: white;
-    padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    max-width: 1200px;
+    background: transparent;
+    padding: 1.5rem 0.5rem;
+    max-width: 1400px;
     margin: 0 auto;
 }
 
 .content-card h2 {
-    color: #667eea;
+    color: #2563eb;
     margin-bottom: 1rem;
     font-size: 1.8rem;
 }

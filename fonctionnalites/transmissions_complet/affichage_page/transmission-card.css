@@ -17,8 +17,8 @@
 }
 
 .transmission-card:hover {
-    border-color: #667eea;
-    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.2);
+    border-color: #2563eb;
+    box-shadow: 0 5px 20px rgba(37, 99, 235, 0.2);
     transform: translateY(-3px);
 }
 
@@ -34,7 +34,7 @@
 .card-title {
     font-size: 1.2rem;
     font-weight: 700;
-    color: #667eea;
+    color: #2563eb;
     margin: 0;
 }
 
@@ -76,7 +76,7 @@
 }
 
 .badge {
-    background: #667eea;
+    background: #2563eb;
     color: white;
     padding: 0.3rem 0.7rem;
     border-radius: 15px;
@@ -85,11 +85,11 @@
 }
 
 .badge.secondary {
-    background: #764ba2;
+    background: #059669;
 }
 
 .badge.success {
-    background: #28a745;
+    background: #059669;
 }
 
 .card-separator {
@@ -105,7 +105,7 @@
 .transmission-title {
     font-size: 1rem;
     font-weight: 600;
-    color: #764ba2;
+    color: #475569;
     margin: 0 0 0.75rem 0;
 }
 
