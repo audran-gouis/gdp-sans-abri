@@ -68,4 +68,3 @@
   // Réinitialiser après chargement de module
   window.initMultiSelectToggle = initMultiSelectToggle;
 })();
-

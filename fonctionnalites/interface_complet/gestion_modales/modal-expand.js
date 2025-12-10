@@ -101,4 +101,3 @@
 })();
 
 console.log('✅ Module modal-expand.js chargé');
-

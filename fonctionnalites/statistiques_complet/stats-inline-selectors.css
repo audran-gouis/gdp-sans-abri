@@ -1,0 +1,99 @@
+/* Sélecteurs en ligne pour les statistiques */
+.stats-inline-selectors {
+    background: transparent !important;
+    padding: 0 0 1.5rem 0;
+    border-radius: 0;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+    flex-wrap: wrap;
+    box-shadow: none;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+/* Classe commune pour tous les sélecteurs - Style identique */
+.stats-selector-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 220px;
+    background: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+
+.stats-selector-item label {
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.9rem;
+}
+
+/* Options de date - masquées par défaut */
+.stats-date-option {
+    display: none;
+    background: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+.stats-date-option.active {
+    display: flex;
+}
+
+/* Plage de dates - Style spécial pour 2 champs côte à côte */
+.stats-selector-range {
+    display: none;
+    gap: 1.5rem;
+    flex: 2;
+    min-width: 460px;
+    background: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+
+.stats-selector-range.active {
+    display: flex;
+}
+
+/* Sélecteurs et inputs - Style unifié pour tous */
+.stats-select,
+.date-input {
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-family: inherit;
+    cursor: pointer;
+    background: transparent !important;
+    transition: all 0.3s ease;
+    width: 100%;
+    height: 44px;
+}
+
+.stats-select:hover,
+.date-input:hover {
+    border-color: #2563eb;
+}
+
+.stats-select:focus,
+.date-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .stats-inline-selectors {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .stats-selector-item,
+    .stats-selector-range {
+        min-width: 100%;
+    }
+}

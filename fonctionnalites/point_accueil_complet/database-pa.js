@@ -208,19 +208,3 @@ if (typeof module !== 'undefined' && module.exports) {
     importerDonneesPA
   };
 }
-
-// Export window pour l'application Electron
-if (typeof window !== 'undefined') {
-  window.initDatabasePA = initDatabasePA;
-  window.sauvegarderFichePA = sauvegarderFichePA;
-  window.recupererFichesPA = recupererFichesPA;
-  window.recupererFichePA = recupererFichePA;
-  window.mettreAJourFichePA = mettreAJourFichePA;
-  window.supprimerFichePA = supprimerFichePA;
-  window.rechercherFichesPA = rechercherFichesPA;
-  window.viderDatabasePA = viderDatabasePA;
-  window.exporterDonneesPA = exporterDonneesPA;
-  window.importerDonneesPA = importerDonneesPA;
-}
-
-console.log('✅ Module database-pa chargé');

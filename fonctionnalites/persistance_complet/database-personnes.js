@@ -252,4 +252,3 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 console.log('✅ Module Database Personnes chargé');
-

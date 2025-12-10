@@ -133,6 +133,15 @@ async function modifierFichePA(personneId) {
     formPA.dataset.personneId = personneId;
     console.log('🔖 personneId défini à:', personneId);
     
+    // Replier automatiquement la section "Informations Personnelles" pour une personne existante
+    const gridInfoPerso = document.getElementById('pa-grid-info-perso');
+    const toggleIcon = document.querySelector('#pa-section-info-perso .collapse-toggle');
+    if (gridInfoPerso && toggleIcon) {
+      gridInfoPerso.style.display = 'none';
+      toggleIcon.classList.add('collapsed');
+      console.log('📁 Section Informations Personnelles repliée automatiquement (PA)');
+    }
+    
     // Ouvrir la modal
     const modal = document.getElementById('modal-point-accueil');
     if (modal) {

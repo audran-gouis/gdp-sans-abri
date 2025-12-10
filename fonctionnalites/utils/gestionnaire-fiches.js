@@ -449,4 +449,3 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 console.log('✅ Gestionnaire centralisé des fiches chargé');
-

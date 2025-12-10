@@ -1,68 +1,39 @@
 /* Styles pour le sélecteur de dates des statistiques */
+/* Style désactivé - maintenant géré par stats-inline-selectors.css */
 .stats-date-selector {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 10px;
-    margin-bottom: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    /* Styles déplacés vers stats-inline-selectors.css */
 }
 
 .stats-selector-group {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+    /* Styles déplacés vers stats-inline-selectors.css */
 }
 
 .stats-selector-group label {
-    font-weight: 600;
-    color: #2563eb;
-    font-size: 1.1rem;
-    min-width: 80px;
+    /* Styles déplacés vers stats-inline-selectors.css */
 }
 
 .stats-select {
-    padding: 0.6rem 1rem;
-    font-size: 1rem;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-family: inherit;
-    cursor: pointer;
-    background: white;
-    transition: all 0.3s ease;
-    min-width: 200px;
+    /* Styles déplacés vers stats-inline-selectors.css */
 }
 
 .stats-select:hover {
-    border-color: #2563eb;
+    /* Styles déplacés vers stats-inline-selectors.css */
 }
 
 .stats-select:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    /* Styles déplacés vers stats-inline-selectors.css */
 }
 
 .stats-date-option {
-    display: none;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    background: white;
-    border-radius: 8px;
-    border: 2px solid #e0e0e0;
+    /* Styles déplacés vers stats-inline-selectors.css */
 }
 
 .stats-date-option.active {
-    display: flex;
+    /* Styles déplacés vers stats-inline-selectors.css */
 }
 
 .stats-date-option label {
-    font-weight: 600;
-    color: #555;
-    min-width: 80px;
+    /* Styles déplacés vers stats-inline-selectors.css */
 }
 
 .stats-range-group {
@@ -85,11 +56,11 @@
 }
 
 #stats-content {
-    padding: 1.5rem;
-    background: white;
-    border-radius: 10px;
+    padding: 1.5rem 0;
+    background: transparent;
+    border-radius: 0;
     min-height: 200px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: none;
 }
 
 

@@ -1,102 +1,92 @@
 /**
- * Code métier - Transmissions : Formulaire avec BASE UNIFIÉE
- * Utilise database-unified.js
+ * Code métier - Transmissions : Ajout transmission minimale
+ * Fonctions pour tests ET application
  */
 
 // ==================== FONCTIONS APPLICATION ====================
 
 /**
- * Trouve une intervention transmission par personneId et date
+ * Trouve une transmission par personId et date
  */
-async function findTransmissionByPersonAndDate(personneId, date) {
-  const interventions = await window.getInterventionsByPersonneAndDate(personneId, date);
-  console.log('🔍 Recherche transmission pour personneId:', personneId, 'date:', date);
-  const found = interventions.find(i => i.type === 'transmissions');
-  console.log('🔍 Transmission trouvée:', found ? `ID ${found.id}` : 'Aucune');
-  return found;
+async function findTransmissionByPersonAndDate(personId, dateTransmission) {
+  const allTransmissions = await window.getAllTransmissions();
+  return allTransmissions.find(t => 
+    String(t.personId) === String(personId) && t.dateTransmission === dateTransmission
+  );
 }
 
 /**
- * Édite une transmission pour une personne
- * @param {number} personneId - L'ID de la personne dans la DB unifiée
+ * Édite une transmission existante
  */
-async function editTransmission(personneId) {
-  console.log('📝 Compléter la transmission pour personne ID:', personneId);
+async function editTransmission(id) {
+  console.log('Compléter la transmission pour ID:', id);
   
   try {
-    // Charger la personne depuis la DB unifiée
-    const personne = await window.getPersonneById(personneId);
+    const allTransmissions = await window.getAllTransmissions();
+    const baseTransmission = allTransmissions.find(t => String(t.id) === String(id));
     
-    if (!personne) {
-      console.error('❌ Personne non trouvée pour ID:', personneId);
+    if (!baseTransmission) {
+      console.error('Transmission non trouvée pour ID:', id);
       alert('Erreur lors du chargement des données');
       return;
     }
     
-    console.log('✅ Personne trouvée:', personne);
     const selectedDate = document.getElementById('transmissions-date')?.value;
-    console.log('📅 Date sélectionnée:', selectedDate);
+    const existingTransmissionForDate = await findTransmissionByPersonAndDate(
+      baseTransmission.personId || id,
+      selectedDate
+    );
     
-    // Chercher si une transmission existe pour cette personne à cette date
-    const existingTransmission = await findTransmissionByPersonAndDate(personneId, selectedDate);
+    const transmission = existingTransmissionForDate || baseTransmission;
     
-    console.log('📋 Transmission existante:', existingTransmission ? `ID ${existingTransmission.id}` : 'Aucune');
+    // Remplir les champs du formulaire
+    document.getElementById('form-nom').value = transmission.nom || '';
+    document.getElementById('form-prenom').value = transmission.prenom || '';
+    document.getElementById('form-ddn').value = transmission.dateNaissance || '';
+    document.getElementById('form-typologie').value = transmission.typologie || '';
+    document.getElementById('form-nb-personnes').value = transmission.nbPersonnes || '';
+    document.getElementById('form-mineurs').value = transmission.mineurs || '';
     
-    // Remplir les champs avec les infos de la personne
-    document.getElementById('form-nom').value = personne.nom || '';
-    document.getElementById('form-prenom').value = personne.prenom || '';
-    document.getElementById('form-ddn').value = personne.dateNaissance || '';
-    document.getElementById('form-description').value = personne.descriptionPhysique || '';
-    document.getElementById('form-inconnu').checked = personne.inconnu || false;
-    document.getElementById('form-departement').value = personne.departement || '';
-    document.getElementById('form-typologie').value = personne.typologie || '';
-    document.getElementById('form-nb-personnes').value = personne.nbPersonnes || '';
-    document.getElementById('form-mineurs').value = personne.mineurs || '';
-    
-    if (existingTransmission) {
-      // MODE ÉDITION : charger toutes les données de la transmission
-      console.log('✅ Transmission existante pour cette date - MODE ÉDITION');
-      document.getElementById('form-type-transmission').value = existingTransmission.typeTransmission || '';
-      document.getElementById('form-adresse').value = existingTransmission.lieu || '';
-      document.getElementById('form-ville').value = existingTransmission.ville || '';
-      document.getElementById('form-signalement').value = existingTransmission.signalement || '';
-      document.getElementById('form-transmission').value = existingTransmission.observations || '';
+    if (existingTransmissionForDate) {
+      document.getElementById('form-type-transmission').value = transmission.typeTransmission || '';
+      document.getElementById('form-adresse').value = transmission.adresse || '';
+      document.getElementById('form-ville').value = transmission.ville || '';
+      document.getElementById('form-signalement').value = transmission.signalement || '';
+      document.getElementById('form-transmission').value = transmission.transmission || '';
       
       // Checkboxes Orly
-      if (existingTransmission.orly) {
-        document.getElementById('form-premier-contact').checked = existingTransmission.orly.premierContact || false;
-        document.getElementById('form-personne-presente').checked = existingTransmission.orly.personnePresente || false;
-        document.getElementById('form-pnt').checked = existingTransmission.orly.pnt || false;
-        document.getElementById('form-maraude').checked = existingTransmission.orly.maraude || false;
-        document.getElementById('form-veille').checked = existingTransmission.orly.veille || false;
-        document.getElementById('form-refus-contact').checked = existingTransmission.orly.refusContact || false;
+      if (transmission.orly) {
+        document.getElementById('form-premier-contact').checked = transmission.orly.premierContact || false;
+        document.getElementById('form-personne-presente').checked = transmission.orly.personnePresente || false;
+        document.getElementById('form-pnt').checked = transmission.orly.pnt || false;
+        document.getElementById('form-maraude').checked = transmission.orly.maraude || false;
+        document.getElementById('form-veille').checked = transmission.orly.veille || false;
+        document.getElementById('form-refus-contact').checked = transmission.orly.refusContact || false;
       }
       
       // Checkboxes Accompagnement
-      if (existingTransmission.accompagnement) {
-        document.getElementById('form-accomp-ecoute').checked = existingTransmission.accompagnement.ecoute || false;
-        document.getElementById('form-accomp-orientation').checked = existingTransmission.accompagnement.orientation || false;
-        document.getElementById('form-accomp-admin').checked = existingTransmission.accompagnement.admin || false;
-        document.getElementById('form-accomp-medical').checked = existingTransmission.accompagnement.medical || false;
-        document.getElementById('form-accomp-hebergement').checked = existingTransmission.accompagnement.hebergement || false;
-        document.getElementById('form-accomp-autre').checked = existingTransmission.accompagnement.autre || false;
+      if (transmission.accompagnement) {
+        document.getElementById('form-accomp-ecoute').checked = transmission.accompagnement.ecoute || false;
+        document.getElementById('form-accomp-orientation').checked = transmission.accompagnement.orientation || false;
+        document.getElementById('form-accomp-admin').checked = transmission.accompagnement.admin || false;
+        document.getElementById('form-accomp-medical').checked = transmission.accompagnement.medical || false;
+        document.getElementById('form-accomp-hebergement').checked = transmission.accompagnement.hebergement || false;
+        document.getElementById('form-accomp-autre').checked = transmission.accompagnement.autre || false;
       }
       
       // Checkboxes Distribution
-      if (existingTransmission.distribution) {
-        document.getElementById('form-distrib-alimentaire').checked = existingTransmission.distribution.alimentaire || false;
-        document.getElementById('form-distrib-vestimentaire').checked = existingTransmission.distribution.vestimentaire || false;
-        document.getElementById('form-distrib-hygiene').checked = existingTransmission.distribution.hygiene || false;
-        document.getElementById('form-distrib-couvertures').checked = existingTransmission.distribution.couvertures || false;
-        document.getElementById('form-distrib-duvet').checked = existingTransmission.distribution.duvet || false;
-        document.getElementById('form-distrib-autre').checked = existingTransmission.distribution.autre || false;
+      if (transmission.distribution) {
+        document.getElementById('form-distrib-alimentaire').checked = transmission.distribution.alimentaire || false;
+        document.getElementById('form-distrib-vestimentaire').checked = transmission.distribution.vestimentaire || false;
+        document.getElementById('form-distrib-hygiene').checked = transmission.distribution.hygiene || false;
+        document.getElementById('form-distrib-couvertures').checked = transmission.distribution.couvertures || false;
+        document.getElementById('form-distrib-duvet').checked = transmission.distribution.duvet || false;
+        document.getElementById('form-distrib-autre').checked = transmission.distribution.autre || false;
       }
       
-      document.getElementById('form-modal-transmission').dataset.editId = existingTransmission.id;
-      console.log('🔖 editId défini à:', existingTransmission.id);
+      document.getElementById('form-modal-transmission').dataset.editId = transmission.id;
     } else {
-      // MODE CRÉATION : réinitialiser les champs de transmission
-      console.log('➕ Pas de transmission pour cette date - MODE CRÉATION');
+      // Nouvelle transmission pour cette date - réinitialiser les champs de transmission
       document.getElementById('form-type-transmission').value = '';
       document.getElementById('form-adresse').value = '';
       document.getElementById('form-ville').value = '';
@@ -104,57 +94,47 @@ async function editTransmission(personneId) {
       document.getElementById('form-transmission').value = '';
       
       // Décocher toutes les checkboxes
-      document.querySelectorAll('#modal-ajout input[type="checkbox"]').forEach(cb => {
-        if (cb.id !== 'form-inconnu') { // Ne pas décocher "inconnu"
-          cb.checked = false;
-        }
-      });
+      document.querySelectorAll('#modal-ajout input[type="checkbox"]').forEach(cb => cb.checked = false);
       
       delete document.getElementById('form-modal-transmission').dataset.editId;
-      console.log('🔖 editId supprimé - création nouvelle transmission');
     }
     
-    document.getElementById('form-modal-transmission').dataset.personneId = personneId;
-    console.log('🔖 personneId défini à:', personneId);
+    document.getElementById('form-modal-transmission').dataset.personId = baseTransmission.personId || id;
     
     // Ouvrir la modal
     const modal = document.getElementById('modal-ajout');
     if (modal) {
-      modal.classList.add('show');
+    modal.classList.add('show');
     }
   } catch (error) {
-    console.error('❌ Erreur lors du chargement:', error);
+    console.error('Erreur lors du chargement:', error);
     alert('Erreur lors du chargement des données');
   }
 }
 
 /**
- * Supprime une personne et toutes ses interventions
+ * Supprime une personne (toutes ses transmissions)
  */
-async function deletePersonCard(personneId) {
-  if (!confirm('Êtes-vous sûr de vouloir supprimer cette personne et toutes ses interventions ?')) {
+async function deletePersonCard(personId) {
+  if (!confirm('Êtes-vous sûr de vouloir supprimer cette personne et toutes ses transmissions ?')) {
     return;
   }
   
   try {
-    // Supprimer toutes les interventions de la personne
-    const interventions = await window.getInterventionsByPersonne(personneId);
+    const allTransmissions = await window.getAllTransmissions();
+    const personTransmissions = allTransmissions.filter(t => 
+      String(t.personId || t.id) === String(personId)
+    );
     
-    for (const intervention of interventions) {
-      await window.deleteIntervention(intervention.id);
-    }
-    
-    console.log(`✅ ${interventions.length} interventions supprimées`);
-    
-    // Note : On ne supprime pas la personne car elle peut avoir des interventions dans d'autres modules
-    // Si vous voulez aussi supprimer la personne, décommentez :
-    // await window.deletePersonne(personneId);
-    
-    await window.afficherToutesLesPersonnesTransmissions();
-    console.log('✅ Personne et interventions supprimées');
+    for (const transmission of personTransmissions) {
+      await window.deleteTransmission(transmission.id);
+}
+
+    await window.loadAndDisplayCards();
+    console.log('Personne supprimée');
   } catch (error) {
-    console.error('❌ Erreur lors de la suppression:', error);
-    alert('Erreur lors de la suppression');
+    console.error('Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression');
   }
 }
 
@@ -169,21 +149,25 @@ function initTransmissionsForm() {
   const modalClose = document.querySelector('#modal-ajout .modal-close');
   
   if (!btnAjouter || !modal || !form) {
-    console.warn('⚠️ Éléments formulaire Transmissions non trouvés');
+    console.warn('Éléments formulaire Transmissions non trouvés');
     return;
   }
   
   /**
    * Obtient la date à utiliser par défaut
+   * Si on est entre 00h00 et 03h00, on retourne la veille
+   * Sinon on retourne la date du jour
    */
   function getDateParDefaut() {
     const maintenant = new Date();
     const heures = maintenant.getHours();
     
+    // Si on est entre minuit et 3h du matin, on prend la veille
     if (heures >= 0 && heures < 3) {
       maintenant.setDate(maintenant.getDate() - 1);
     }
     
+    // Formater en YYYY-MM-DD pour l'input date
     return maintenant.toISOString().split('T')[0];
   }
   
@@ -191,12 +175,13 @@ function initTransmissionsForm() {
   btnAjouter.addEventListener('click', () => {
     form.reset();
     delete form.dataset.editId;
-    delete form.dataset.personneId;
+    delete form.dataset.personId;
     
+    // Initialiser la date du sélecteur de transmission avec la date par défaut
     const dateTransmission = document.getElementById('transmissions-date');
     if (dateTransmission && !dateTransmission.value) {
       dateTransmission.value = getDateParDefaut();
-      console.log('📅 Date Transmissions initialisée à:', dateTransmission.value);
+      console.log('Date Transmissions initialisée à:', dateTransmission.value);
     }
     
     modal.classList.add('show');
@@ -207,119 +192,112 @@ function initTransmissionsForm() {
     modal.classList.remove('show');
     form.reset();
     delete form.dataset.editId;
-    delete form.dataset.personneId;
+    delete form.dataset.personId;
   };
   
   btnAnnuler?.addEventListener('click', closeModal);
   modalClose?.addEventListener('click', closeModal);
-  
-  // Initialiser l'auto-complétion de la typologie
-  if (typeof window.initTypologieAutocomplete === 'function') {
-    window.initTypologieAutocomplete();
-    console.log('✅ Auto-complétion typologie initialisée pour Transmissions');
-  }
   
   // Soumettre le formulaire
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const editId = form.dataset.editId;
-    const personneId = form.dataset.personneId ? parseInt(form.dataset.personneId) : null;
+    const personId = form.dataset.personId;
     const selectedDate = document.getElementById('transmissions-date')?.value || new Date().toISOString().split('T')[0];
     
-    console.log('💾 Soumission formulaire - editId:', editId, 'personneId:', personneId, 'date:', selectedDate);
+    const formData = {
+      nom: document.getElementById('form-nom').value,
+      prenom: document.getElementById('form-prenom').value,
+      dateNaissance: document.getElementById('form-ddn').value,
+      typologie: document.getElementById('form-typologie').value,
+      nbPersonnes: document.getElementById('form-nb-personnes').value,
+      mineurs: document.getElementById('form-mineurs').value,
+      typeTransmission: document.getElementById('form-type-transmission').value,
+      adresse: document.getElementById('form-adresse').value,
+      ville: document.getElementById('form-ville').value,
+      signalement: document.getElementById('form-signalement').value,
+      transmission: document.getElementById('form-transmission').value,
+      dateTransmission: selectedDate,
+      orly: {
+        premierContact: document.getElementById('form-premier-contact')?.checked || false,
+        personnePresente: document.getElementById('form-personne-presente')?.checked || false,
+        pnt: document.getElementById('form-pnt')?.checked || false,
+        maraude: document.getElementById('form-maraude')?.checked || false,
+        veille: document.getElementById('form-veille')?.checked || false,
+        refusContact: document.getElementById('form-refus-contact')?.checked || false
+      },
+      accompagnement: {
+        ecoute: document.getElementById('form-accomp-ecoute')?.checked || false,
+        orientation: document.getElementById('form-accomp-orientation')?.checked || false,
+        admin: document.getElementById('form-accomp-admin')?.checked || false,
+        medical: document.getElementById('form-accomp-medical')?.checked || false,
+        hebergement: document.getElementById('form-accomp-hebergement')?.checked || false,
+        autre: document.getElementById('form-accomp-autre')?.checked || false
+      },
+      distribution: {
+        alimentaire: document.getElementById('form-distrib-alimentaire')?.checked || false,
+        vestimentaire: document.getElementById('form-distrib-vestimentaire')?.checked || false,
+        hygiene: document.getElementById('form-distrib-hygiene')?.checked || false,
+        couvertures: document.getElementById('form-distrib-couvertures')?.checked || false,
+        duvet: document.getElementById('form-distrib-duvet')?.checked || false,
+        autre: document.getElementById('form-distrib-autre')?.checked || false
+      }
+    };
     
     try {
-      // Données de la personne
-      const personneData = {
-        nom: document.getElementById('form-nom').value,
-        prenom: document.getElementById('form-prenom').value,
-        dateNaissance: document.getElementById('form-ddn').value,
-        descriptionPhysique: document.getElementById('form-description').value,
-        inconnu: document.getElementById('form-inconnu').checked,
-        departement: document.getElementById('form-departement').value,
-        typologie: document.getElementById('form-typologie').value,
-        nbPersonnes: document.getElementById('form-nb-personnes').value,
-        mineurs: document.getElementById('form-mineurs').value
-      };
-      
-      // Données de l'intervention transmission
-      const interventionData = {
-        typeTransmission: document.getElementById('form-type-transmission').value,
-        lieu: document.getElementById('form-adresse').value,
-        ville: document.getElementById('form-ville').value,
-        signalement: document.getElementById('form-signalement').value,
-        observations: document.getElementById('form-transmission').value,
-        date: selectedDate,
-        type: 'transmissions',
-        orly: {
-          premierContact: document.getElementById('form-premier-contact')?.checked || false,
-          personnePresente: document.getElementById('form-personne-presente')?.checked || false,
-          pnt: document.getElementById('form-pnt')?.checked || false,
-          maraude: document.getElementById('form-maraude')?.checked || false,
-          veille: document.getElementById('form-veille')?.checked || false,
-          refusContact: document.getElementById('form-refus-contact')?.checked || false
-        },
-        accompagnement: {
-          ecoute: document.getElementById('form-accomp-ecoute')?.checked || false,
-          orientation: document.getElementById('form-accomp-orientation')?.checked || false,
-          admin: document.getElementById('form-accomp-admin')?.checked || false,
-          medical: document.getElementById('form-accomp-medical')?.checked || false,
-          hebergement: document.getElementById('form-accomp-hebergement')?.checked || false,
-          autre: document.getElementById('form-accomp-autre')?.checked || false
-        },
-        distribution: {
-          alimentaire: document.getElementById('form-distrib-alimentaire')?.checked || false,
-          vestimentaire: document.getElementById('form-distrib-vestimentaire')?.checked || false,
-          hygiene: document.getElementById('form-distrib-hygiene')?.checked || false,
-          couvertures: document.getElementById('form-distrib-couvertures')?.checked || false,
-          duvet: document.getElementById('form-distrib-duvet')?.checked || false,
-          autre: document.getElementById('form-distrib-autre')?.checked || false
-        }
-      };
-      
-      let finalPersonneId = personneId;
-      
-      if (personneId) {
-        // Mettre à jour la personne existante
-        await window.updatePersonne(personneId, personneData);
-        console.log('✅ Personne mise à jour, ID:', personneId);
-      } else {
-        // Créer ou récupérer la personne
-        finalPersonneId = await window.creerOuRecupererPersonne(personneData);
-        console.log('✅ Personne créée/récupérée, ID:', finalPersonneId);
-      }
-      
-      // Ajouter personneId à l'intervention
-      interventionData.personneId = finalPersonneId;
-      
       if (editId) {
-        // Mettre à jour l'intervention existante
-        await window.updateIntervention(parseInt(editId), interventionData);
-        console.log('✅ Intervention mise à jour, ID:', editId);
+        // Mise à jour
+        formData.id = parseInt(editId);
+        formData.personId = parseInt(personId);
+        await window.updateTransmission(formData);
+        console.log('Transmission mise à jour');
+      } else if (personId) {
+        // Nouvelle transmission pour une personne existante
+        formData.personId = parseInt(personId);
+        await window.addTransmission(formData);
+        console.log('Nouvelle transmission ajoutée pour personne existante');
       } else {
-        // Créer une nouvelle intervention
-        const interventionId = await window.ajouterIntervention(interventionData);
-        console.log('✅ Nouvelle intervention créée, ID:', interventionId);
+        // Nouvelle personne
+        const newId = await window.addTransmission(formData);
+        // Mettre à jour avec le personId
+        formData.id = newId;
+        formData.personId = newId;
+        await window.updateTransmission(formData);
+        console.log('Nouvelle personne créée');
       }
       
-      // Fermer la modal et rafraîchir
       closeModal();
-      await window.afficherToutesLesPersonnesTransmissions();
-      console.log('✅ Transmission enregistrée avec succès');
-      
+      if (typeof window.afficherToutesFichesTransmissions === 'function') {
+        await window.afficherToutesFichesTransmissions();
+      } else {
+        await window.loadAndDisplayCards();
+      }
     } catch (error) {
-      console.error('❌ Erreur lors de l\'enregistrement:', error);
-      alert('Erreur lors de l\'enregistrement : ' + error.message);
+      console.error('Erreur lors de l\'enregistrement:', error);
+      alert('Erreur lors de l\'enregistrement');
     }
   });
   
-  console.log('✅ Formulaire Transmissions initialisé (Base Unifiée)');
+  console.log('✅ Formulaire Transmissions initialisé');
 }
 
-// Exposer les fonctions globalement
-window.editTransmission = editTransmission;
-window.deletePersonCard = deletePersonCard;
-window.initTransmissionsForm = initTransmissionsForm;
+// ==================== EXPORT ====================
 
-console.log('✅ Module Transmissions chargé (Base Unifiée)');
+// Export pour Node.js (tests)
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    findTransmissionByPersonAndDate,
+    editTransmission,
+    deletePersonCard,
+    initTransmissionsForm
+  };
+} else {
+  // Exposer globalement pour le navigateur
+  window.findTransmissionByPersonAndDate = findTransmissionByPersonAndDate;
+  window.editTransmission = editTransmission;
+  window.deletePersonCard = deletePersonCard;
+  window.initTransmissionsForm = initTransmissionsForm;
+}
+
+console.log('✅ Module ajout_transmission_minimale chargé');

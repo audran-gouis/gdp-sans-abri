@@ -22,11 +22,13 @@
                 <input type="date" id="filter-ddn" class="filter-input">
             </div>
             
-            <div class="filter-group filter-group-checkbox">
-                <label class="filter-checkbox-label">
-                    <input type="checkbox" id="filter-inconnu" class="filter-checkbox">
-                    <span>Inconnu ?</span>
-                </label>
+            <div class="filter-group">
+                <label for="filter-inconnu">Connus/Inconnus :</label>
+                <select id="filter-inconnu" class="filter-input">
+                    <option value="">Tous</option>
+                    <option value="connus">Connus</option>
+                    <option value="inconnus">Inconnus</option>
+                </select>
             </div>
             
             <div class="filter-group">

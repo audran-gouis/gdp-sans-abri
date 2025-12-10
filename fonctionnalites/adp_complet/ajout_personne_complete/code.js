@@ -117,10 +117,19 @@ async function editTransmissionAdp(personneId) {
     document.getElementById('modal-adp').dataset.personneId = personneId;
     console.log('🔖 personneId défini à:', personneId);
     
+    // Replier automatiquement la section "Informations Personnelles" pour une personne existante
+    const gridInfoPerso = document.getElementById('adp-grid-info-perso');
+    const toggleIcon = document.querySelector('#adp-section-info-perso .collapse-toggle');
+    if (gridInfoPerso && toggleIcon) {
+      gridInfoPerso.style.display = 'none';
+      toggleIcon.classList.add('collapsed');
+      console.log('📁 Section Informations Personnelles repliée automatiquement (ADP)');
+    }
+    
     // Ouvrir la modal
     const modal = document.getElementById('modal-adp');
     if (modal) {
-      modal.classList.add('show');
+    modal.classList.add('show');
     }
   } catch (error) {
     console.error('❌ Erreur lors du chargement:', error);
@@ -255,52 +264,52 @@ function initAdpForm() {
     try {
       // Données de la personne
       const personneData = {
-        nom: document.getElementById('adp-form-nom').value,
-        prenom: document.getElementById('adp-form-prenom').value,
-        dateNaissance: document.getElementById('adp-form-ddn').value,
-        descriptionPhysique: document.getElementById('adp-form-description').value,
-        inconnu: document.getElementById('adp-form-inconnu').checked,
+      nom: document.getElementById('adp-form-nom').value,
+      prenom: document.getElementById('adp-form-prenom').value,
+      dateNaissance: document.getElementById('adp-form-ddn').value,
+      descriptionPhysique: document.getElementById('adp-form-description').value,
+      inconnu: document.getElementById('adp-form-inconnu').checked,
         departement: document.getElementById('adp-form-departement').value,
-        typologie: document.getElementById('adp-form-typologie').value,
-        nbPersonnes: document.getElementById('adp-form-nb-personnes').value,
+      typologie: document.getElementById('adp-form-typologie').value,
+      nbPersonnes: document.getElementById('adp-form-nb-personnes').value,
         mineurs: document.getElementById('adp-form-mineurs').value
       };
       
       // Données de l'intervention ADP
       const interventionData = {
-        typeTransmission: document.getElementById('adp-form-type-transmission').value,
+      typeTransmission: document.getElementById('adp-form-type-transmission').value,
         lieu: document.getElementById('adp-form-adresse').value,
-        ville: document.getElementById('adp-form-ville').value,
-        signalement: document.getElementById('adp-form-signalement').value,
+      ville: document.getElementById('adp-form-ville').value,
+      signalement: document.getElementById('adp-form-signalement').value,
         observations: document.getElementById('adp-form-transmission').value,
         date: selectedDate,
         type: 'adp',
-        orly: {
+      orly: {
           premierContact: document.getElementById('adp-form-premier-contact')?.checked || false,
-          personnePresente: document.getElementById('adp-form-personne-presente')?.checked || false,
-          pnt: document.getElementById('adp-form-pnt')?.checked || false,
-          maraude: document.getElementById('adp-form-maraude')?.checked || false,
-          veille: document.getElementById('adp-form-veille')?.checked || false,
-          refusContact: document.getElementById('adp-form-refus-contact')?.checked || false
-        },
-        accompagnement: {
-          ecoute: document.getElementById('adp-form-accomp-ecoute')?.checked || false,
-          orientation: document.getElementById('adp-form-accomp-orientation')?.checked || false,
-          admin: document.getElementById('adp-form-accomp-admin')?.checked || false,
-          medical: document.getElementById('adp-form-accomp-medical')?.checked || false,
-          hebergement: document.getElementById('adp-form-accomp-hebergement')?.checked || false,
-          autre: document.getElementById('adp-form-accomp-autre')?.checked || false
-        },
-        distribution: {
-          alimentaire: document.getElementById('adp-form-distrib-alimentaire')?.checked || false,
-          vestimentaire: document.getElementById('adp-form-distrib-vestimentaire')?.checked || false,
-          hygiene: document.getElementById('adp-form-distrib-hygiene')?.checked || false,
-          couvertures: document.getElementById('adp-form-distrib-couvertures')?.checked || false,
-          duvet: document.getElementById('adp-form-distrib-duvet')?.checked || false,
-          autre: document.getElementById('adp-form-distrib-autre')?.checked || false
-        }
-      };
-      
+        personnePresente: document.getElementById('adp-form-personne-presente')?.checked || false,
+        pnt: document.getElementById('adp-form-pnt')?.checked || false,
+        maraude: document.getElementById('adp-form-maraude')?.checked || false,
+        veille: document.getElementById('adp-form-veille')?.checked || false,
+        refusContact: document.getElementById('adp-form-refus-contact')?.checked || false
+      },
+      accompagnement: {
+        ecoute: document.getElementById('adp-form-accomp-ecoute')?.checked || false,
+        orientation: document.getElementById('adp-form-accomp-orientation')?.checked || false,
+        admin: document.getElementById('adp-form-accomp-admin')?.checked || false,
+        medical: document.getElementById('adp-form-accomp-medical')?.checked || false,
+        hebergement: document.getElementById('adp-form-accomp-hebergement')?.checked || false,
+        autre: document.getElementById('adp-form-accomp-autre')?.checked || false
+      },
+      distribution: {
+        alimentaire: document.getElementById('adp-form-distrib-alimentaire')?.checked || false,
+        vestimentaire: document.getElementById('adp-form-distrib-vestimentaire')?.checked || false,
+        hygiene: document.getElementById('adp-form-distrib-hygiene')?.checked || false,
+        couvertures: document.getElementById('adp-form-distrib-couvertures')?.checked || false,
+        duvet: document.getElementById('adp-form-distrib-duvet')?.checked || false,
+        autre: document.getElementById('adp-form-distrib-autre')?.checked || false
+      }
+    };
+    
       let finalPersonneId = personneId;
       
       if (personneId) {
@@ -341,8 +350,8 @@ function initAdpForm() {
 }
 
 // Exposer les fonctions globalement
-window.editTransmissionAdp = editTransmissionAdp;
-window.initAdpForm = initAdpForm;
-window.initAdpFilters = initAdpFilters;
+  window.editTransmissionAdp = editTransmissionAdp;
+  window.initAdpForm = initAdpForm;
+  window.initAdpFilters = initAdpFilters;
 
 console.log('✅ Module ADP chargé (Base Unifiée)');

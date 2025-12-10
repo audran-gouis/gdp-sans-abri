@@ -1,19 +1,19 @@
 /* Filtres détaillés pour les statistiques */
 .stats-filters {
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 1.5rem;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
     margin-bottom: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: none;
 }
 
 .stats-filters h3 {
     color: #2563eb;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     margin-bottom: 1.5rem;
     padding-bottom: 0.75rem;
-    border-bottom: 2px solid #f0f0f0;
+    border-bottom: 2px solid #e5e7eb;
 }
 
 .stats-filters-grid {
@@ -24,17 +24,17 @@
 }
 
 .stats-filter-section {
-    background: #f8f9fa;
-    padding: 1.5rem;
-    border-radius: 8px;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
 }
 
 .stats-filter-section h4 {
     color: #475569;
-    font-size: 1.1rem;
+    font-size: 1rem;
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
-    border-bottom: 2px solid #e0e0e0;
+    border-bottom: 1px solid #e5e7eb;
 }
 
 .stats-filter-group {
@@ -59,7 +59,6 @@
     opacity: 1;
     pointer-events: auto;
 }
-
 
 
 

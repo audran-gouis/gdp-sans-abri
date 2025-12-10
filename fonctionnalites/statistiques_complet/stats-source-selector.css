@@ -1,20 +1,11 @@
 /* Sélecteur de source pour les statistiques */
+/* Style désactivé - maintenant géré par stats-inline-selectors.css */
 .stats-source-selector {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 10px;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    /* Styles déplacés vers stats-inline-selectors.css */
 }
 
 .stats-source-selector label {
-    font-weight: 600;
-    color: #2563eb;
-    font-size: 1.1rem;
-    min-width: 80px;
+    /* Styles déplacés vers stats-inline-selectors.css */
 }
 
 

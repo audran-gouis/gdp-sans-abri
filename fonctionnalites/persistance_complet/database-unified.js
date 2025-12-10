@@ -1,36 +1,21 @@
-/**
- * BASE DE DONNÉES UNIFIÉE - Architecture unique pour toutes les données
- * 
- * Structure :
- * - Table "personnes" : informations de base des personnes
- * - Table "interventions" : toutes les interventions (Transmissions, ADP, Point Accueil)
- *   avec référence à la personne par personneId
- * 
- * Compatible Electron (pas d'import/export ES6)
- * Variables globales exposées sur window
- */
-
 (function() {
   'use strict';
 
-  const DB_NAME = 'MaraudesUnifiedDB';
-  const DB_VERSION = 1;
+  const DB_NAME_UNIFIED = 'MaraudesUnifiedDB';
+  const DB_VERSION_UNIFIED = 1;
   const STORE_PERSONNES = 'personnes';
   const STORE_INTERVENTIONS = 'interventions';
 
-  let db = null;
+  let dbUnified = null;
 
-  /**
-   * Initialise la base de données unifiée
-   */
   const initDatabaseUnified = () => {
     return new Promise((resolve, reject) => {
-      if (db) {
-        resolve(db);
+      if (dbUnified) {
+        resolve(dbUnified);
         return;
       }
 
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      const request = indexedDB.open(DB_NAME_UNIFIED, DB_VERSION_UNIFIED);
 
       request.onerror = () => {
         console.error('❌ Erreur ouverture DB Unifiée');
@@ -38,460 +23,312 @@
       };
 
       request.onsuccess = (event) => {
-        db = event.target.result;
-        console.log('✅ Base de données unifiée ouverte');
-        resolve(db);
+        dbUnified = event.target.result;
+        console.log('✅ Base Unifiée ouverte');
+        resolve(dbUnified);
       };
 
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
 
-        // Table PERSONNES
+        // Store pour les personnes
         if (!db.objectStoreNames.contains(STORE_PERSONNES)) {
-          const storePersonnes = db.createObjectStore(STORE_PERSONNES, {
+          const personnesStore = db.createObjectStore(STORE_PERSONNES, {
             keyPath: 'id',
             autoIncrement: true
           });
-
-          // Index pour recherche
-          storePersonnes.createIndex('personId', 'personId', { unique: true });
-          storePersonnes.createIndex('nom', 'nom', { unique: false });
-          storePersonnes.createIndex('prenom', 'prenom', { unique: false });
-          storePersonnes.createIndex('dateNaissance', 'dateNaissance', { unique: false });
-          storePersonnes.createIndex('descriptionPhysique', 'descriptionPhysique', { unique: false });
-          storePersonnes.createIndex('inconnu', 'inconnu', { unique: false });
-          storePersonnes.createIndex('departement', 'departement', { unique: false });
-
-          console.log('✅ Table Personnes créée');
+          personnesStore.createIndex('personId', 'personId', { unique: true });
+          personnesStore.createIndex('nom', 'nom', { unique: false });
+          personnesStore.createIndex('prenom', 'prenom', { unique: false });
+          personnesStore.createIndex('dateNaissance', 'dateNaissance', { unique: false });
+          personnesStore.createIndex('inconnu', 'inconnu', { unique: false });
+          console.log('✅ Object store Personnes créé dans DB Unifiée');
         }
 
-        // Table INTERVENTIONS
+        // Store pour les interventions
         if (!db.objectStoreNames.contains(STORE_INTERVENTIONS)) {
-          const storeInterventions = db.createObjectStore(STORE_INTERVENTIONS, {
+          const interventionsStore = db.createObjectStore(STORE_INTERVENTIONS, {
             keyPath: 'id',
             autoIncrement: true
           });
-
-          // Index pour recherche
-          storeInterventions.createIndex('personneId', 'personneId', { unique: false });
-          storeInterventions.createIndex('date', 'date', { unique: false });
-          storeInterventions.createIndex('type', 'type', { unique: false });
-          storeInterventions.createIndex('personneDate', ['personneId', 'date'], { unique: false });
-          storeInterventions.createIndex('personneType', ['personneId', 'type'], { unique: false });
-
-          console.log('✅ Table Interventions créée');
+          interventionsStore.createIndex('personneId', 'personneId', { unique: false });
+          interventionsStore.createIndex('date', 'date', { unique: false });
+          interventionsStore.createIndex('type', 'type', { unique: false });
+          interventionsStore.createIndex('personneId_date_type', ['personneId', 'date', 'type'], { unique: true });
+          console.log('✅ Object store Interventions créé dans DB Unifiée');
         }
       };
     });
   };
 
-  /**
-   * Génère un personId unique basé sur les infos de la personne
-   */
   const genererPersonId = (personne) => {
     if (personne.inconnu) {
-      return `inconnu_${(personne.descriptionPhysique || '').substring(0, 50).replace(/\s/g, '_').toLowerCase()}_${Date.now()}`;
+      return `inconnu_${(personne.descriptionPhysique || '').substring(0, 50).replace(/\s/g, '_').toLowerCase()}`;
     }
-
     const nom = (personne.nom || '').toLowerCase().trim();
     const prenom = (personne.prenom || '').toLowerCase().trim();
     const ddn = personne.dateNaissance || '';
-
     return `${nom}_${prenom}_${ddn}`;
   };
 
-  // ============================================================
-  // GESTION DES PERSONNES
-  // ============================================================
-
-  /**
-   * Trouve une personne par ses informations
-   */
-  const trouverPersonne = async (infos) => {
-    await initDatabaseUnified();
-    const personIdRecherche = genererPersonId(infos);
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_PERSONNES], 'readonly');
-      const objectStore = transaction.objectStore(STORE_PERSONNES);
-      const index = objectStore.index('personId');
-      const request = index.get(personIdRecherche);
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  };
-
-  /**
-   * Crée une nouvelle personne ou récupère l'ID d'une personne existante
-   */
   const creerOuRecupererPersonne = async (infos) => {
     await initDatabaseUnified();
-
-    console.log('🔍 Recherche/Création personne:', infos);
-
-    // Chercher si la personne existe déjà
-    const personneExistante = await trouverPersonne(infos);
-
-    if (personneExistante) {
-      console.log('✅ Personne existante trouvée, ID:', personneExistante.id);
-      return personneExistante.id;
-    }
-
-    // Créer une nouvelle personne
     const personId = genererPersonId(infos);
 
-    const nouvellePersonne = {
-      personId,
-      nom: infos.nom || '',
-      prenom: infos.prenom || '',
-      dateNaissance: infos.dateNaissance || '',
-      descriptionPhysique: infos.descriptionPhysique || '',
-      inconnu: infos.inconnu || false,
-      departement: infos.departement || '',
-      typologie: infos.typologie || '',
-      nbPersonnes: infos.nbPersonnes || '',
-      mineurs: infos.mineurs || '',
-      dateCreation: new Date().toISOString(),
-      dateModification: new Date().toISOString()
-    };
-
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_PERSONNES], 'readwrite');
-      const objectStore = transaction.objectStore(STORE_PERSONNES);
-      const request = objectStore.add(nouvellePersonne);
+      const transaction = dbUnified.transaction([STORE_PERSONNES], 'readwrite');
+      const store = transaction.objectStore(STORE_PERSONNES);
+      const index = store.index('personId');
+      const request = index.get(personId);
 
-      request.onsuccess = () => {
-        console.log('✅ Nouvelle personne créée, ID:', request.result);
-        resolve(request.result);
+      request.onsuccess = async () => {
+        let personne = request.result;
+        if (personne) {
+          // Mettre à jour les infos de la personne si elle existe
+          const updatedPersonne = {
+            ...personne,
+            nom: infos.nom || personne.nom,
+            prenom: infos.prenom || personne.prenom,
+            dateNaissance: infos.dateNaissance || personne.dateNaissance,
+            descriptionPhysique: infos.descriptionPhysique || personne.descriptionPhysique,
+            inconnu: typeof infos.inconnu === 'boolean' ? infos.inconnu : personne.inconnu,
+            departement: infos.departement || personne.departement,
+            typologie: infos.typologie || personne.typologie,
+            nbPersonnes: infos.nbPersonnes || personne.nbPersonnes,
+            mineurs: infos.mineurs || personne.mineurs,
+            dateModification: new Date().toISOString()
+          };
+          await updatePersonne(personne.id, updatedPersonne);
+          resolve(personne.id);
+        } else {
+          // Créer une nouvelle personne
+          const nouvellePersonne = {
+            personId,
+            nom: infos.nom || '',
+            prenom: infos.prenom || '',
+            dateNaissance: infos.dateNaissance || '',
+            descriptionPhysique: infos.descriptionPhysique || '',
+            inconnu: infos.inconnu || false,
+            departement: infos.departement || '',
+            typologie: infos.typologie || '',
+            nbPersonnes: infos.nbPersonnes || '',
+            mineurs: infos.mineurs || '',
+            dateCreation: new Date().toISOString(),
+            dateModification: new Date().toISOString()
+          };
+          const addRequest = store.add(nouvellePersonne);
+          addRequest.onsuccess = () => resolve(addRequest.result);
+          addRequest.onerror = () => reject(addRequest.error);
+        }
       };
       request.onerror = () => reject(request.error);
     });
   };
 
-  /**
-   * Récupère une personne par son ID
-   */
   const getPersonneById = async (id) => {
     await initDatabaseUnified();
-
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_PERSONNES], 'readonly');
-      const objectStore = transaction.objectStore(STORE_PERSONNES);
-      const request = objectStore.get(id);
-
+      const transaction = dbUnified.transaction([STORE_PERSONNES], 'readonly');
+      const store = transaction.objectStore(STORE_PERSONNES);
+      const request = store.get(id);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
   };
 
-  /**
-   * Met à jour les informations d'une personne
-   */
   const updatePersonne = async (id, infos) => {
     await initDatabaseUnified();
-
     return new Promise(async (resolve, reject) => {
       const personne = await getPersonneById(id);
       if (!personne) {
         reject(new Error('Personne non trouvée'));
         return;
       }
-
       const personneModifiee = {
         ...personne,
-        nom: infos.nom !== undefined ? infos.nom : personne.nom,
-        prenom: infos.prenom !== undefined ? infos.prenom : personne.prenom,
+        nom: infos.nom || personne.nom,
+        prenom: infos.prenom || personne.prenom,
         dateNaissance: infos.dateNaissance || personne.dateNaissance,
-        descriptionPhysique: infos.descriptionPhysique !== undefined ? infos.descriptionPhysique : personne.descriptionPhysique,
+        descriptionPhysique: infos.descriptionPhysique || personne.descriptionPhysique,
         inconnu: typeof infos.inconnu === 'boolean' ? infos.inconnu : personne.inconnu,
-        departement: infos.departement !== undefined ? infos.departement : personne.departement,
+        departement: infos.departement || personne.departement,
         typologie: infos.typologie || personne.typologie,
-        nbPersonnes: infos.nbPersonnes !== undefined ? infos.nbPersonnes : personne.nbPersonnes,
-        mineurs: infos.mineurs !== undefined ? infos.mineurs : personne.mineurs,
+        nbPersonnes: infos.nbPersonnes || personne.nbPersonnes,
+        mineurs: infos.mineurs || personne.mineurs,
         dateModification: new Date().toISOString()
       };
-
-      const transaction = db.transaction([STORE_PERSONNES], 'readwrite');
-      const objectStore = transaction.objectStore(STORE_PERSONNES);
-      const request = objectStore.put(personneModifiee);
-
-      request.onsuccess = () => {
-        console.log('✅ Personne mise à jour, ID:', id);
-        resolve(personneModifiee);
-      };
+      const transaction = dbUnified.transaction([STORE_PERSONNES], 'readwrite');
+      const store = transaction.objectStore(STORE_PERSONNES);
+      const request = store.put(personneModifiee);
+      request.onsuccess = () => resolve(personneModifiee);
       request.onerror = () => reject(request.error);
     });
   };
 
-  /**
-   * Récupère toutes les personnes
-   */
+  const deletePersonne = async (id) => {
+    await initDatabaseUnified();
+    return new Promise((resolve, reject) => {
+      const transaction = dbUnified.transaction([STORE_PERSONNES, STORE_INTERVENTIONS], 'readwrite');
+      const personnesStore = transaction.objectStore(STORE_PERSONNES);
+      const interventionsStore = transaction.objectStore(STORE_INTERVENTIONS);
+
+      // Supprimer toutes les interventions liées à cette personne
+      const index = interventionsStore.index('personneId');
+      const range = IDBKeyRange.only(id);
+      index.openCursor(range).onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor) {
+          cursor.delete();
+          cursor.continue();
+        }
+      };
+
+      // Supprimer la personne elle-même
+      const request = personnesStore.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  };
+
   const getAllPersonnes = async () => {
     await initDatabaseUnified();
-
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_PERSONNES], 'readonly');
-      const objectStore = transaction.objectStore(STORE_PERSONNES);
-      const request = objectStore.getAll();
-
+      const transaction = dbUnified.transaction([STORE_PERSONNES], 'readonly');
+      const store = transaction.objectStore(STORE_PERSONNES);
+      const request = store.getAll();
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
   };
 
-  // ============================================================
-  // GESTION DES INTERVENTIONS
-  // ============================================================
-
-  /**
-   * Ajoute une nouvelle intervention
-   */
-  const ajouterIntervention = async (intervention) => {
+  const addIntervention = async (intervention) => {
     await initDatabaseUnified();
-
-    if (!intervention.personneId) {
-      throw new Error('personneId requis pour ajouter une intervention');
-    }
-    if (!intervention.date) {
-      throw new Error('date requise pour ajouter une intervention');
-    }
-    if (!intervention.type) {
-      throw new Error('type requis (transmissions/adp/pointAccueil)');
-    }
-
-    const nouvelleIntervention = {
-      ...intervention,
-      dateCreation: new Date().toISOString()
-    };
-
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_INTERVENTIONS], 'readwrite');
-      const objectStore = transaction.objectStore(STORE_INTERVENTIONS);
-      const request = objectStore.add(nouvelleIntervention);
-
-      request.onsuccess = () => {
-        console.log(`✅ Intervention ${intervention.type} ajoutée, ID:`, request.result);
-        resolve(request.result);
-      };
+      const transaction = dbUnified.transaction([STORE_INTERVENTIONS], 'readwrite');
+      const store = transaction.objectStore(STORE_INTERVENTIONS);
+      const request = store.add(intervention);
+      request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
   };
 
-  /**
-   * Met à jour une intervention existante
-   */
-  const updateIntervention = async (id, data) => {
-    await initDatabaseUnified();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_INTERVENTIONS], 'readwrite');
-      const objectStore = transaction.objectStore(STORE_INTERVENTIONS);
-      
-      const getRequest = objectStore.get(id);
-      
-      getRequest.onsuccess = () => {
-        const intervention = getRequest.result;
-        if (!intervention) {
-          reject(new Error('Intervention non trouvée'));
-          return;
-        }
-
-        const interventionModifiee = {
-          ...intervention,
-          ...data,
-          id: intervention.id,
-          dateModification: new Date().toISOString()
-        };
-
-        const putRequest = objectStore.put(interventionModifiee);
-        putRequest.onsuccess = () => {
-          console.log('✅ Intervention mise à jour, ID:', id);
-          resolve(interventionModifiee);
-        };
-        putRequest.onerror = () => reject(putRequest.error);
-      };
-      
-      getRequest.onerror = () => reject(getRequest.error);
-    });
-  };
-
-  /**
-   * Récupère une intervention par ID
-   */
   const getInterventionById = async (id) => {
     await initDatabaseUnified();
-
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_INTERVENTIONS], 'readonly');
-      const objectStore = transaction.objectStore(STORE_INTERVENTIONS);
-      const request = objectStore.get(id);
-
+      const transaction = dbUnified.transaction([STORE_INTERVENTIONS], 'readonly');
+      const store = transaction.objectStore(STORE_INTERVENTIONS);
+      const request = store.get(id);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
   };
 
-  /**
-   * Récupère toutes les interventions
-   */
-  const getAllInterventions = async () => {
+  const updateIntervention = async (id, updates) => {
     await initDatabaseUnified();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_INTERVENTIONS], 'readonly');
-      const objectStore = transaction.objectStore(STORE_INTERVENTIONS);
-      const request = objectStore.getAll();
-
-      request.onsuccess = () => resolve(request.result);
+    return new Promise(async (resolve, reject) => {
+      const intervention = await getInterventionById(id);
+      if (!intervention) {
+        reject(new Error('Intervention non trouvée'));
+        return;
+      }
+      const updatedIntervention = {
+        ...intervention,
+        ...updates,
+        dateModification: new Date().toISOString()
+      };
+      const transaction = dbUnified.transaction([STORE_INTERVENTIONS], 'readwrite');
+      const store = transaction.objectStore(STORE_INTERVENTIONS);
+      const request = store.put(updatedIntervention);
+      request.onsuccess = () => resolve(updatedIntervention);
       request.onerror = () => reject(request.error);
     });
   };
 
-  /**
-   * Récupère les interventions d'une personne
-   */
-  const getInterventionsByPersonne = async (personneId) => {
-    await initDatabaseUnified();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_INTERVENTIONS], 'readonly');
-      const objectStore = transaction.objectStore(STORE_INTERVENTIONS);
-      const index = objectStore.index('personneId');
-      const request = index.getAll(personneId);
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  };
-
-  /**
-   * Récupère les interventions d'une personne pour une date donnée
-   */
-  const getInterventionsByPersonneAndDate = async (personneId, date) => {
-    await initDatabaseUnified();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_INTERVENTIONS], 'readonly');
-      const objectStore = transaction.objectStore(STORE_INTERVENTIONS);
-      const index = objectStore.index('personneDate');
-      const request = index.getAll([personneId, date]);
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  };
-
-  /**
-   * Récupère les interventions par type
-   */
-  const getInterventionsByType = async (type) => {
-    await initDatabaseUnified();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_INTERVENTIONS], 'readonly');
-      const objectStore = transaction.objectStore(STORE_INTERVENTIONS);
-      const index = objectStore.index('type');
-      const request = index.getAll(type);
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  };
-
-  /**
-   * Récupère les interventions d'une personne pour un type donné
-   */
-  const getInterventionsByPersonneAndType = async (personneId, type) => {
-    await initDatabaseUnified();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_INTERVENTIONS], 'readonly');
-      const objectStore = transaction.objectStore(STORE_INTERVENTIONS);
-      const index = objectStore.index('personneType');
-      const request = index.getAll([personneId, type]);
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  };
-
-  /**
-   * Supprime une intervention
-   */
   const deleteIntervention = async (id) => {
     await initDatabaseUnified();
-
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_INTERVENTIONS], 'readwrite');
-      const objectStore = transaction.objectStore(STORE_INTERVENTIONS);
-      const request = objectStore.delete(id);
+      const transaction = dbUnified.transaction([STORE_INTERVENTIONS], 'readwrite');
+      const store = transaction.objectStore(STORE_INTERVENTIONS);
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  };
 
+  const getAllInterventions = async () => {
+    await initDatabaseUnified();
+    return new Promise((resolve, reject) => {
+      const transaction = dbUnified.transaction([STORE_INTERVENTIONS], 'readonly');
+      const store = transaction.objectStore(STORE_INTERVENTIONS);
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  };
+
+  const getInterventionsByPersonneIdAndDateAndType = async (personneId, date, type) => {
+    await initDatabaseUnified();
+    return new Promise((resolve, reject) => {
+      const transaction = dbUnified.transaction([STORE_INTERVENTIONS], 'readonly');
+      const store = transaction.objectStore(STORE_INTERVENTIONS);
+      const index = store.index('personneId_date_type');
+      const key = [personneId, date, type];
+      const request = index.get(key);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  };
+
+  const getInterventionsByPersonneAndDate = async (personneId, date) => {
+    await initDatabaseUnified();
+    return new Promise((resolve, reject) => {
+      const transaction = dbUnified.transaction([STORE_INTERVENTIONS], 'readonly');
+      const store = transaction.objectStore(STORE_INTERVENTIONS);
+      const index = store.index('personneId');
+      const range = IDBKeyRange.only(personneId);
+      const request = index.getAll(range);
+      
       request.onsuccess = () => {
-        console.log('✅ Intervention supprimée, ID:', id);
-        resolve();
+        const interventions = request.result.filter(i => i.date === date);
+        resolve(interventions);
       };
       request.onerror = () => reject(request.error);
     });
   };
 
-  // ============================================================
-  // FONCTIONS UTILITAIRES
-  // ============================================================
-
-  /**
-   * Récupère toutes les personnes avec leurs interventions
-   */
   const getPersonnesAvecInterventions = async () => {
     await initDatabaseUnified();
-
     const personnes = await getAllPersonnes();
     const interventions = await getAllInterventions();
 
-    // Grouper les interventions par personne
-    const interventionsParPersonne = {};
-    interventions.forEach(intervention => {
-      if (!interventionsParPersonne[intervention.personneId]) {
-        interventionsParPersonne[intervention.personneId] = [];
+    const personnesMap = new Map(personnes.map(p => [p.id, { ...p, interventions: [] }]));
+
+    interventions.forEach(interv => {
+      if (personnesMap.has(interv.personneId)) {
+        personnesMap.get(interv.personneId).interventions.push(interv);
       }
-      interventionsParPersonne[intervention.personneId].push(intervention);
     });
 
-    // Enrichir les personnes avec leurs interventions
-    return personnes.map(personne => ({
-      ...personne,
-      interventions: interventionsParPersonne[personne.id] || []
-    }));
+    return Array.from(personnesMap.values());
   };
 
-  // ============================================================
-  // EXPORTS GLOBAUX
-  // ============================================================
-
-  // Exposer les fonctions globalement
   window.initDatabaseUnified = initDatabaseUnified;
-  
-  // Personnes
   window.creerOuRecupererPersonne = creerOuRecupererPersonne;
   window.getPersonneById = getPersonneById;
   window.updatePersonne = updatePersonne;
-  window.getAllPersonnes = getAllPersonnes;
-  window.trouverPersonne = trouverPersonne;
-  
-  // Interventions
-  window.ajouterIntervention = ajouterIntervention;
-  window.updateIntervention = updateIntervention;
+  window.deletePersonne = deletePersonne;
+  window.addIntervention = addIntervention;
+  window.ajouterIntervention = addIntervention; // Alias
   window.getInterventionById = getInterventionById;
-  window.getAllInterventions = getAllInterventions;
-  window.getInterventionsByPersonne = getInterventionsByPersonne;
-  window.getInterventionsByPersonneAndDate = getInterventionsByPersonneAndDate;
-  window.getInterventionsByType = getInterventionsByType;
-  window.getInterventionsByPersonneAndType = getInterventionsByPersonneAndType;
+  window.updateIntervention = updateIntervention;
+  window.modifierIntervention = updateIntervention; // Alias
   window.deleteIntervention = deleteIntervention;
-  
-  // Utilitaires
+  window.supprimerIntervention = deleteIntervention; // Alias
+  window.getAllPersonnes = getAllPersonnes;
+  window.getAllInterventions = getAllInterventions;
+  window.getInterventionsByPersonneIdAndDateAndType = getInterventionsByPersonneIdAndDateAndType;
+  window.getInterventionsByPersonneAndDate = getInterventionsByPersonneAndDate;
   window.getPersonnesAvecInterventions = getPersonnesAvecInterventions;
 
-  console.log('📦 Module Base de Données Unifiée chargé');
+  console.log('📦 Module Persistance Unifiée chargé');
 })();
-
