@@ -228,10 +228,13 @@ function applyDetailedFilters(interventions) {
   
   // === FILTRES SITUATION ===
   
-  // Filtre par département
-  const filterDepartement = document.getElementById('stats-filter-departement')?.value;
-  if (filterDepartement) {
-    filtered = filtered.filter(item => item.personne?.departement?.includes(filterDepartement));
+  // Filtre par département (Select Multiple)
+  const filterDepartementSelect = document.getElementById('stats-filter-departement');
+  if (filterDepartementSelect) {
+    const selectedValues = Array.from(filterDepartementSelect.selectedOptions).map(opt => opt.value);
+    if (selectedValues.length > 0) {
+      filtered = filtered.filter(item => selectedValues.includes(item.personne?.departement));
+    }
   }
   
   // Filtre par typologie (Select Multiple)
@@ -596,7 +599,6 @@ function resetFilters() {
     'stats-filter-prenom', 
     'stats-filter-ddn',
     'stats-filter-description',
-    'stats-filter-departement',
     'stats-filter-adresse',
     'stats-filter-ville'
   ];
@@ -616,6 +618,7 @@ function resetFilters() {
   
   // Réinitialiser les selects multiples
   const multiSelectFields = [
+    'stats-filter-departement',
     'stats-filter-typologie',
     'stats-filter-nb-personnes',
     'stats-filter-mineurs',
