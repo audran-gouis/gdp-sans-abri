@@ -2,7 +2,7 @@
   'use strict';
 
   const DB_NAME_UNIFIED = 'MaraudesUnifiedDB';
-  const DB_VERSION_UNIFIED = 1;
+  const DB_VERSION_UNIFIED = 2;
   const STORE_PERSONNES = 'personnes';
   const STORE_INTERVENTIONS = 'interventions';
 
@@ -30,6 +30,10 @@
 
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
+        const transaction = event.target.transaction;
+        const oldVersion = event.oldVersion;
+
+        console.log(`🔄 Mise à jour DB de version ${oldVersion} vers ${DB_VERSION_UNIFIED}`);
 
         // Store pour les personnes
         if (!db.objectStoreNames.contains(STORE_PERSONNES)) {
@@ -46,16 +50,26 @@
         }
 
         // Store pour les interventions
+        let interventionsStore;
         if (!db.objectStoreNames.contains(STORE_INTERVENTIONS)) {
-          const interventionsStore = db.createObjectStore(STORE_INTERVENTIONS, {
+          interventionsStore = db.createObjectStore(STORE_INTERVENTIONS, {
             keyPath: 'id',
             autoIncrement: true
           });
           interventionsStore.createIndex('personneId', 'personneId', { unique: false });
           interventionsStore.createIndex('date', 'date', { unique: false });
           interventionsStore.createIndex('type', 'type', { unique: false });
-          interventionsStore.createIndex('personneId_date_type', ['personneId', 'date', 'type'], { unique: true });
+          interventionsStore.createIndex('personneId_date_type', ['personneId', 'date', 'type'], { unique: false });
           console.log('✅ Object store Interventions créé dans DB Unifiée');
+        } else {
+          // Récupérer le store existant depuis la transaction
+          interventionsStore = transaction.objectStore(STORE_INTERVENTIONS);
+          
+          // Ajouter l'index composé s'il n'existe pas (migration v1 -> v2)
+          if (oldVersion < 2 && !interventionsStore.indexNames.contains('personneId_date_type')) {
+            interventionsStore.createIndex('personneId_date_type', ['personneId', 'date', 'type'], { unique: false });
+            console.log('✅ Index composé personneId_date_type ajouté');
+          }
         }
       };
     });
@@ -271,59 +285,16 @@
     return new Promise((resolve, reject) => {
       const transaction = dbUnified.transaction([STORE_INTERVENTIONS], 'readonly');
       const store = transaction.objectStore(STORE_INTERVENTIONS);
-      
-      // Vérifier si l'index composite existe
-      let indexExists = false;
-      try {
-        const index = store.index('personneId_date_type');
-        indexExists = true;
-        const key = [personneId, date, type];
-        const request = index.get(key);
-        request.onsuccess = () => resolve(request.result || null);
-        request.onerror = () => {
-          // En cas d'erreur, utiliser la méthode alternative
-          fallbackGetIntervention(store, personneId, date, type, resolve, reject);
-        };
-      } catch (error) {
-        // L'index n'existe pas, utiliser la méthode alternative
-        fallbackGetIntervention(store, personneId, date, type, resolve, reject);
-      }
-    });
-  };
-  
-  // Fonction de secours pour récupérer une intervention sans index composite
-  const fallbackGetIntervention = (store, personneId, date, type, resolve, reject) => {
-    try {
-      const index = store.index('personneId');
-      const range = IDBKeyRange.only(personneId);
-      const request = index.getAll(range);
-      
+      const index = store.index('personneId_date_type');
+      const key = [personneId, date, type];
+      const request = index.getAll(key);
       request.onsuccess = () => {
-        const interventions = request.result.filter(i => i.date === date && i.type === type);
-        resolve(interventions.length > 0 ? interventions[0] : null);
+        const results = request.result;
+        // Retourner le premier résultat ou null si aucun
+        resolve(results.length > 0 ? results[0] : null);
       };
-      request.onerror = () => {
-        // Si même l'index personneId n'existe pas, utiliser getAll
-        const getAllRequest = store.getAll();
-        getAllRequest.onsuccess = () => {
-          const interventions = getAllRequest.result.filter(
-            i => i.personneId === personneId && i.date === date && i.type === type
-          );
-          resolve(interventions.length > 0 ? interventions[0] : null);
-        };
-        getAllRequest.onerror = () => reject(getAllRequest.error);
-      };
-    } catch (error) {
-      // Si aucun index n'existe, utiliser getAll
-      const getAllRequest = store.getAll();
-      getAllRequest.onsuccess = () => {
-        const interventions = getAllRequest.result.filter(
-          i => i.personneId === personneId && i.date === date && i.type === type
-        );
-        resolve(interventions.length > 0 ? interventions[0] : null);
-      };
-      getAllRequest.onerror = () => reject(getAllRequest.error);
-    }
+      request.onerror = () => reject(request.error);
+    });
   };
 
   const getInterventionsByPersonneAndDate = async (personneId, date) => {
@@ -359,170 +330,71 @@
     return Array.from(personnesMap.values());
   };
 
-  // ==================== FONCTIONS DE COMPATIBILITÉ (ancienne API) ====================
-  
   /**
-   * Fonction de compatibilité pour addTransmission (ancienne API)
-   * Convertit l'ancien format vers le nouveau format de la base unifiée
+   * Change le type d'une intervention (déplace d'un type à un autre)
+   * @param {number} interventionId - ID de l'intervention à déplacer
+   * @param {string} nouveauType - Nouveau type ('transmissions', 'adp', 'pointAccueil')
+   * @returns {Promise<Object>} - L'intervention mise à jour
    */
-  const addTransmission = async (data) => {
+  const changerTypeIntervention = async (interventionId, nouveauType) => {
     await initDatabaseUnified();
     
-    try {
-      // Séparer les données de la personne et de l'intervention
-      const personneData = {
-        nom: data.nom || '',
-        prenom: data.prenom || '',
-        dateNaissance: data.dateNaissance || '',
-        descriptionPhysique: data.descriptionPhysique || '',
-        inconnu: data.inconnu || false,
-        departement: data.departement || '',
-        typologie: data.typologie || '',
-        nbPersonnes: data.nbPersonnes || '',
-        mineurs: data.mineurs || ''
-      };
-      
-      // Créer ou récupérer la personne
-      let personneId = data.personId || data.personneId;
-      if (!personneId) {
-        // Pas d'ID fourni, créer ou récupérer la personne
-        personneId = await creerOuRecupererPersonne(personneData);
-      } else {
-        // Un ID est fourni, vérifier si la personne existe
-        try {
-          const personneExistante = await getPersonneById(personneId);
-          if (personneExistante) {
-            // La personne existe, la mettre à jour
-            await updatePersonne(personneId, personneData);
-          } else {
-            // La personne n'existe pas, la créer
-            console.warn(`⚠️ Personne ID ${personneId} non trouvée, création d'une nouvelle personne`);
-            personneId = await creerOuRecupererPersonne(personneData);
-          }
-        } catch (error) {
-          // En cas d'erreur, créer ou récupérer la personne
-          console.warn(`⚠️ Erreur lors de la vérification de la personne ID ${personneId}, création/récupération:`, error);
-          personneId = await creerOuRecupererPersonne(personneData);
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Récupérer l'intervention actuelle
+        const intervention = await getInterventionById(interventionId);
+        
+        if (!intervention) {
+          reject(new Error('Intervention non trouvée'));
+          return;
         }
-      }
-      
-      // Préparer les données de l'intervention
-      const interventionData = {
-        personneId: personneId,
-        date: data.dateTransmission || data.date || new Date().toISOString().split('T')[0],
-        type: 'transmissions',
-        typeTransmission: data.typeTransmission || '',
-        adresse: data.adresse || '',
-        ville: data.ville || '',
-        signalement: data.signalement || '',
-        transmission: data.transmission || '',
-        orly: data.orly || {},
-        accompagnement: data.accompagnement || {},
-        distribution: data.distribution || {},
-        observations: data.observations || data.transmission || '',
-        dateCreation: new Date().toISOString(),
-        dateModification: new Date().toISOString()
-      };
-      
-      // Si un ID est fourni, c'est une mise à jour
-      if (data.id) {
-        interventionData.id = data.id;
-        const updated = await updateIntervention(data.id, interventionData);
-        // Retourner l'ID de l'intervention (compatibilité avec l'ancien code)
-        return updated.id;
-      } else {
-        // Vérifier si une intervention existe déjà pour cette personne, date et type
+        
+        // Vérifier si une intervention du nouveau type existe déjà pour cette personne et cette date
         const existingIntervention = await getInterventionsByPersonneIdAndDateAndType(
-          personneId,
-          interventionData.date,
-          'transmissions'
+          intervention.personneId,
+          intervention.date,
+          nouveauType
         );
         
-        if (existingIntervention) {
-          // Mettre à jour l'intervention existante
-          const updated = await updateIntervention(existingIntervention.id, interventionData);
-          // Retourner l'ID de l'intervention (compatibilité avec l'ancien code)
-          return updated.id;
-        } else {
-          // Créer une nouvelle intervention
-          const interventionId = await addIntervention(interventionData);
-          // Retourner l'ID de l'intervention (compatibilité avec l'ancien code)
-          return interventionId;
+        if (existingIntervention && existingIntervention.id !== interventionId) {
+          reject(new Error(`Une intervention de type "${nouveauType}" existe déjà pour cette personne à cette date`));
+          return;
         }
-      }
-    } catch (error) {
-      console.error('❌ Erreur dans addTransmission:', error);
-      throw error;
-    }
-  };
-  
-  /**
-   * Fonction de compatibilité pour updateTransmission (ancienne API)
-   */
-  const updateTransmission = async (data) => {
-    await initDatabaseUnified();
-    
-    try {
-      // Si data est juste un ID, on ne peut pas faire grand-chose
-      if (typeof data === 'number') {
-        throw new Error('updateTransmission nécessite un objet avec les données');
-      }
-      
-      // Utiliser addTransmission qui gère aussi les mises à jour
-      return await addTransmission(data);
-    } catch (error) {
-      console.error('❌ Erreur dans updateTransmission:', error);
-      throw error;
-    }
-  };
-  
-  /**
-   * Fonction de compatibilité pour getAllTransmissions (ancienne API)
-   * Retourne toutes les interventions de type 'transmissions' avec les données de la personne
-   */
-  const getAllTransmissions = async () => {
-    await initDatabaseUnified();
-    const allInterventions = await getAllInterventions();
-    const allPersonnes = await getAllPersonnes();
-    
-    // Créer un Map pour accéder rapidement aux personnes par ID
-    const personnesMap = new Map(allPersonnes.map(p => [p.id, p]));
-    
-    // Filtrer pour ne retourner que les transmissions et enrichir avec les données de la personne
-    return allInterventions
-      .filter(interv => interv.type === 'transmissions')
-      .map(interv => {
-        const personne = personnesMap.get(interv.personneId) || {};
         
-        // Convertir au format ancien avec les données de la personne
-        return {
-          id: interv.id,
-          personId: interv.personneId,
-          personneId: interv.personneId,
-          // Données de la personne
-          nom: personne.nom || '',
-          prenom: personne.prenom || '',
-          dateNaissance: personne.dateNaissance || '',
-          descriptionPhysique: personne.descriptionPhysique || '',
-          inconnu: personne.inconnu || false,
-          departement: personne.departement || '',
-          typologie: personne.typologie || '',
-          nbPersonnes: personne.nbPersonnes || '',
-          mineurs: personne.mineurs || '',
-          // Données de l'intervention
-          dateTransmission: interv.date,
-          date: interv.date,
-          typeTransmission: interv.typeTransmission || '',
-          adresse: interv.adresse || '',
-          ville: interv.ville || '',
-          signalement: interv.signalement || '',
-          transmission: interv.transmission || interv.observations || '',
-          orly: interv.orly || {},
-          accompagnement: interv.accompagnement || {},
-          distribution: interv.distribution || {},
-          observations: interv.observations || '',
+        // Pour éviter les conflits avec l'index unique, on doit supprimer puis recréer
+        // Sauvegarder toutes les données
+        const interventionData = {
+          personneId: intervention.personneId,
+          date: intervention.date,
+          type: nouveauType,
+          typeTransmission: intervention.typeTransmission || '',
+          adresse: intervention.adresse || intervention.lieu || '',
+          lieu: intervention.lieu || intervention.adresse || '',
+          ville: intervention.ville || '',
+          signalement: intervention.signalement || '',
+          transmission: intervention.transmission || '',
+          observations: intervention.observations || intervention.transmission || '',
+          orly: intervention.orly || {},
+          accompagnement: intervention.accompagnement || {},
+          distribution: intervention.distribution || {},
+          dateCreation: intervention.dateCreation || new Date().toISOString(),
+          dateModification: new Date().toISOString()
         };
-      });
+        
+        // Supprimer l'ancienne intervention
+        await deleteIntervention(interventionId);
+        
+        // Créer la nouvelle intervention avec le nouveau type
+        const newInterventionId = await addIntervention(interventionData);
+        
+        // Récupérer la nouvelle intervention créée
+        const newIntervention = await getInterventionById(newInterventionId);
+        resolve(newIntervention);
+      } catch (error) {
+        console.error('❌ Erreur lors du changement de type:', error);
+        reject(error);
+      }
+    });
   };
 
   window.initDatabaseUnified = initDatabaseUnified;
@@ -542,11 +414,7 @@
   window.getInterventionsByPersonneIdAndDateAndType = getInterventionsByPersonneIdAndDateAndType;
   window.getInterventionsByPersonneAndDate = getInterventionsByPersonneAndDate;
   window.getPersonnesAvecInterventions = getPersonnesAvecInterventions;
-  
-  // Fonctions de compatibilité (ancienne API)
-  window.addTransmission = addTransmission;
-  window.updateTransmission = updateTransmission;
-  window.getAllTransmissions = getAllTransmissions;
+  window.changerTypeIntervention = changerTypeIntervention;
 
   console.log('📦 Module Persistance Unifiée chargé');
 })();

@@ -60,6 +60,17 @@
     transform: translateY(-2px);
 }
 
+/* Bouton Déplacer - Violet */
+.btn-deplacer {
+    background: #7c3aed;
+    color: white;
+}
+
+.btn-deplacer:hover {
+    background: #6d28d9;
+    transform: translateY(-2px);
+}
+
 
 
 

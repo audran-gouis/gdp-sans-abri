@@ -419,14 +419,16 @@ async function afficherToutesLesPersonnesTransmissions() {
     const badgeCount = genererBadgeInterventions(stats, selectedDate);
     
     // Vérifier si une transmission existe pour cette date
-    const hasTransmissionToday = personne.transmissions && personne.transmissions.some(i => i.date === selectedDate);
+    const transmissionToday = personne.transmissions && personne.transmissions.find(i => i.date === selectedDate);
+    const hasTransmissionToday = !!transmissionToday;
     const btnText = hasTransmissionToday ? 'Modifier' : 'Compléter';
     const btnClass = hasTransmissionToday ? 'btn-edit btn-modifier' : 'btn-edit btn-completer';
+    const personneNom = personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim() || 'Non renseigné';
 
     return `
       <div class="transmission-card">
         <div class="card-header">
-          <h3>${personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim()}</h3>
+          <h3>${personneNom}</h3>
           <div class="card-badges">
             ${badgeCount}
             ${badges}
@@ -441,6 +443,7 @@ async function afficherToutesLesPersonnesTransmissions() {
         </div>
         <div class="card-actions">
           <button class="btn-card ${btnClass}" data-personne-id="${personne.id}" data-type="transmissions">${btnText}</button>
+          ${hasTransmissionToday && transmissionToday ? `<button class="btn-card btn-deplacer" data-intervention-id="${transmissionToday.id}" data-type="transmissions" data-personne-nom="${personneNom}" title="Déplacer vers un autre type">Déplacer</button>` : ''}
         </div>
       </div>
     `;
@@ -452,6 +455,18 @@ async function afficherToutesLesPersonnesTransmissions() {
       const personneId = parseInt(btn.dataset.personneId);
       if (personneId && typeof window.editTransmission === 'function') {
         window.editTransmission(personneId);
+      }
+    });
+  });
+  
+  // Ajouter les événements aux boutons de déplacement
+  container.querySelectorAll('.btn-deplacer[data-type="transmissions"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const interventionId = parseInt(btn.dataset.interventionId);
+      const typeActuel = btn.dataset.type;
+      const personneNom = btn.dataset.personneNom;
+      if (interventionId && typeof window.afficherModaleDeplacement === 'function') {
+        window.afficherModaleDeplacement(interventionId, typeActuel, personneNom);
       }
     });
   });
@@ -481,14 +496,16 @@ async function afficherToutesLesPersonnesADP() {
     const badgeCount = genererBadgeInterventions(stats, selectedDate);
     
     // Vérifier si une ADP existe pour cette date
-    const hasAdpToday = personne.adp && personne.adp.some(i => i.date === selectedDate);
+    const adpToday = personne.adp && personne.adp.find(i => i.date === selectedDate);
+    const hasAdpToday = !!adpToday;
     const btnText = hasAdpToday ? 'Modifier' : 'Compléter';
     const btnClass = hasAdpToday ? 'btn-edit btn-modifier' : 'btn-edit btn-completer';
+    const personneNom = personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim() || 'Non renseigné';
 
     return `
       <div class="transmission-card">
         <div class="card-header">
-          <h3>${personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim()}</h3>
+          <h3>${personneNom}</h3>
           <div class="card-badges">
             ${badgeCount}
             ${badges}
@@ -503,6 +520,7 @@ async function afficherToutesLesPersonnesADP() {
         </div>
         <div class="card-actions">
           <button class="btn-card ${btnClass}" data-personne-id="${personne.id}" data-type="adp">${btnText}</button>
+          ${hasAdpToday && adpToday ? `<button class="btn-card btn-deplacer" data-intervention-id="${adpToday.id}" data-type="adp" data-personne-nom="${personneNom}" title="Déplacer vers un autre type">Déplacer</button>` : ''}
         </div>
       </div>
     `;
@@ -514,6 +532,18 @@ async function afficherToutesLesPersonnesADP() {
       const personneId = parseInt(btn.dataset.personneId);
       if (personneId && typeof window.editTransmissionAdp === 'function') {
         window.editTransmissionAdp(personneId);
+      }
+    });
+  });
+  
+  // Ajouter les événements aux boutons de déplacement
+  container.querySelectorAll('.btn-deplacer[data-type="adp"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const interventionId = parseInt(btn.dataset.interventionId);
+      const typeActuel = btn.dataset.type;
+      const personneNom = btn.dataset.personneNom;
+      if (interventionId && typeof window.afficherModaleDeplacement === 'function') {
+        window.afficherModaleDeplacement(interventionId, typeActuel, personneNom);
       }
     });
   });
@@ -543,14 +573,16 @@ async function afficherToutesLesPersonnesPA() {
     const badgeCount = genererBadgeInterventions(stats, selectedDate);
     
     // Vérifier si une fiche Point Accueil existe pour cette date
-    const hasPAToday = personne.pointAccueil && personne.pointAccueil.some(i => i.date === selectedDate);
+    const paToday = personne.pointAccueil && personne.pointAccueil.find(i => i.date === selectedDate);
+    const hasPAToday = !!paToday;
     const btnText = hasPAToday ? 'Modifier' : 'Compléter';
     const btnClass = hasPAToday ? 'btn-edit btn-modifier' : 'btn-edit btn-completer';
+    const personneNom = personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim() || 'Non renseigné';
 
     return `
       <div class="transmission-card">
         <div class="card-header">
-          <h3>${personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim()}</h3>
+          <h3>${personneNom}</h3>
           <div class="card-badges">
             ${badgeCount}
             ${badges}
@@ -565,6 +597,7 @@ async function afficherToutesLesPersonnesPA() {
         </div>
         <div class="card-actions">
           <button class="btn-card ${btnClass}" data-personne-id="${personne.id}" data-type="pointAccueil">${btnText}</button>
+          ${hasPAToday && paToday ? `<button class="btn-card btn-deplacer" data-intervention-id="${paToday.id}" data-type="pointAccueil" data-personne-nom="${personneNom}" title="Déplacer vers un autre type">Déplacer</button>` : ''}
         </div>
       </div>
     `;
@@ -576,6 +609,18 @@ async function afficherToutesLesPersonnesPA() {
       const personneId = parseInt(btn.dataset.personneId);
       if (personneId && typeof window.modifierFichePA === 'function') {
         window.modifierFichePA(personneId);
+      }
+    });
+  });
+  
+  // Ajouter les événements aux boutons de déplacement
+  container.querySelectorAll('.btn-deplacer[data-type="pointAccueil"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const interventionId = parseInt(btn.dataset.interventionId);
+      const typeActuel = btn.dataset.type;
+      const personneNom = btn.dataset.personneNom;
+      if (interventionId && typeof window.afficherModaleDeplacement === 'function') {
+        window.afficherModaleDeplacement(interventionId, typeActuel, personneNom);
       }
     });
   });
