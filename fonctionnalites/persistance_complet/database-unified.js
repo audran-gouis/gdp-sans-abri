@@ -271,12 +271,59 @@
     return new Promise((resolve, reject) => {
       const transaction = dbUnified.transaction([STORE_INTERVENTIONS], 'readonly');
       const store = transaction.objectStore(STORE_INTERVENTIONS);
-      const index = store.index('personneId_date_type');
-      const key = [personneId, date, type];
-      const request = index.get(key);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
+      
+      // Vérifier si l'index composite existe
+      let indexExists = false;
+      try {
+        const index = store.index('personneId_date_type');
+        indexExists = true;
+        const key = [personneId, date, type];
+        const request = index.get(key);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => {
+          // En cas d'erreur, utiliser la méthode alternative
+          fallbackGetIntervention(store, personneId, date, type, resolve, reject);
+        };
+      } catch (error) {
+        // L'index n'existe pas, utiliser la méthode alternative
+        fallbackGetIntervention(store, personneId, date, type, resolve, reject);
+      }
     });
+  };
+  
+  // Fonction de secours pour récupérer une intervention sans index composite
+  const fallbackGetIntervention = (store, personneId, date, type, resolve, reject) => {
+    try {
+      const index = store.index('personneId');
+      const range = IDBKeyRange.only(personneId);
+      const request = index.getAll(range);
+      
+      request.onsuccess = () => {
+        const interventions = request.result.filter(i => i.date === date && i.type === type);
+        resolve(interventions.length > 0 ? interventions[0] : null);
+      };
+      request.onerror = () => {
+        // Si même l'index personneId n'existe pas, utiliser getAll
+        const getAllRequest = store.getAll();
+        getAllRequest.onsuccess = () => {
+          const interventions = getAllRequest.result.filter(
+            i => i.personneId === personneId && i.date === date && i.type === type
+          );
+          resolve(interventions.length > 0 ? interventions[0] : null);
+        };
+        getAllRequest.onerror = () => reject(getAllRequest.error);
+      };
+    } catch (error) {
+      // Si aucun index n'existe, utiliser getAll
+      const getAllRequest = store.getAll();
+      getAllRequest.onsuccess = () => {
+        const interventions = getAllRequest.result.filter(
+          i => i.personneId === personneId && i.date === date && i.type === type
+        );
+        resolve(interventions.length > 0 ? interventions[0] : null);
+      };
+      getAllRequest.onerror = () => reject(getAllRequest.error);
+    }
   };
 
   const getInterventionsByPersonneAndDate = async (personneId, date) => {
@@ -312,6 +359,172 @@
     return Array.from(personnesMap.values());
   };
 
+  // ==================== FONCTIONS DE COMPATIBILITÉ (ancienne API) ====================
+  
+  /**
+   * Fonction de compatibilité pour addTransmission (ancienne API)
+   * Convertit l'ancien format vers le nouveau format de la base unifiée
+   */
+  const addTransmission = async (data) => {
+    await initDatabaseUnified();
+    
+    try {
+      // Séparer les données de la personne et de l'intervention
+      const personneData = {
+        nom: data.nom || '',
+        prenom: data.prenom || '',
+        dateNaissance: data.dateNaissance || '',
+        descriptionPhysique: data.descriptionPhysique || '',
+        inconnu: data.inconnu || false,
+        departement: data.departement || '',
+        typologie: data.typologie || '',
+        nbPersonnes: data.nbPersonnes || '',
+        mineurs: data.mineurs || ''
+      };
+      
+      // Créer ou récupérer la personne
+      let personneId = data.personId || data.personneId;
+      if (!personneId) {
+        // Pas d'ID fourni, créer ou récupérer la personne
+        personneId = await creerOuRecupererPersonne(personneData);
+      } else {
+        // Un ID est fourni, vérifier si la personne existe
+        try {
+          const personneExistante = await getPersonneById(personneId);
+          if (personneExistante) {
+            // La personne existe, la mettre à jour
+            await updatePersonne(personneId, personneData);
+          } else {
+            // La personne n'existe pas, la créer
+            console.warn(`⚠️ Personne ID ${personneId} non trouvée, création d'une nouvelle personne`);
+            personneId = await creerOuRecupererPersonne(personneData);
+          }
+        } catch (error) {
+          // En cas d'erreur, créer ou récupérer la personne
+          console.warn(`⚠️ Erreur lors de la vérification de la personne ID ${personneId}, création/récupération:`, error);
+          personneId = await creerOuRecupererPersonne(personneData);
+        }
+      }
+      
+      // Préparer les données de l'intervention
+      const interventionData = {
+        personneId: personneId,
+        date: data.dateTransmission || data.date || new Date().toISOString().split('T')[0],
+        type: 'transmissions',
+        typeTransmission: data.typeTransmission || '',
+        adresse: data.adresse || '',
+        ville: data.ville || '',
+        signalement: data.signalement || '',
+        transmission: data.transmission || '',
+        orly: data.orly || {},
+        accompagnement: data.accompagnement || {},
+        distribution: data.distribution || {},
+        observations: data.observations || data.transmission || '',
+        dateCreation: new Date().toISOString(),
+        dateModification: new Date().toISOString()
+      };
+      
+      // Si un ID est fourni, c'est une mise à jour
+      if (data.id) {
+        interventionData.id = data.id;
+        const updated = await updateIntervention(data.id, interventionData);
+        // Retourner l'ID de l'intervention (compatibilité avec l'ancien code)
+        return updated.id;
+      } else {
+        // Vérifier si une intervention existe déjà pour cette personne, date et type
+        const existingIntervention = await getInterventionsByPersonneIdAndDateAndType(
+          personneId,
+          interventionData.date,
+          'transmissions'
+        );
+        
+        if (existingIntervention) {
+          // Mettre à jour l'intervention existante
+          const updated = await updateIntervention(existingIntervention.id, interventionData);
+          // Retourner l'ID de l'intervention (compatibilité avec l'ancien code)
+          return updated.id;
+        } else {
+          // Créer une nouvelle intervention
+          const interventionId = await addIntervention(interventionData);
+          // Retourner l'ID de l'intervention (compatibilité avec l'ancien code)
+          return interventionId;
+        }
+      }
+    } catch (error) {
+      console.error('❌ Erreur dans addTransmission:', error);
+      throw error;
+    }
+  };
+  
+  /**
+   * Fonction de compatibilité pour updateTransmission (ancienne API)
+   */
+  const updateTransmission = async (data) => {
+    await initDatabaseUnified();
+    
+    try {
+      // Si data est juste un ID, on ne peut pas faire grand-chose
+      if (typeof data === 'number') {
+        throw new Error('updateTransmission nécessite un objet avec les données');
+      }
+      
+      // Utiliser addTransmission qui gère aussi les mises à jour
+      return await addTransmission(data);
+    } catch (error) {
+      console.error('❌ Erreur dans updateTransmission:', error);
+      throw error;
+    }
+  };
+  
+  /**
+   * Fonction de compatibilité pour getAllTransmissions (ancienne API)
+   * Retourne toutes les interventions de type 'transmissions' avec les données de la personne
+   */
+  const getAllTransmissions = async () => {
+    await initDatabaseUnified();
+    const allInterventions = await getAllInterventions();
+    const allPersonnes = await getAllPersonnes();
+    
+    // Créer un Map pour accéder rapidement aux personnes par ID
+    const personnesMap = new Map(allPersonnes.map(p => [p.id, p]));
+    
+    // Filtrer pour ne retourner que les transmissions et enrichir avec les données de la personne
+    return allInterventions
+      .filter(interv => interv.type === 'transmissions')
+      .map(interv => {
+        const personne = personnesMap.get(interv.personneId) || {};
+        
+        // Convertir au format ancien avec les données de la personne
+        return {
+          id: interv.id,
+          personId: interv.personneId,
+          personneId: interv.personneId,
+          // Données de la personne
+          nom: personne.nom || '',
+          prenom: personne.prenom || '',
+          dateNaissance: personne.dateNaissance || '',
+          descriptionPhysique: personne.descriptionPhysique || '',
+          inconnu: personne.inconnu || false,
+          departement: personne.departement || '',
+          typologie: personne.typologie || '',
+          nbPersonnes: personne.nbPersonnes || '',
+          mineurs: personne.mineurs || '',
+          // Données de l'intervention
+          dateTransmission: interv.date,
+          date: interv.date,
+          typeTransmission: interv.typeTransmission || '',
+          adresse: interv.adresse || '',
+          ville: interv.ville || '',
+          signalement: interv.signalement || '',
+          transmission: interv.transmission || interv.observations || '',
+          orly: interv.orly || {},
+          accompagnement: interv.accompagnement || {},
+          distribution: interv.distribution || {},
+          observations: interv.observations || '',
+        };
+      });
+  };
+
   window.initDatabaseUnified = initDatabaseUnified;
   window.creerOuRecupererPersonne = creerOuRecupererPersonne;
   window.getPersonneById = getPersonneById;
@@ -329,6 +542,11 @@
   window.getInterventionsByPersonneIdAndDateAndType = getInterventionsByPersonneIdAndDateAndType;
   window.getInterventionsByPersonneAndDate = getInterventionsByPersonneAndDate;
   window.getPersonnesAvecInterventions = getPersonnesAvecInterventions;
+  
+  // Fonctions de compatibilité (ancienne API)
+  window.addTransmission = addTransmission;
+  window.updateTransmission = updateTransmission;
+  window.getAllTransmissions = getAllTransmissions;
 
   console.log('📦 Module Persistance Unifiée chargé');
 })();

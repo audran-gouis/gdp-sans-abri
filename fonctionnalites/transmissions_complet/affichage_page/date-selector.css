@@ -2,6 +2,7 @@
 .date-selector-container {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 1rem;
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;

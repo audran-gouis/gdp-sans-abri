@@ -26,33 +26,39 @@
       return false;
     }
     
-    let isExpanded = false;
+    // Par défaut, les modales sont en plein écran
+    let isExpanded = true;
+    const modalContent = modal.querySelector('.modal-content');
+    
+    // Initialiser le bouton avec l'icône de réduction (puisque c'est plein écran par défaut)
+    if (modalContent) {
+      btnExpand.textContent = '🗗'; // Icône rétrécir
+      btnExpand.title = 'Réduire';
+    }
     
     btnExpand.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
-      
-      const modalContent = modal.querySelector('.modal-content');
       
       if (!modalContent) {
         console.warn('⚠️ modal-content non trouvé dans', modalId);
         return;
       }
       
-      if (!isExpanded) {
-        // Agrandir
-        modalContent.classList.add('modal-expanded');
-        btnExpand.textContent = '🗗'; // Icône rétrécir
-        btnExpand.title = 'Réduire';
-        isExpanded = true;
-        console.log('✅ Modale agrandie:', modalId);
-      } else {
+      if (isExpanded) {
         // Réduire
-        modalContent.classList.remove('modal-expanded');
+        modalContent.classList.add('modal-reduced');
         btnExpand.textContent = '⛶'; // Icône agrandir
         btnExpand.title = 'Agrandir';
         isExpanded = false;
         console.log('✅ Modale réduite:', modalId);
+      } else {
+        // Agrandir
+        modalContent.classList.remove('modal-reduced');
+        btnExpand.textContent = '🗗'; // Icône rétrécir
+        btnExpand.title = 'Réduire';
+        isExpanded = true;
+        console.log('✅ Modale agrandie:', modalId);
       }
     });
     

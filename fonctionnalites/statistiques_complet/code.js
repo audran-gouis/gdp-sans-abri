@@ -467,6 +467,55 @@ function displayStatistics(interventions, source) {
     typologieStats[typo] = (typologieStats[typo] || 0) + nbPersonnes;
   });
   
+  // Compter les familles avec enfants (ménages et personnes)
+  const typologiesAvecEnfants = [
+    'femme-seule-avec-enfants',
+    'homme-seul-avec-enfants',
+    'groupe-adultes-avec-enfants'
+  ];
+  
+  let nbMenagesAvecEnfants = 0;
+  let nbPersonnesAvecEnfants = 0;
+  
+  uniquePersonsMap.forEach(entry => {
+    const personne = entry.personne;
+    const typo = personne.typologie || 'non-renseigne';
+    
+    if (typologiesAvecEnfants.includes(typo)) {
+      nbMenagesAvecEnfants++;
+      let nbStr = String(personne.nbPersonnes || '1').replace('+', '');
+      const nbPersonnes = parseInt(nbStr) || 1;
+      nbPersonnesAvecEnfants += nbPersonnes;
+    }
+  });
+  
+  // Compter les signalements (ménages et personnes)
+  let nbMenagesSignalement115 = 0;
+  let nbPersonnesSignalement115 = 0;
+  let nbMenagesSignalementPartenaires = 0;
+  let nbPersonnesSignalementPartenaires = 0;
+  
+  uniquePersonsMap.forEach(entry => {
+    const personne = entry.personne;
+    // Vérifier si au moins une intervention a un signalement
+    const hasSignalement115 = entry.interventions.some(interv => interv.signalement === '115');
+    const hasSignalementPartenaires = entry.interventions.some(interv => interv.signalement === 'partenaires');
+    
+    if (hasSignalement115) {
+      nbMenagesSignalement115++;
+      let nbStr = String(personne.nbPersonnes || '1').replace('+', '');
+      const nbPersonnes = parseInt(nbStr) || 1;
+      nbPersonnesSignalement115 += nbPersonnes;
+    }
+    
+    if (hasSignalementPartenaires) {
+      nbMenagesSignalementPartenaires++;
+      let nbStr = String(personne.nbPersonnes || '1').replace('+', '');
+      const nbPersonnes = parseInt(nbStr) || 1;
+      nbPersonnesSignalementPartenaires += nbPersonnes;
+    }
+  });
+  
   const sourceLabel = source === 'all' ? 'Toutes sources' : 
                       source === 'transmissions' ? 'Transmissions' : 
                       source === 'adp' ? 'ADP' : 'Point Accueil';
@@ -508,7 +557,7 @@ function displayStatistics(interventions, source) {
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
           <div style="text-align: center;">
             <div style="font-size: 2rem; font-weight: bold;">${totalPersonnesDistinctes}</div>
-            <div>Fiche${totalPersonnesDistinctes > 1 ? 's' : ''} distincte${totalPersonnesDistinctes > 1 ? 's' : ''}</div>
+            <div>Ménage${totalPersonnesDistinctes > 1 ? 's' : ''}</div>
           </div>
           <div style="text-align: center;">
             <div style="font-size: 2rem; font-weight: bold;">${totalNbPersonnes}</div>
@@ -521,6 +570,45 @@ function displayStatistics(interventions, source) {
           <div style="text-align: center;">
             <div style="font-size: 2rem; font-weight: bold;">${totalPassages}</div>
             <div>Passage${totalPassages > 1 ? 's' : ''}</div>
+          </div>
+        </div>
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.3);">
+          <div style="font-size: 0.9rem; margin-bottom: 0.5rem; opacity: 0.9;">Dont famille${nbMenagesAvecEnfants > 1 ? 's' : ''} avec enfant${nbMenagesAvecEnfants > 1 ? 's' : ''}</div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
+            <div style="text-align: center;">
+              <div style="font-size: 1.5rem; font-weight: bold;">${nbMenagesAvecEnfants}</div>
+              <div style="font-size: 0.85rem;">Ménage${nbMenagesAvecEnfants > 1 ? 's' : ''}</div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 1.5rem; font-weight: bold;">${nbPersonnesAvecEnfants}</div>
+              <div style="font-size: 0.85rem;">Personne${nbPersonnesAvecEnfants > 1 ? 's' : ''}</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.3);">
+          <div style="font-size: 0.9rem; margin-bottom: 0.5rem; opacity: 0.9;">Dont Signalement 115</div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
+            <div style="text-align: center;">
+              <div style="font-size: 1.5rem; font-weight: bold;">${nbMenagesSignalement115}</div>
+              <div style="font-size: 0.85rem;">Ménage${nbMenagesSignalement115 > 1 ? 's' : ''}</div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 1.5rem; font-weight: bold;">${nbPersonnesSignalement115}</div>
+              <div style="font-size: 0.85rem;">Personne${nbPersonnesSignalement115 > 1 ? 's' : ''}</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.3);">
+          <div style="font-size: 0.9rem; margin-bottom: 0.5rem; opacity: 0.9;">Dont Signalement Partenaires</div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
+            <div style="text-align: center;">
+              <div style="font-size: 1.5rem; font-weight: bold;">${nbMenagesSignalementPartenaires}</div>
+              <div style="font-size: 0.85rem;">Ménage${nbMenagesSignalementPartenaires > 1 ? 's' : ''}</div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 1.5rem; font-weight: bold;">${nbPersonnesSignalementPartenaires}</div>
+              <div style="font-size: 0.85rem;">Personne${nbPersonnesSignalementPartenaires > 1 ? 's' : ''}</div>
+            </div>
           </div>
         </div>
         ${detailBySource}

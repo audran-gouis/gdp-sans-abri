@@ -19,29 +19,29 @@
 
 .modal-content {
     background: white;
-    border-radius: 15px;
-    width: 90%;
-    max-width: 800px;
-    max-height: 90vh;
+    border-radius: 10px;
+    width: 98vw;
+    height: 98vh;
+    max-width: 98vw;
+    max-height: 98vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     animation: slideIn 0.3s ease-out;
     transition: all 0.3s ease;
-}
-
-/* Mode plein écran - nouvelle classe */
-.modal-content.modal-expanded {
-    width: 98vw !important;
-    height: 98vh !important;
-    max-width: 98vw !important;
-    max-height: 98vh !important;
-    border-radius: 10px !important;
     margin: 0;
 }
 
-.modal-content.modal-expanded .modal-body {
+/* Mode réduit - classe pour réduire la modale */
+.modal-content.modal-reduced {
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    border-radius: 15px;
+}
+
+.modal-content .modal-body {
     flex: 1;
     overflow-y: auto;
 }

@@ -4,6 +4,123 @@
  */
 
 /**
+ * Calcule la distance de Levenshtein entre deux chaînes
+ * @param {string} str1 - Première chaîne
+ * @param {string} str2 - Deuxième chaîne
+ * @returns {number} - Distance de Levenshtein
+ */
+function levenshteinDistance(str1, str2) {
+  if (!str1 || !str2) return Math.max(str1?.length || 0, str2?.length || 0);
+  
+  const len1 = str1.length;
+  const len2 = str2.length;
+  
+  // Créer une matrice
+  const matrix = Array(len1 + 1).fill(null).map(() => Array(len2 + 1).fill(0));
+  
+  // Initialiser la première ligne et colonne
+  for (let i = 0; i <= len1; i++) matrix[i][0] = i;
+  for (let j = 0; j <= len2; j++) matrix[0][j] = j;
+  
+  // Remplir la matrice
+  for (let i = 1; i <= len1; i++) {
+    for (let j = 1; j <= len2; j++) {
+      const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,      // Suppression
+        matrix[i][j - 1] + 1,      // Insertion
+        matrix[i - 1][j - 1] + cost // Substitution
+      );
+    }
+  }
+  
+  return matrix[len1][len2];
+}
+
+/**
+ * Calcule un score de similarité entre 0 et 1 (1 = identique, 0 = complètement différent)
+ * @param {string} str1 - Première chaîne
+ * @param {string} str2 - Deuxième chaîne
+ * @returns {number} - Score de similarité entre 0 et 1
+ */
+function similarityScore(str1, str2) {
+  if (!str1 || !str2) return 0;
+  if (str1 === str2) return 1;
+  
+  const maxLen = Math.max(str1.length, str2.length);
+  if (maxLen === 0) return 1;
+  
+  const distance = levenshteinDistance(str1, str2);
+  return 1 - (distance / maxLen);
+}
+
+/**
+ * Vérifie si une chaîne correspond à une recherche avec tolérance aux fautes
+ * @param {string} text - Texte à rechercher dans
+ * @param {string} searchTerm - Terme de recherche
+ * @param {number} threshold - Seuil de similarité (0-1), par défaut 0.6 (60% de similarité)
+ * @returns {boolean} - true si le texte correspond
+ */
+function fuzzyMatch(text, searchTerm, threshold = 0.6) {
+  if (!text || !searchTerm) return false;
+  
+  const textLower = text.toLowerCase().trim();
+  const searchLower = searchTerm.toLowerCase().trim();
+  
+  // Si la recherche est vide, tout correspond
+  if (searchLower.length === 0) return true;
+  
+  // Si le texte contient exactement le terme de recherche, c'est une correspondance parfaite
+  if (textLower.includes(searchLower)) return true;
+  
+  // Si le terme de recherche est très court (1-2 caractères), utiliser une recherche exacte
+  if (searchLower.length <= 2) {
+    return textLower.includes(searchLower);
+  }
+  
+  // Pour les termes plus longs, utiliser la similarité
+  // Vérifier aussi si le terme de recherche est contenu dans le texte (même avec des caractères manquants)
+  const words = textLower.split(/\s+/);
+  const searchWords = searchLower.split(/\s+/);
+  
+  // Vérifier si tous les mots de recherche sont présents (avec tolérance)
+  for (const searchWord of searchWords) {
+    let found = false;
+    
+    // D'abord vérifier une correspondance exacte dans un mot
+    for (const word of words) {
+      if (word.includes(searchWord)) {
+        found = true;
+        break;
+      }
+    }
+    
+    // Si pas trouvé exactement, vérifier la similarité
+    if (!found) {
+      for (const word of words) {
+        const similarity = similarityScore(word, searchWord);
+        if (similarity >= threshold) {
+          found = true;
+          break;
+        }
+      }
+    }
+    
+    // Si un mot de recherche n'est pas trouvé, la recherche échoue
+    if (!found) {
+      // Dernière chance : vérifier la similarité globale
+      const globalSimilarity = similarityScore(textLower, searchLower);
+      if (globalSimilarity >= threshold) {
+        return true;
+      }
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+/**
  * Charge toutes les personnes avec leurs interventions
  */
 async function chargerToutesLesPersonnesAvecInterventions() {
@@ -176,14 +293,14 @@ function genererBadgeInterventions(stats, selectedDate) {
 function applyTransmissionsFilters(personnes) {
   let filtered = personnes;
   
-  const filterNom = document.getElementById('filter-nom')?.value?.toLowerCase();
+  const filterNom = document.getElementById('filter-nom')?.value;
   if (filterNom) {
-    filtered = filtered.filter(p => p.nom?.toLowerCase().includes(filterNom));
+    filtered = filtered.filter(p => fuzzyMatch(p.nom || '', filterNom));
   }
   
-  const filterPrenom = document.getElementById('filter-prenom')?.value?.toLowerCase();
+  const filterPrenom = document.getElementById('filter-prenom')?.value;
   if (filterPrenom) {
-    filtered = filtered.filter(p => p.prenom?.toLowerCase().includes(filterPrenom));
+    filtered = filtered.filter(p => fuzzyMatch(p.prenom || '', filterPrenom));
   }
   
   const filterDdn = document.getElementById('filter-ddn')?.value;
@@ -198,9 +315,9 @@ function applyTransmissionsFilters(personnes) {
     filtered = filtered.filter(p => p.inconnu === true);
   }
   
-  const filterDescription = document.getElementById('filter-description')?.value?.toLowerCase();
+  const filterDescription = document.getElementById('filter-description')?.value;
   if (filterDescription) {
-    filtered = filtered.filter(p => p.descriptionPhysique?.toLowerCase().includes(filterDescription));
+    filtered = filtered.filter(p => fuzzyMatch(p.descriptionPhysique || '', filterDescription));
   }
   
   return filtered;
@@ -212,14 +329,14 @@ function applyTransmissionsFilters(personnes) {
 function applyAdpFilters(personnes) {
   let filtered = personnes;
   
-  const filterNom = document.getElementById('adp-filter-nom')?.value?.toLowerCase();
+  const filterNom = document.getElementById('adp-filter-nom')?.value;
   if (filterNom) {
-    filtered = filtered.filter(p => p.nom?.toLowerCase().includes(filterNom));
+    filtered = filtered.filter(p => fuzzyMatch(p.nom || '', filterNom));
   }
   
-  const filterPrenom = document.getElementById('adp-filter-prenom')?.value?.toLowerCase();
+  const filterPrenom = document.getElementById('adp-filter-prenom')?.value;
   if (filterPrenom) {
-    filtered = filtered.filter(p => p.prenom?.toLowerCase().includes(filterPrenom));
+    filtered = filtered.filter(p => fuzzyMatch(p.prenom || '', filterPrenom));
   }
   
   const filterDdn = document.getElementById('adp-filter-ddn')?.value;
@@ -234,9 +351,9 @@ function applyAdpFilters(personnes) {
     filtered = filtered.filter(p => p.inconnu === true);
   }
   
-  const filterDescription = document.getElementById('adp-filter-description')?.value?.toLowerCase();
+  const filterDescription = document.getElementById('adp-filter-description')?.value;
   if (filterDescription) {
-    filtered = filtered.filter(p => p.descriptionPhysique?.toLowerCase().includes(filterDescription));
+    filtered = filtered.filter(p => fuzzyMatch(p.descriptionPhysique || '', filterDescription));
   }
   
   return filtered;
@@ -248,14 +365,14 @@ function applyAdpFilters(personnes) {
 function applyPAFilters(personnes) {
   let filtered = personnes;
   
-  const filterNom = document.getElementById('pa-filter-nom')?.value?.toLowerCase();
+  const filterNom = document.getElementById('pa-filter-nom')?.value;
   if (filterNom) {
-    filtered = filtered.filter(p => p.nom?.toLowerCase().includes(filterNom));
+    filtered = filtered.filter(p => fuzzyMatch(p.nom || '', filterNom));
   }
   
-  const filterPrenom = document.getElementById('pa-filter-prenom')?.value?.toLowerCase();
+  const filterPrenom = document.getElementById('pa-filter-prenom')?.value;
   if (filterPrenom) {
-    filtered = filtered.filter(p => p.prenom?.toLowerCase().includes(filterPrenom));
+    filtered = filtered.filter(p => fuzzyMatch(p.prenom || '', filterPrenom));
   }
   
   const filterDdn = document.getElementById('pa-filter-ddn')?.value;
@@ -270,9 +387,9 @@ function applyPAFilters(personnes) {
     filtered = filtered.filter(p => p.inconnu === true);
   }
   
-  const filterDescription = document.getElementById('pa-filter-description')?.value?.toLowerCase();
+  const filterDescription = document.getElementById('pa-filter-description')?.value;
   if (filterDescription) {
-    filtered = filtered.filter(p => p.descriptionPhysique?.toLowerCase().includes(filterDescription));
+    filtered = filtered.filter(p => fuzzyMatch(p.descriptionPhysique || '', filterDescription));
   }
   
   return filtered;
