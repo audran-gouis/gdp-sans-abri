@@ -418,6 +418,16 @@ async function afficherToutesLesPersonnesTransmissions() {
     const stats = compterInterventionsParDate(personne, selectedDate, 'transmissions');
     const badgeCount = genererBadgeInterventions(stats, selectedDate);
     
+    // Récupérer les infos historiques valides pour cette date
+    const infosALaDate = window.getInfosALaDate ? 
+      window.getInfosALaDate(personne, selectedDate) : 
+      {
+        departement: personne.departement || '',
+        typologie: personne.typologie || '',
+        nbPersonnes: personne.nbPersonnes || '',
+        mineurs: personne.mineurs || ''
+      };
+    
     // Vérifier si une transmission existe pour cette date
     const transmissionToday = personne.transmissions && personne.transmissions.find(i => i.date === selectedDate);
     const hasTransmissionToday = !!transmissionToday;
@@ -426,7 +436,7 @@ async function afficherToutesLesPersonnesTransmissions() {
     const personneNom = personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim() || 'Non renseigné';
 
     return `
-      <div class="transmission-card">
+      <div class="transmission-card" data-personne-id="${personne.id}">
         <div class="card-header">
           <h3>${personneNom}</h3>
           <div class="card-badges">
@@ -437,8 +447,8 @@ async function afficherToutesLesPersonnesTransmissions() {
         <div class="card-body">
           ${personne.descriptionPhysique ? `<p><strong>Description:</strong> ${personne.descriptionPhysique}</p>` : ''}
           ${personne.dateNaissance ? `<p><strong>Date de naissance:</strong> ${new Date(personne.dateNaissance).toLocaleDateString('fr-FR')}</p>` : ''}
-          ${personne.departement ? `<p><strong>Département:</strong> ${personne.departement}</p>` : ''}
-          ${personne.typologie ? `<p><strong>Typologie:</strong> ${personne.typologie}</p>` : ''}
+          ${infosALaDate.departement ? `<p><strong>Département:</strong> ${infosALaDate.departement}</p>` : ''}
+          ${infosALaDate.typologie ? `<p><strong>Typologie:</strong> ${infosALaDate.typologie}</p>` : ''}
           ${!hasTransmissionToday && selectedDate ? '<p class="no-transmission-notice">Pas de maraude départementale pour ce jour</p>' : ''}
         </div>
         <div class="card-actions">
@@ -470,6 +480,11 @@ async function afficherToutesLesPersonnesTransmissions() {
       }
     });
   });
+  
+  // Attacher le menu contextuel aux nouvelles cartes
+  if (typeof window.attachContextMenuToAllCards === 'function') {
+    window.attachContextMenuToAllCards();
+  }
 }
 
 /**
@@ -495,6 +510,16 @@ async function afficherToutesLesPersonnesADP() {
     const stats = compterInterventionsParDate(personne, selectedDate, 'adp');
     const badgeCount = genererBadgeInterventions(stats, selectedDate);
     
+    // Récupérer les infos historiques valides pour cette date
+    const infosALaDate = window.getInfosALaDate ? 
+      window.getInfosALaDate(personne, selectedDate) : 
+      {
+        departement: personne.departement || '',
+        typologie: personne.typologie || '',
+        nbPersonnes: personne.nbPersonnes || '',
+        mineurs: personne.mineurs || ''
+      };
+    
     // Vérifier si une ADP existe pour cette date
     const adpToday = personne.adp && personne.adp.find(i => i.date === selectedDate);
     const hasAdpToday = !!adpToday;
@@ -503,7 +528,7 @@ async function afficherToutesLesPersonnesADP() {
     const personneNom = personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim() || 'Non renseigné';
 
     return `
-      <div class="transmission-card">
+      <div class="transmission-card" data-personne-id="${personne.id}">
         <div class="card-header">
           <h3>${personneNom}</h3>
           <div class="card-badges">
@@ -514,8 +539,8 @@ async function afficherToutesLesPersonnesADP() {
         <div class="card-body">
           ${personne.descriptionPhysique ? `<p><strong>Description:</strong> ${personne.descriptionPhysique}</p>` : ''}
           ${personne.dateNaissance ? `<p><strong>Date de naissance:</strong> ${new Date(personne.dateNaissance).toLocaleDateString('fr-FR')}</p>` : ''}
-          ${personne.departement ? `<p><strong>Département:</strong> ${personne.departement}</p>` : ''}
-          ${personne.typologie ? `<p><strong>Typologie:</strong> ${personne.typologie}</p>` : ''}
+          ${infosALaDate.departement ? `<p><strong>Département:</strong> ${infosALaDate.departement}</p>` : ''}
+          ${infosALaDate.typologie ? `<p><strong>Typologie:</strong> ${infosALaDate.typologie}</p>` : ''}
           ${!hasAdpToday && selectedDate ? '<p class="no-transmission-notice">Pas de maraude ADP pour ce jour</p>' : ''}
         </div>
         <div class="card-actions">
@@ -547,6 +572,11 @@ async function afficherToutesLesPersonnesADP() {
       }
     });
   });
+  
+  // Attacher le menu contextuel aux nouvelles cartes
+  if (typeof window.attachContextMenuToAllCards === 'function') {
+    window.attachContextMenuToAllCards();
+  }
 }
 
 /**
@@ -572,6 +602,16 @@ async function afficherToutesLesPersonnesPA() {
     const stats = compterInterventionsParDate(personne, selectedDate, 'pointAccueil');
     const badgeCount = genererBadgeInterventions(stats, selectedDate);
     
+    // Récupérer les infos historiques valides pour cette date
+    const infosALaDate = window.getInfosALaDate ? 
+      window.getInfosALaDate(personne, selectedDate) : 
+      {
+        departement: personne.departement || '',
+        typologie: personne.typologie || '',
+        nbPersonnes: personne.nbPersonnes || '',
+        mineurs: personne.mineurs || ''
+      };
+    
     // Vérifier si une fiche Point Accueil existe pour cette date
     const paToday = personne.pointAccueil && personne.pointAccueil.find(i => i.date === selectedDate);
     const hasPAToday = !!paToday;
@@ -580,7 +620,7 @@ async function afficherToutesLesPersonnesPA() {
     const personneNom = personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim() || 'Non renseigné';
 
     return `
-      <div class="transmission-card">
+      <div class="transmission-card" data-personne-id="${personne.id}">
         <div class="card-header">
           <h3>${personneNom}</h3>
           <div class="card-badges">
@@ -591,8 +631,8 @@ async function afficherToutesLesPersonnesPA() {
         <div class="card-body">
           ${personne.descriptionPhysique ? `<p><strong>Description:</strong> ${personne.descriptionPhysique}</p>` : ''}
           ${personne.dateNaissance ? `<p><strong>Date de naissance:</strong> ${new Date(personne.dateNaissance).toLocaleDateString('fr-FR')}</p>` : ''}
-          ${personne.departement ? `<p><strong>Département:</strong> ${personne.departement}</p>` : ''}
-          ${personne.typologie ? `<p><strong>Typologie:</strong> ${personne.typologie}</p>` : ''}
+          ${infosALaDate.departement ? `<p><strong>Département:</strong> ${infosALaDate.departement}</p>` : ''}
+          ${infosALaDate.typologie ? `<p><strong>Typologie:</strong> ${infosALaDate.typologie}</p>` : ''}
           ${!hasPAToday && selectedDate ? '<p class="no-transmission-notice">Pas de point accueil pour ce jour</p>' : ''}
         </div>
         <div class="card-actions">
@@ -624,6 +664,11 @@ async function afficherToutesLesPersonnesPA() {
       }
     });
   });
+  
+  // Attacher le menu contextuel aux nouvelles cartes
+  if (typeof window.attachContextMenuToAllCards === 'function') {
+    window.attachContextMenuToAllCards();
+  }
 }
 
 // Exports

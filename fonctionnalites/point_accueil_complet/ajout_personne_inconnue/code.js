@@ -32,7 +32,8 @@ async function selectionnerPointAccueil(page, point) {
 }
 
 async function selectionnerDate(page, date) {
-  await page.fill('#form-pa-date', date);
+  // NOTE: Ce champ n'existe plus - la date vient du sélecteur de l'onglet Point Accueil
+  console.warn('selectionnerDate() est obsolète - utiliser le sélecteur pa-date de l\'onglet');
 }
 
 async function cocherDistribution(page, option) {

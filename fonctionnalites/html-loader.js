@@ -53,6 +53,11 @@
             container: 'modal-point-accueil-container',
             file: 'fonctionnalites/point_accueil_complet/modal-point-accueil.html',
             insertMode: 'replace'
+        },
+        {
+            container: 'modal-doublons-container',
+            file: 'fonctionnalites/interface_complet/modal-doublons.html',
+            insertMode: 'replace'
         }
     ];
 

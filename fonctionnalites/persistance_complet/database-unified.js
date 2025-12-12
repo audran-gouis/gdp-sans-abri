@@ -2,7 +2,7 @@
   'use strict';
 
   const DB_NAME_UNIFIED = 'MaraudesUnifiedDB';
-  const DB_VERSION_UNIFIED = 2;
+  const DB_VERSION_UNIFIED = 3; // Version 3 : Ajout historisation
   const STORE_PERSONNES = 'personnes';
   const STORE_INTERVENTIONS = 'interventions';
 
@@ -30,10 +30,10 @@
 
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
-        const transaction = event.target.transaction;
         const oldVersion = event.oldVersion;
+        const transaction = event.target.transaction;
 
-        console.log(`🔄 Mise à jour DB de version ${oldVersion} vers ${DB_VERSION_UNIFIED}`);
+        console.log(`🔄 Mise à jour DB: v${oldVersion} → v${DB_VERSION_UNIFIED}`);
 
         // Store pour les personnes
         if (!db.objectStoreNames.contains(STORE_PERSONNES)) {
@@ -46,7 +46,14 @@
           personnesStore.createIndex('prenom', 'prenom', { unique: false });
           personnesStore.createIndex('dateNaissance', 'dateNaissance', { unique: false });
           personnesStore.createIndex('inconnu', 'inconnu', { unique: false });
-          console.log('✅ Object store Personnes créé dans DB Unifiée');
+          console.log('✅ Object store Personnes créé');
+        }
+        
+        // Migration v2 -> v3 : Ajouter le système d'historisation
+        if (oldVersion < 3 && db.objectStoreNames.contains(STORE_PERSONNES)) {
+          console.log('🔄 Migration v2 -> v3 : Ajout système d\'historisation');
+          // La migration des données se fera au niveau applicatif
+          // lors du chargement de chaque personne
         }
 
         // Store pour les interventions
@@ -59,16 +66,25 @@
           interventionsStore.createIndex('personneId', 'personneId', { unique: false });
           interventionsStore.createIndex('date', 'date', { unique: false });
           interventionsStore.createIndex('type', 'type', { unique: false });
-          interventionsStore.createIndex('personneId_date_type', ['personneId', 'date', 'type'], { unique: false });
-          console.log('✅ Object store Interventions créé dans DB Unifiée');
+          interventionsStore.createIndex('personneId_date_type', ['personneId', 'date', 'type'], { unique: true });
+          console.log('✅ Object store Interventions créé');
         } else {
-          // Récupérer le store existant depuis la transaction
+          // Migration v1 -> v2 : Ajouter l'index composé s'il n'existe pas
           interventionsStore = transaction.objectStore(STORE_INTERVENTIONS);
-          
-          // Ajouter l'index composé s'il n'existe pas (migration v1 -> v2)
           if (oldVersion < 2 && !interventionsStore.indexNames.contains('personneId_date_type')) {
-            interventionsStore.createIndex('personneId_date_type', ['personneId', 'date', 'type'], { unique: false });
-            console.log('✅ Index composé personneId_date_type ajouté');
+            try {
+              interventionsStore.createIndex('personneId_date_type', ['personneId', 'date', 'type'], { unique: true });
+              console.log('✅ Index personneId_date_type ajouté');
+            } catch (error) {
+              console.warn('⚠️ Erreur création index (probablement des doublons):', error.message);
+              // Si ça échoue à cause de doublons, créer l'index non-unique
+              try {
+                interventionsStore.createIndex('personneId_date_type', ['personneId', 'date', 'type'], { unique: false });
+                console.log('✅ Index personneId_date_type ajouté (non-unique)');
+              } catch (e) {
+                console.error('❌ Impossible de créer l\'index:', e);
+              }
+            }
           }
         }
       };
@@ -169,6 +185,7 @@
         typologie: infos.typologie || personne.typologie,
         nbPersonnes: infos.nbPersonnes || personne.nbPersonnes,
         mineurs: infos.mineurs || personne.mineurs,
+        infoHistorique: infos.infoHistorique || personne.infoHistorique || [], // ✅ AJOUT
         dateModification: new Date().toISOString()
       };
       const transaction = dbUnified.transaction([STORE_PERSONNES], 'readwrite');
@@ -287,12 +304,8 @@
       const store = transaction.objectStore(STORE_INTERVENTIONS);
       const index = store.index('personneId_date_type');
       const key = [personneId, date, type];
-      const request = index.getAll(key);
-      request.onsuccess = () => {
-        const results = request.result;
-        // Retourner le premier résultat ou null si aucun
-        resolve(results.length > 0 ? results[0] : null);
-      };
+      const request = index.get(key);
+      request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
   };
@@ -330,73 +343,6 @@
     return Array.from(personnesMap.values());
   };
 
-  /**
-   * Change le type d'une intervention (déplace d'un type à un autre)
-   * @param {number} interventionId - ID de l'intervention à déplacer
-   * @param {string} nouveauType - Nouveau type ('transmissions', 'adp', 'pointAccueil')
-   * @returns {Promise<Object>} - L'intervention mise à jour
-   */
-  const changerTypeIntervention = async (interventionId, nouveauType) => {
-    await initDatabaseUnified();
-    
-    return new Promise(async (resolve, reject) => {
-      try {
-        // Récupérer l'intervention actuelle
-        const intervention = await getInterventionById(interventionId);
-        
-        if (!intervention) {
-          reject(new Error('Intervention non trouvée'));
-          return;
-        }
-        
-        // Vérifier si une intervention du nouveau type existe déjà pour cette personne et cette date
-        const existingIntervention = await getInterventionsByPersonneIdAndDateAndType(
-          intervention.personneId,
-          intervention.date,
-          nouveauType
-        );
-        
-        if (existingIntervention && existingIntervention.id !== interventionId) {
-          reject(new Error(`Une intervention de type "${nouveauType}" existe déjà pour cette personne à cette date`));
-          return;
-        }
-        
-        // Pour éviter les conflits avec l'index unique, on doit supprimer puis recréer
-        // Sauvegarder toutes les données
-        const interventionData = {
-          personneId: intervention.personneId,
-          date: intervention.date,
-          type: nouveauType,
-          typeTransmission: intervention.typeTransmission || '',
-          adresse: intervention.adresse || intervention.lieu || '',
-          lieu: intervention.lieu || intervention.adresse || '',
-          ville: intervention.ville || '',
-          signalement: intervention.signalement || '',
-          transmission: intervention.transmission || '',
-          observations: intervention.observations || intervention.transmission || '',
-          orly: intervention.orly || {},
-          accompagnement: intervention.accompagnement || {},
-          distribution: intervention.distribution || {},
-          dateCreation: intervention.dateCreation || new Date().toISOString(),
-          dateModification: new Date().toISOString()
-        };
-        
-        // Supprimer l'ancienne intervention
-        await deleteIntervention(interventionId);
-        
-        // Créer la nouvelle intervention avec le nouveau type
-        const newInterventionId = await addIntervention(interventionData);
-        
-        // Récupérer la nouvelle intervention créée
-        const newIntervention = await getInterventionById(newInterventionId);
-        resolve(newIntervention);
-      } catch (error) {
-        console.error('❌ Erreur lors du changement de type:', error);
-        reject(error);
-      }
-    });
-  };
-
   window.initDatabaseUnified = initDatabaseUnified;
   window.creerOuRecupererPersonne = creerOuRecupererPersonne;
   window.getPersonneById = getPersonneById;
@@ -414,7 +360,6 @@
   window.getInterventionsByPersonneIdAndDateAndType = getInterventionsByPersonneIdAndDateAndType;
   window.getInterventionsByPersonneAndDate = getInterventionsByPersonneAndDate;
   window.getPersonnesAvecInterventions = getPersonnesAvecInterventions;
-  window.changerTypeIntervention = changerTypeIntervention;
 
   console.log('📦 Module Persistance Unifiée chargé');
 })();

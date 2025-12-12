@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des Doublons</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f5f7fa;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      color: #1a202c;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: #718096;
+      font-size: 14px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .stat-card h3 {
+      font-size: 14px;
+      color: #718096;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .stat-card .value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+
+    .stat-card.warning .value {
+      color: #f59e0b;
+    }
+
+    .stat-card.danger .value {
+      color: #ef4444;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #718096;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e5e7eb;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .doublon-group {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .doublon-header {
+      background: #fef3c7;
+      padding: 16px 20px;
+      border-left: 4px solid #f59e0b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .doublon-header h3 {
+      font-size: 16px;
+      color: #92400e;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .confidence-badge {
+      background: #f59e0b;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .personnes-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 16px;
+      padding: 20px;
+    }
+
+    .personne-card {
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .personne-card:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+
+    .personne-card.selected {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+
+    .personne-card .radio-input {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+    }
+
+    .personne-card input[type="radio"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .personne-info h4 {
+      font-size: 18px;
+      color: #1a202c;
+      margin-bottom: 12px;
+    }
+
+    .personne-details {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 14px;
+      color: #4b5563;
+    }
+
+    .detail-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .detail-label {
+      font-weight: 600;
+      color: #374151;
+      min-width: 100px;
+    }
+
+    .interventions-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #3b82f6;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+
+    .fusion-actions {
+      padding: 16px 20px;
+      background: #f9fafb;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #718096;
+    }
+
+    .empty-state svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-state h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+      color: #1a202c;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      background: white;
+      padding: 8px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 12px 24px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .alert {
+      padding: 16px 20px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .alert-success {
+      background: #d1fae5;
+      color: #065f46;
+      border-left: 4px solid #10b981;
+    }
+
+    .alert-warning {
+      background: #fef3c7;
+      color: #92400e;
+      border-left: 4px solid #f59e0b;
+    }
+
+    .alert-danger {
+      background: #fee2e2;
+      color: #991b1b;
+      border-left: 4px solid #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔍 Gestion des Doublons</h1>
+      <p>Détectez et fusionnez les fiches en doublon dans votre base de données</p>
+    </div>
+
+    <div class="stats" id="stats">
+      <div class="stat-card">
+        <h3>Groupes de doublons</h3>
+        <div class="value">-</div>
+      </div>
+      <div class="stat-card warning">
+        <h3>Personnes concernées</h3>
+        <div class="value">-</div>
+      </div>
+      <div class="stat-card danger">
+        <h3>Interventions en doublon</h3>
+        <div class="value">-</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-detecter">
+        <span>🔍</span>
+        Détecter les doublons
+      </button>
+      <button class="btn btn-danger" id="btn-nettoyer" disabled>
+        <span>🧹</span>
+        Nettoyer les interventions
+      </button>
+      <button class="btn btn-secondary" id="btn-rapport">
+        <span>📊</span>
+        Télécharger le rapport
+      </button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="personnes">
+        Doublons de personnes
+      </button>
+      <button class="tab" data-tab="interventions">
+        Doublons d'interventions
+      </button>
+    </div>
+
+    <div class="tab-content active" id="tab-personnes">
+      <div id="doublons-personnes-content"></div>
+    </div>
+
+    <div class="tab-content" id="tab-interventions">
+      <div id="doublons-interventions-content"></div>
+    </div>
+  </div>
+
+  <script>
+    let rapportDoublons = null;
+    let doublonsPersonnes = [];
+    let doublonsInterventions = [];
+
+    // Gestion des onglets
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+      });
+    });
+
+    // Détecter les doublons
+    document.getElementById('btn-detecter').addEventListener('click', async () => {
+      const btn = document.getElementById('btn-detecter');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Détection en cours...';
+
+      try {
+        rapportDoublons = await genererRapportDoublons();
+        doublonsPersonnes = rapportDoublons.doublonsPersonnes.groupes;
+        doublonsInterventions = rapportDoublons.doublonsInterventions.groupes;
+
+        afficherStats();
+        afficherDoublonsPersonnes();
+        afficherDoublonsInterventions();
+
+        document.getElementById('btn-nettoyer').disabled = doublonsInterventions.length === 0;
+      } catch (error) {
+        console.error('Erreur:', error);
+        alert('Erreur lors de la détection des doublons');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>🔍</span> Détecter les doublons';
+      }
+    });
+
+    // Nettoyer les interventions
+    document.getElementById('btn-nettoyer').addEventListener('click', async () => {
+      if (!confirm('Voulez-vous vraiment nettoyer les interventions en doublon ? Cette action est irréversible.')) {
+        return;
+      }
+
+      const btn = document.getElementById('btn-nettoyer');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Nettoyage en cours...';
+
+      try {
+        const nbSuppressions = await nettoyerDoublonsInterventions();
+        alert(`✅ ${nbSuppressions} intervention(s) en doublon supprimée(s)`);
+        
+        // Recharger les données
+        document.getElementById('btn-detecter').click();
+      } catch (error) {
+        console.error('Erreur:', error);
+        alert('Erreur lors du nettoyage');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>🧹</span> Nettoyer les interventions';
+      }
+    });
+
+    // Télécharger le rapport
+    document.getElementById('btn-rapport').addEventListener('click', () => {
+      if (!rapportDoublons) {
+        alert('Veuillez d\'abord détecter les doublons');
+        return;
+      }
+
+      const blob = new Blob([JSON.stringify(rapportDoublons, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rapport-doublons-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    function afficherStats() {
+      const stats = document.querySelectorAll('.stat-card .value');
+      stats[0].textContent = rapportDoublons.doublonsPersonnes.nombre;
+      stats[1].textContent = rapportDoublons.doublonsPersonnes.totalPersonnesConcernees;
+      stats[2].textContent = rapportDoublons.doublonsInterventions.totalInterventionsConcernees;
+    }
+
+    function afficherDoublonsPersonnes() {
+      const container = document.getElementById('doublons-personnes-content');
+      
+      if (doublonsPersonnes.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <h3>Aucun doublon détecté</h3>
+            <p>Votre base de données ne contient pas de fiches en doublon</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = doublonsPersonnes.map((groupe, index) => `
+        <div class="doublon-group">
+          <div class="doublon-header">
+            <h3>
+              <span>⚠️</span>
+              Groupe ${index + 1} - ${groupe.personnes.length} fiches similaires
+            </h3>
+            <span class="confidence-badge">
+              ${Math.round(groupe.scoreConfiance * 100)}% de similarité
+            </span>
+          </div>
+          <div class="personnes-list">
+            ${groupe.personnes.map((personne, pIndex) => `
+              <div class="personne-card ${pIndex === 0 ? 'selected' : ''}" data-groupe="${index}" data-personne="${personne.id}">
+                <div class="radio-input">
+                  <input type="radio" name="groupe_${index}" value="${personne.id}" ${pIndex === 0 ? 'checked' : ''}>
+                </div>
+                <div class="personne-info">
+                  <h4>${personne.nom || '(vide)'} ${personne.prenom || '(vide)'}</h4>
+                  <div class="personne-details">
+                    <div class="detail-row">
+                      <span class="detail-label">ID:</span>
+                      <span>#${personne.id}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="detail-label">Date naissance:</span>
+                      <span>${personne.dateNaissance || 'Non renseignée'}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="detail-label">Département:</span>
+                      <span>${personne.departement || 'Non renseigné'}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="detail-label">Typologie:</span>
+                      <span>${personne.typologie || 'Non renseignée'}</span>
+                    </div>
+                  </div>
+                  <div class="interventions-badge">
+                    <span>📋</span>
+                    ${personne.nbInterventions} intervention(s)
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="fusion-actions">
+            <button class="btn btn-secondary" onclick="ignorerGroupe(${index})">
+              Ignorer ce groupe
+            </button>
+            <button class="btn btn-primary" onclick="fusionnerGroupe(${index})">
+              <span>🔀</span>
+              Fusionner vers la fiche sélectionnée
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      // Gérer la sélection des cartes
+      document.querySelectorAll('.personne-card input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          const groupe = e.target.closest('.doublon-group');
+          groupe.querySelectorAll('.personne-card').forEach(card => card.classList.remove('selected'));
+          e.target.closest('.personne-card').classList.add('selected');
+        });
+      });
+    }
+
+    function afficherDoublonsInterventions() {
+      const container = document.getElementById('doublons-interventions-content');
+      
+      if (doublonsInterventions.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <h3>Aucun doublon d'intervention</h3>
+            <p>Votre base de données ne contient pas d'interventions en doublon</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="alert alert-warning">
+          <span>⚠️</span>
+          <div>
+            <strong>${doublonsInterventions.length} groupe(s) d'interventions en doublon détecté(s)</strong>
+            <p>Ces interventions ont la même personne, date et type. Vous pouvez les nettoyer automatiquement.</p>
+          </div>
+        </div>
+        ${doublonsInterventions.map((groupe, index) => `
+          <div class="doublon-group">
+            <div class="doublon-header">
+              <h3>
+                <span>🔴</span>
+                ${groupe.interventions.length} interventions en doublon
+              </h3>
+            </div>
+            <div style="padding: 20px;">
+              ${groupe.interventions.map((interv, iIndex) => `
+                <div style="padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; ${iIndex === 0 ? 'background: #eff6ff;' : ''}">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <strong>ID: #${interv.id}</strong> - 
+                      Type: ${interv.type} - 
+                      Date: ${interv.date}
+                      ${iIndex === 0 ? '<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">À CONSERVER</span>' : ''}
+                    </div>
+                    <small style="color: #6b7280;">Créé le: ${new Date(interv.dateCreation).toLocaleString('fr-FR')}</small>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('')}
+      `;
+    }
+
+    async function fusionnerGroupe(groupeIndex) {
+      const groupe = doublonsPersonnes[groupeIndex];
+      const selectedRadio = document.querySelector(`input[name="groupe_${groupeIndex}"]:checked`);
+      
+      if (!selectedRadio) {
+        alert('Veuillez sélectionner une fiche à conserver');
+        return;
+      }
+
+      const personnePrincipaleId = parseInt(selectedRadio.value);
+      const autresPersonnesIds = groupe.personnes
+        .map(p => p.id)
+        .filter(id => id !== personnePrincipaleId);
+
+      if (!confirm(`Fusionner ${autresPersonnesIds.length} fiche(s) vers la fiche #${personnePrincipaleId} ?\n\nCette action est irréversible.`)) {
+        return;
+      }
+
+      try {
+        await fusionnerPersonnes(personnePrincipaleId, autresPersonnesIds);
+        alert('✅ Fusion réussie !');
+        
+        // Recharger les données
+        document.getElementById('btn-detecter').click();
+      } catch (error) {
+        console.error('Erreur:', error);
+        alert('❌ Erreur lors de la fusion: ' + error.message);
+      }
+    }
+
+    function ignorerGroupe(groupeIndex) {
+      doublonsPersonnes.splice(groupeIndex, 1);
+      afficherDoublonsPersonnes();
+      afficherStats();
+    }
+
+    // Charger automatiquement au démarrage
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('btn-detecter').click();
+      }, 500);
+    });
+  </script>
+</body>
+</html>
+

@@ -50,8 +50,17 @@
     <!-- Badges sources -->
     <link rel="stylesheet" href="fonctionnalites/utils/badges-sources.css">
     
-    <!-- Boutons états (Compléter/Modifier) -->
-    <link rel="stylesheet" href="fonctionnalites/utils/btn-states.css">
+    <!-- Historisation des informations -->
+    <link rel="stylesheet" href="fonctionnalites/utils/historisation-infos.css">
+    
+    <!-- Gestion des doublons -->
+    <link rel="stylesheet" href="fonctionnalites/doublons_complet/doublons-tab.css">
+    
+    <!-- Menu contextuel (clic droit) -->
+    <link rel="stylesheet" href="fonctionnalites/interface_complet/context-menu.css">
+    
+    <!-- Modale doublons -->
+    <link rel="stylesheet" href="fonctionnalites/interface_complet/modal-doublons.css">
 </head>
 <body>
     <div id="app">
@@ -85,6 +94,9 @@
 
     <!-- Modal Point Accueil : fonctionnalites/point_accueil_complet/modal-point-accueil.html -->
     <div id="modal-point-accueil-container"></div>
+    
+    <!-- Modal Doublons : fonctionnalites/interface_complet/modal-doublons.html -->
+    <div id="modal-doublons-container"></div>
 
     <!-- Chargeur de modules HTML -->
     <script src="fonctionnalites/html-loader.js"></script>
@@ -93,8 +105,19 @@
     <!-- NOUVELLE BASE DE DONNÉES UNIFIÉE -->
     <script src="fonctionnalites/persistance_complet/database-unified.js"></script>
     
+    <!-- Système de gestion des doublons -->
+    <script src="fonctionnalites/persistance_complet/gestion-doublons.js"></script>
+    <script src="fonctionnalites/persistance_complet/integration-doublons.js"></script>
+    
     <!-- Gestionnaire de personnes (utilise la base unifiée) -->
     <script src="fonctionnalites/utils/gestionnaire-personnes.js"></script>
+    
+    <!-- Système d'historisation des informations -->
+    <script src="fonctionnalites/utils/historisation-infos.js"></script>
+    <script src="fonctionnalites/utils/historisation-form-utils.js"></script>
+    
+    <!-- Gestionnaire de fiches (affichage avec badges) -->
+    <script src="fonctionnalites/utils/gestionnaire-fiches.js"></script>
     
     <!-- Gestion du déplacement d'interventions -->
     <script src="fonctionnalites/utils/deplacer-intervention.js"></script>
@@ -122,6 +145,12 @@
     <script src="fonctionnalites/utils/vider-bdd.js"></script>
     <script src="fonctionnalites/utils/reinit-bdd.js"></script>
     <script src="fonctionnalites/utils/diagnostic-bdd.js"></script>
+    
+    <!-- Menu contextuel (clic droit) -->
+    <script src="fonctionnalites/interface_complet/context-menu.js"></script>
+    
+    <!-- Modale doublons -->
+    <script src="fonctionnalites/interface_complet/modal-doublons.js"></script>
     
     <!-- Script principal -->
     <script src="renderer.js"></script>

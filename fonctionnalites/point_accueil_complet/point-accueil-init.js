@@ -58,16 +58,24 @@ async function modifierFichePA(personneId) {
     
     const formPA = document.getElementById('form-point-accueil');
     
+    // Récupérer les DERNIÈRES infos connues (pour pré-remplir le formulaire)
+    const dernieresInfos = window.getDernieresInfos ? window.getDernieresInfos(personne) : {
+      departement: personne.departement || '',
+      typologie: personne.typologie || '',
+      nbPersonnes: personne.nbPersonnes || '',
+      mineurs: personne.mineurs || ''
+    };
+    
     // Remplir les champs avec les infos de la personne
     document.getElementById('form-pa-nom').value = personne.nom || '';
     document.getElementById('form-pa-prenom').value = personne.prenom || '';
     document.getElementById('form-pa-ddn').value = personne.dateNaissance || '';
     document.getElementById('form-pa-description').value = personne.descriptionPhysique || '';
     document.getElementById('form-pa-inconnu').checked = personne.inconnu || false;
-    document.getElementById('form-pa-departement').value = personne.departement || '';
-    document.getElementById('form-pa-typologie').value = personne.typologie || '';
-    document.getElementById('form-pa-nb-personnes').value = personne.nbPersonnes || '';
-    document.getElementById('form-pa-mineurs').value = personne.mineurs || '';
+    document.getElementById('form-pa-departement').value = dernieresInfos.departement;
+    document.getElementById('form-pa-typologie').value = dernieresInfos.typologie;
+    document.getElementById('form-pa-nb-personnes').value = dernieresInfos.nbPersonnes;
+    document.getElementById('form-pa-mineurs').value = dernieresInfos.mineurs;
     
     if (existingPA) {
       // MODE ÉDITION : charger toutes les données de la fiche PA
@@ -278,7 +286,7 @@ function initPointAccueilForm() {
     
     const editId = formPA.dataset.editId;
     const personneId = formPA.dataset.personneId ? parseInt(formPA.dataset.personneId) : null;
-    const selectedDate = document.getElementById('pa-date')?.value || document.getElementById('form-pa-date')?.value || new Date().toISOString().split('T')[0];
+    const selectedDate = document.getElementById('pa-date')?.value || new Date().toISOString().split('T')[0];
     
     console.log('💾 Soumission formulaire PA - editId:', editId, 'personneId:', personneId, 'date:', selectedDate);
     
@@ -289,11 +297,8 @@ function initPointAccueilForm() {
         prenom: document.getElementById('form-pa-prenom').value,
         dateNaissance: document.getElementById('form-pa-ddn').value,
         descriptionPhysique: document.getElementById('form-pa-description').value,
-        inconnu: document.getElementById('form-pa-inconnu').checked,
-        departement: document.getElementById('form-pa-departement').value,
-        typologie: document.getElementById('form-pa-typologie').value,
-        nbPersonnes: document.getElementById('form-pa-nb-personnes').value,
-        mineurs: document.getElementById('form-pa-mineurs').value
+        inconnu: document.getElementById('form-pa-inconnu').checked
+        // NOTE: departement, typologie, nbPersonnes, mineurs sont gérés via infoHistorique
       };
       
       // Données de l'intervention Point Accueil
@@ -334,6 +339,31 @@ function initPointAccueilForm() {
       let finalPersonneId = personneId;
       
       if (personneId) {
+        // Charger la personne existante pour gérer l'historisation
+        const personneExistante = await window.getPersonneById(personneId);
+        
+        // Détecter si les infos historisées ont changé
+        if (window.ajouterVersionInfos && personneExistante) {
+          const nouvellesInfos = {
+            departement: document.getElementById('form-pa-departement').value || '',
+            typologie: document.getElementById('form-pa-typologie').value,
+            nbPersonnes: document.getElementById('form-pa-nb-personnes').value,
+            mineurs: document.getElementById('form-pa-mineurs').value
+          };
+          
+          // Ajouter une version dans l'historique si changement détecté
+          const historiqueMAJ = window.ajouterVersionInfos(
+            personneExistante, 
+            selectedDate, 
+            nouvellesInfos
+          );
+          
+          console.log('📋 Historique mis à jour:', historiqueMAJ);
+          
+          // Mettre à jour UNIQUEMENT l'historique
+          personneData.infoHistorique = historiqueMAJ;
+        }
+        
         // Mettre à jour la personne existante
         await window.updatePersonne(personneId, personneData);
         console.log('✅ Personne mise à jour, ID:', personneId);
@@ -341,6 +371,26 @@ function initPointAccueilForm() {
         // Créer ou récupérer la personne
         finalPersonneId = await window.creerOuRecupererPersonne(personneData);
         console.log('✅ Personne créée/récupérée, ID:', finalPersonneId);
+        
+        // Initialiser l'historique pour une nouvelle personne
+        if (window.ajouterVersionInfos) {
+          const personneCreee = await window.getPersonneById(finalPersonneId);
+          if (personneCreee) {
+            const infosInitiales = {
+              departement: document.getElementById('form-pa-departement').value || '',
+              typologie: document.getElementById('form-pa-typologie').value,
+              nbPersonnes: document.getElementById('form-pa-nb-personnes').value,
+              mineurs: document.getElementById('form-pa-mineurs').value
+            };
+            const historiqueInit = window.ajouterVersionInfos(
+              personneCreee,
+              selectedDate,
+              infosInitiales
+            );
+            await window.updatePersonne(finalPersonneId, { infoHistorique: historiqueInit });
+            console.log('📋 Historique initialisé pour nouvelle personne');
+          }
+        }
       }
       
       // Ajouter personneId à l'intervention

@@ -43,15 +43,13 @@
                             <span>Personne inconnue</span>
                         </label>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Section Situation -->
-            <div class="form-section">
-                <h3>Situation</h3>
-                <div class="form-grid">
+                    
+                    <!-- Informations historisées -->
                     <div class="form-group">
-                        <label for="form-departement">Département d'origine :</label>
+                        <label for="form-departement">
+                            Département d'origine :
+                            <button type="button" id="btn-voir-historique" class="btn-historique" title="Voir l'historique" style="display: none;">📋</button>
+                        </label>
                         <select id="form-departement" class="form-input" name="departement">
                             <option value="">Sélectionner...</option>
                             <option value="01">01 - Ain</option>
@@ -195,6 +193,11 @@
                             <option value="4+">4+</option>
                         </select>
                     </div>
+                    
+                    <div id="alerte-modification-infos" class="alert-info" style="display: none; grid-column: 1 / -1; background: #eff6ff; border-left: 4px solid #2563eb; padding: 1rem; border-radius: 4px; margin-top: 0.5rem;">
+                        <strong>ℹ️ Modification détectée</strong>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">Ces nouvelles valeurs seront appliquées à partir de la date de cette intervention. Les interventions antérieures conserveront leurs valeurs d'origine.</p>
+                    </div>
                 </div>
             </div>
             
@@ -212,11 +215,6 @@
                             <option value="signalement">Signalement</option>
                             <option value="suivi">Suivi</option>
                         </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="form-date">Date :</label>
-                        <input type="date" id="form-date" class="form-input" name="date">
                     </div>
                     
                     <div class="form-group">

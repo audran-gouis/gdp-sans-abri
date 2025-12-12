@@ -1,0 +1,67 @@
+<!-- Modale de gestion des doublons -->
+<div id="modal-doublons" class="modal-doublons">
+    <div class="modal-doublons-content">
+        <!-- Header -->
+        <div class="modal-doublons-header">
+            <h2>Gestion des Doublons</h2>
+            <button class="modal-doublons-close" id="close-modal-doublons">×</button>
+        </div>
+        
+        <!-- Body -->
+        <div class="modal-doublons-body">
+            <!-- Fiche parent (gauche) -->
+            <div class="doublons-fiche-selected">
+                <h3>Fiche parent</h3>
+                <div id="fiche-selected-container">
+                    <!-- Sera rempli dynamiquement -->
+                </div>
+            </div>
+            
+            <!-- Recherche et résultats (droite) -->
+            <div class="doublons-search-results">
+                <!-- Filtres -->
+                <div class="doublons-filters">
+                    <h3>Rechercher des fiches</h3>
+                    <div class="filters-grid">
+                        <div class="filter-field">
+                            <label for="filter-doublon-nom">Nom</label>
+                            <input type="text" id="filter-doublon-nom" placeholder="Rechercher par nom...">
+                        </div>
+                        <div class="filter-field">
+                            <label for="filter-doublon-prenom">Prénom</label>
+                            <input type="text" id="filter-doublon-prenom" placeholder="Rechercher par prénom...">
+                        </div>
+                        <div class="filter-field">
+                            <label for="filter-doublon-ddn">Date de naissance</label>
+                            <input type="date" id="filter-doublon-ddn">
+                        </div>
+                        <div class="filter-field">
+                            <label for="filter-doublon-description">Description physique</label>
+                            <input type="text" id="filter-doublon-description" placeholder="Rechercher par description...">
+                        </div>
+                        <div class="filter-field">
+                            <label for="filter-doublon-typologie">Typologie</label>
+                            <input type="text" id="filter-doublon-typologie" placeholder="Typologie...">
+                        </div>
+                        <div class="filter-field">
+                            <label for="filter-doublon-departement">Département</label>
+                            <input type="text" id="filter-doublon-departement" placeholder="Département...">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Résultats -->
+                <div class="doublons-results-list">
+                    <div class="doublons-results-header">
+                        <h4>Résultats de la recherche</h4>
+                        <span class="results-count" id="doublons-count">0</span>
+                    </div>
+                    <div id="doublons-candidates-container">
+                        <!-- Sera rempli dynamiquement -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

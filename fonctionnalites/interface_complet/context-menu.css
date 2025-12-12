@@ -1,0 +1,82 @@
+/* Style du menu contextuel (clic droit) */
+.context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    padding: 0.5rem 0;
+    min-width: 180px;
+    display: none;
+    animation: fadeIn 0.15s ease;
+}
+
+.context-menu.visible {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+    color: #333;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+
+.context-menu-item:hover {
+    background: #f0f0f0;
+}
+
+.context-menu-item:active {
+    background: #e0e0e0;
+}
+
+.context-menu-separator {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 0.5rem 0;
+}
+
+/* Styles spécifiques pour les différents types d'actions */
+.context-menu-item.duplicate {
+    color: #2563eb;
+}
+
+.context-menu-item.duplicate:hover {
+    background: #eff6ff;
+}
+
+.context-menu-item.edit {
+    color: #059669;
+}
+
+.context-menu-item.edit:hover {
+    background: #f0fdf4;
+}
+
+.context-menu-item.delete {
+    color: #dc2626;
+}
+
+.context-menu-item.delete:hover {
+    background: #fef2f2;
+}
+

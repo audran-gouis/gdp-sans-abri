@@ -1,0 +1,294 @@
+<!-- 
+  EXEMPLE D'INTÉGRATION DU SYSTÈME DE GESTION DES DOUBLONS
+  
+  Copiez les lignes ci-dessous dans votre index.html
+  APRÈS la ligne database-unified.js (ligne 94)
+-->
+
+<!-- Système de gestion des doublons -->
+<script src="fonctionnalites/persistance_complet/gestion-doublons.js"></script>
+<script src="fonctionnalites/persistance_complet/integration-doublons.js"></script>
+
+<!-- 
+  RÉSULTAT ATTENDU dans index.html :
+  
+  <script src="fonctionnalites/persistance_complet/database-unified.js"></script>
+  
+  <!-- Système de gestion des doublons -->
+  <script src="fonctionnalites/persistance_complet/gestion-doublons.js"></script>
+  <script src="fonctionnalites/persistance_complet/integration-doublons.js"></script>
+  
+  <!-- Gestionnaire de personnes (utilise la base unifiée) -->
+  <script src="fonctionnalites/utils/gestionnaire-personnes.js"></script>
+-->
+
+<!-- 
+  BOUTON POUR OUVRIR LA GESTION DES DOUBLONS
+  
+  Ajoutez ce bouton où vous voulez dans votre interface :
+-->
+
+<button 
+  onclick="ouvrirGestionDoublons()" 
+  style="
+    position: fixed;
+    bottom: 100px;
+    right: 24px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    transition: all 0.3s;
+    z-index: 1000;
+  "
+  onmouseover="this.style.transform='translateY(-2px)'"
+  onmouseout="this.style.transform='translateY(0)'"
+>
+  🔍 Gérer les doublons
+</button>
+
+<!-- 
+  ALTERNATIVE : AJOUTER UN LIEN DANS LE MENU DE NAVIGATION
+  
+  Si vous avez un menu, ajoutez ceci :
+-->
+
+<nav>
+  <!-- Vos liens existants -->
+  <a href="#" onclick="ouvrirGestionDoublons(); return false;">
+    🔍 Doublons
+  </a>
+</nav>
+
+<!-- 
+  MODIFICATION DU CODE EXISTANT
+  
+  Dans vos fichiers JavaScript qui créent des personnes,
+  remplacez les appels à creerOuRecupererPersonne par :
+-->
+
+<script>
+// AVANT (ancien code)
+const personneId = await creerOuRecupererPersonne({
+  nom: document.getElementById('nom').value,
+  prenom: document.getElementById('prenom').value,
+  dateNaissance: document.getElementById('dateNaissance').value
+});
+
+// APRÈS (nouveau code avec vérification)
+const personneId = await creerOuRecupererPersonneAvecVerification({
+  nom: document.getElementById('nom').value,
+  prenom: document.getElementById('prenom').value,
+  dateNaissance: document.getElementById('dateNaissance').value
+});
+</script>
+
+<!-- 
+  EXEMPLE DE VÉRIFICATION MANUELLE
+  
+  Si vous voulez vérifier sans créer automatiquement :
+-->
+
+<script>
+async function verifierAvantCreer() {
+  const infos = {
+    nom: document.getElementById('nom').value,
+    prenom: document.getElementById('prenom').value,
+    dateNaissance: document.getElementById('dateNaissance').value
+  };
+  
+  const doublons = await verifierDoublonsAvantCreation(infos);
+  
+  if (doublons.length > 0) {
+    console.log(`⚠️ ${doublons.length} doublon(s) potentiel(s) trouvé(s)`);
+    doublons.forEach(d => {
+      console.log(`- ${d.nom} ${d.prenom} (${d.nbInterventions} interventions)`);
+    });
+    
+    // Afficher la modale d'avertissement
+    const resultat = await afficherAvertissementDoublons(doublons);
+    
+    if (resultat.action === 'utiliser') {
+      console.log(`Utilisation de la fiche existante #${resultat.personneId}`);
+      return resultat.personneId;
+    } else if (resultat.action === 'annuler') {
+      console.log('Création annulée');
+      return null;
+    }
+  }
+  
+  // Créer la nouvelle personne
+  return await creerOuRecupererPersonne(infos);
+}
+</script>
+
+<!-- 
+  DÉSACTIVER LA VÉRIFICATION TEMPORAIREMENT
+  
+  Si vous voulez créer sans vérification dans un cas spécifique :
+-->
+
+<script>
+const personneId = await creerOuRecupererPersonneAvecVerification(infos, {
+  verifierDoublons: false  // Désactive la vérification
+});
+</script>
+
+<!-- 
+  FORCER L'AFFICHAGE DU BADGE
+  
+  Si le badge automatique ne s'affiche pas :
+-->
+
+<script>
+// Dans renderer.js ou après le chargement de la page
+window.addEventListener('load', async () => {
+  // Attendre que tout soit chargé
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  
+  // Forcer l'affichage du badge
+  ajouterBadgeDoublons();
+});
+</script>
+
+<!-- 
+  EXÉCUTER UNE DÉTECTION AUTOMATIQUE AU DÉMARRAGE
+  
+  Pour scanner automatiquement au chargement :
+-->
+
+<script>
+window.addEventListener('load', async () => {
+  console.log('🔍 Vérification des doublons au démarrage...');
+  
+  const rapport = await genererRapportDoublons();
+  
+  if (rapport.doublonsPersonnes.nombre > 0 || rapport.doublonsInterventions.nombre > 0) {
+    console.warn(`⚠️ Doublons détectés !`);
+    console.log(`- ${rapport.doublonsPersonnes.nombre} groupe(s) de personnes`);
+    console.log(`- ${rapport.doublonsInterventions.nombre} groupe(s) d'interventions`);
+    
+    // Afficher une notification
+    if (confirm(`⚠️ ${rapport.doublonsPersonnes.nombre} groupe(s) de doublons détecté(s).\n\nVoulez-vous ouvrir la gestion des doublons ?`)) {
+      ouvrirGestionDoublons();
+    }
+  } else {
+    console.log('✅ Aucun doublon détecté');
+  }
+});
+</script>
+
+<!-- 
+  NETTOYAGE AUTOMATIQUE DES INTERVENTIONS
+  
+  Pour nettoyer automatiquement au démarrage :
+-->
+
+<script>
+window.addEventListener('load', async () => {
+  const doublonsInterv = await detecterDoublonsInterventions();
+  
+  if (doublonsInterv.length > 0) {
+    console.warn(`⚠️ ${doublonsInterv.length} groupe(s) d'interventions en doublon`);
+    
+    if (confirm(`Voulez-vous nettoyer automatiquement les interventions en doublon ?`)) {
+      const nbSuppressions = await nettoyerDoublonsInterventions();
+      alert(`✅ ${nbSuppressions} intervention(s) supprimée(s)`);
+    }
+  }
+});
+</script>
+
+<!-- 
+  AJOUT D'UN MENU DE GESTION DANS L'INTERFACE
+  
+  Exemple de menu déroulant avec option doublons :
+-->
+
+<div class="menu-admin">
+  <button onclick="toggleMenuAdmin()">⚙️ Administration</button>
+  <div id="menu-admin-dropdown" style="display: none;">
+    <a href="#" onclick="ouvrirGestionDoublons(); return false;">
+      🔍 Gérer les doublons
+    </a>
+    <a href="#" onclick="afficherStatistiquesDoublons(); return false;">
+      📊 Statistiques doublons
+    </a>
+    <a href="#" onclick="exporterRapportDoublons(); return false;">
+      💾 Exporter le rapport
+    </a>
+  </div>
+</div>
+
+<script>
+function toggleMenuAdmin() {
+  const menu = document.getElementById('menu-admin-dropdown');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+async function afficherStatistiquesDoublons() {
+  const rapport = await genererRapportDoublons();
+  alert(`
+📊 STATISTIQUES DOUBLONS
+
+Personnes:
+- ${rapport.doublonsPersonnes.nombre} groupe(s) de doublons
+- ${rapport.doublonsPersonnes.totalPersonnesConcernees} personne(s) concernée(s)
+
+Interventions:
+- ${rapport.doublonsInterventions.nombre} groupe(s) de doublons
+- ${rapport.doublonsInterventions.totalInterventionsConcernees} intervention(s) concernée(s)
+
+Date: ${new Date(rapport.dateRapport).toLocaleString('fr-FR')}
+  `);
+}
+
+async function exporterRapportDoublons() {
+  const rapport = await genererRapportDoublons();
+  const blob = new Blob([JSON.stringify(rapport, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `rapport-doublons-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  alert('✅ Rapport téléchargé');
+}
+</script>
+
+<!-- 
+  TESTS
+  
+  Pour tester le système, ouvrez la console et exécutez :
+-->
+
+<script>
+// Créer des données de test
+async function creerDonneesTest() {
+  console.log('🧪 Création de données de test...');
+  
+  const p1 = await creerOuRecupererPersonne({
+    nom: 'Dupont',
+    prenom: 'Jean',
+    dateNaissance: '1990-01-01'
+  });
+  
+  const p2 = await creerOuRecupererPersonne({
+    nom: 'Dupond',  // Similaire
+    prenom: 'Jean',
+    dateNaissance: '1990-01-01'
+  });
+  
+  console.log(`✅ Personnes créées: ${p1}, ${p2}`);
+  
+  const doublons = await detecterDoublons();
+  console.log(`🔍 ${doublons.length} groupe(s) de doublons trouvé(s)`);
+}
+
+// Exécuter : creerDonneesTest()
+</script>
+

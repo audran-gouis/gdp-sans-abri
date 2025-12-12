@@ -42,16 +42,24 @@ async function editTransmissionAdp(personneId) {
     
     console.log('📋 ADP existante:', existingAdp ? `ID ${existingAdp.id}` : 'Aucune');
     
+    // Récupérer les DERNIÈRES infos connues (pour pré-remplir le formulaire)
+    const dernieresInfos = window.getDernieresInfos ? window.getDernieresInfos(personne) : {
+      departement: personne.departement || '',
+      typologie: personne.typologie || '',
+      nbPersonnes: personne.nbPersonnes || '',
+      mineurs: personne.mineurs || ''
+    };
+    
     // Remplir les champs avec les infos de la personne
     document.getElementById('adp-form-nom').value = personne.nom || '';
     document.getElementById('adp-form-prenom').value = personne.prenom || '';
     document.getElementById('adp-form-ddn').value = personne.dateNaissance || '';
     document.getElementById('adp-form-description').value = personne.descriptionPhysique || '';
     document.getElementById('adp-form-inconnu').checked = personne.inconnu || false;
-    document.getElementById('adp-form-departement').value = personne.departement || '';
-    document.getElementById('adp-form-typologie').value = personne.typologie || '';
-    document.getElementById('adp-form-nb-personnes').value = personne.nbPersonnes || '';
-    document.getElementById('adp-form-mineurs').value = personne.mineurs || '';
+    document.getElementById('adp-form-departement').value = dernieresInfos.departement;
+    document.getElementById('adp-form-typologie').value = dernieresInfos.typologie;
+    document.getElementById('adp-form-nb-personnes').value = dernieresInfos.nbPersonnes;
+    document.getElementById('adp-form-mineurs').value = dernieresInfos.mineurs;
     
     if (existingAdp) {
       // MODE ÉDITION : charger toutes les données de l'ADP
@@ -264,15 +272,12 @@ function initAdpForm() {
     try {
       // Données de la personne
       const personneData = {
-      nom: document.getElementById('adp-form-nom').value,
-      prenom: document.getElementById('adp-form-prenom').value,
-      dateNaissance: document.getElementById('adp-form-ddn').value,
-      descriptionPhysique: document.getElementById('adp-form-description').value,
-      inconnu: document.getElementById('adp-form-inconnu').checked,
-        departement: document.getElementById('adp-form-departement').value,
-      typologie: document.getElementById('adp-form-typologie').value,
-      nbPersonnes: document.getElementById('adp-form-nb-personnes').value,
-        mineurs: document.getElementById('adp-form-mineurs').value
+        nom: document.getElementById('adp-form-nom').value,
+        prenom: document.getElementById('adp-form-prenom').value,
+        dateNaissance: document.getElementById('adp-form-ddn').value,
+        descriptionPhysique: document.getElementById('adp-form-description').value,
+        inconnu: document.getElementById('adp-form-inconnu').checked
+        // NOTE: departement, typologie, nbPersonnes, mineurs sont gérés via infoHistorique
       };
       
       // Données de l'intervention ADP
@@ -313,6 +318,31 @@ function initAdpForm() {
       let finalPersonneId = personneId;
       
       if (personneId) {
+        // Charger la personne existante pour gérer l'historisation
+        const personneExistante = await window.getPersonneById(personneId);
+        
+        // Détecter si les infos historisées ont changé
+        if (window.ajouterVersionInfos && personneExistante) {
+          const nouvellesInfos = {
+            departement: document.getElementById('adp-form-departement').value || '',
+            typologie: document.getElementById('adp-form-typologie').value,
+            nbPersonnes: document.getElementById('adp-form-nb-personnes').value,
+            mineurs: document.getElementById('adp-form-mineurs').value
+          };
+          
+          // Ajouter une version dans l'historique si changement détecté
+          const historiqueMAJ = window.ajouterVersionInfos(
+            personneExistante, 
+            selectedDate, 
+            nouvellesInfos
+          );
+          
+          console.log('📋 Historique mis à jour:', historiqueMAJ);
+          
+          // Mettre à jour UNIQUEMENT l'historique
+          personneData.infoHistorique = historiqueMAJ;
+        }
+        
         // Mettre à jour la personne existante
         await window.updatePersonne(personneId, personneData);
         console.log('✅ Personne mise à jour, ID:', personneId);
@@ -320,6 +350,26 @@ function initAdpForm() {
         // Créer ou récupérer la personne
         finalPersonneId = await window.creerOuRecupererPersonne(personneData);
         console.log('✅ Personne créée/récupérée, ID:', finalPersonneId);
+        
+        // Initialiser l'historique pour une nouvelle personne
+        if (window.ajouterVersionInfos) {
+          const personneCreee = await window.getPersonneById(finalPersonneId);
+          if (personneCreee) {
+            const infosInitiales = {
+              departement: document.getElementById('adp-form-departement').value || '',
+              typologie: document.getElementById('adp-form-typologie').value,
+              nbPersonnes: document.getElementById('adp-form-nb-personnes').value,
+              mineurs: document.getElementById('adp-form-mineurs').value
+            };
+            const historiqueInit = window.ajouterVersionInfos(
+              personneCreee,
+              selectedDate,
+              infosInitiales
+            );
+            await window.updatePersonne(finalPersonneId, { infoHistorique: historiqueInit });
+            console.log('📋 Historique initialisé pour nouvelle personne');
+          }
+        }
       }
       
       // Ajouter personneId à l'intervention

@@ -56,15 +56,37 @@ async function editTransmission(personneId) {
     
     console.log('📋 Transmission existante:', existingTransmission ? `ID ${existingTransmission.id}` : 'Aucune');
     
+    // Récupérer les DERNIÈRES infos connues (pour pré-remplir le formulaire)
+    const dernieresInfos = window.getDernieresInfos ? window.getDernieresInfos(personne) : {
+      departement: personne.departement || '',
+      typologie: personne.typologie || '',
+      nbPersonnes: personne.nbPersonnes || '',
+      mineurs: personne.mineurs || ''
+    };
+    
     // Remplir les champs avec les infos de la personne
     document.getElementById('form-nom').value = personne.nom || '';
     document.getElementById('form-prenom').value = personne.prenom || '';
     document.getElementById('form-ddn').value = personne.dateNaissance || '';
     document.getElementById('form-description').value = personne.descriptionPhysique || '';
     document.getElementById('form-inconnu').checked = personne.inconnu || false;
-    document.getElementById('form-typologie').value = personne.typologie || '';
-    document.getElementById('form-nb-personnes').value = personne.nbPersonnes || '';
-    document.getElementById('form-mineurs').value = personne.mineurs || '';
+    document.getElementById('form-departement').value = dernieresInfos.departement;
+    document.getElementById('form-typologie').value = dernieresInfos.typologie;
+    document.getElementById('form-nb-personnes').value = dernieresInfos.nbPersonnes;
+    document.getElementById('form-mineurs').value = dernieresInfos.mineurs;
+    
+    // Stocker les valeurs initiales pour détecter les changements
+    const form = document.getElementById('form-modal-transmission');
+    form.dataset.initialDepartement = dernieresInfos.departement;
+    form.dataset.initialTypologie = dernieresInfos.typologie;
+    form.dataset.initialNbPersonnes = dernieresInfos.nbPersonnes;
+    form.dataset.initialMineurs = dernieresInfos.mineurs;
+    
+    // Afficher le bouton historique si la personne a un historique
+    const btnVoirHistorique = document.getElementById('btn-voir-historique');
+    if (btnVoirHistorique && personne.infoHistorique && personne.infoHistorique.length > 0) {
+      btnVoirHistorique.style.display = 'inline-block';
+    }
     
     if (existingTransmission) {
       // Remplir les champs de l'intervention existante
@@ -209,6 +231,16 @@ function initTransmissionsForm() {
     form.reset();
     delete form.dataset.editId;
     delete form.dataset.personneId;
+    delete form.dataset.initialDepartement;
+    delete form.dataset.initialTypologie;
+    delete form.dataset.initialNbPersonnes;
+    delete form.dataset.initialMineurs;
+    
+    // Cacher le bouton historique et l'alerte en mode création
+    const btnVoirHistorique = document.getElementById('btn-voir-historique');
+    if (btnVoirHistorique) btnVoirHistorique.style.display = 'none';
+    const alerteModif = document.getElementById('alerte-modification-infos');
+    if (alerteModif) alerteModif.style.display = 'none';
     
     // Initialiser la date du sélecteur de transmission avec la date par défaut
     const dateTransmission = document.getElementById('transmissions-date');
@@ -226,10 +258,67 @@ function initTransmissionsForm() {
     form.reset();
     delete form.dataset.editId;
     delete form.dataset.personneId;
+    delete form.dataset.initialDepartement;
+    delete form.dataset.initialTypologie;
+    delete form.dataset.initialNbPersonnes;
+    delete form.dataset.initialMineurs;
+    
+    // Cacher l'alerte
+    const alerteModif = document.getElementById('alerte-modification-infos');
+    if (alerteModif) alerteModif.style.display = 'none';
   };
   
   btnAnnuler?.addEventListener('click', closeModal);
   modalClose?.addEventListener('click', closeModal);
+  
+  // Détecter les changements sur les champs historisés
+  const champsHistorises = [
+    'form-departement',
+    'form-typologie', 
+    'form-nb-personnes',
+    'form-mineurs'
+  ];
+  
+  champsHistorises.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (field) {
+      field.addEventListener('change', () => {
+        // Vérifier si on est en mode édition (pas création)
+        if (!form.dataset.personneId) return;
+        
+        const alerteModif = document.getElementById('alerte-modification-infos');
+        if (!alerteModif) return;
+        
+        // Vérifier si au moins un champ a changé
+        const depChanged = document.getElementById('form-departement').value !== (form.dataset.initialDepartement || '');
+        const typoChanged = document.getElementById('form-typologie').value !== (form.dataset.initialTypologie || '');
+        const nbChanged = document.getElementById('form-nb-personnes').value !== (form.dataset.initialNbPersonnes || '');
+        const minChanged = document.getElementById('form-mineurs').value !== (form.dataset.initialMineurs || '');
+        
+        if (depChanged || typoChanged || nbChanged || minChanged) {
+          alerteModif.style.display = 'block';
+          console.log('⚠️ Modification détectée des informations historisées');
+        } else {
+          alerteModif.style.display = 'none';
+        }
+      });
+    }
+  });
+  
+  // Event listener pour le bouton "Voir l'historique"
+  const btnVoirHistorique = document.getElementById('btn-voir-historique');
+  if (btnVoirHistorique) {
+    btnVoirHistorique.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const personneId = form.dataset.personneId;
+      if (personneId && window.afficherHistoriqueModal) {
+        const personne = await window.getPersonneById(parseInt(personneId));
+        if (personne) {
+          window.afficherHistoriqueModal(personne);
+        }
+      }
+    });
+  }
   
   // Soumettre le formulaire
   form.addEventListener('submit', async (e) => {
@@ -248,11 +337,8 @@ function initTransmissionsForm() {
         prenom: document.getElementById('form-prenom').value,
         dateNaissance: document.getElementById('form-ddn').value,
         descriptionPhysique: document.getElementById('form-description')?.value || '',
-        inconnu: document.getElementById('form-inconnu')?.checked || false,
-        departement: document.getElementById('form-departement')?.value || '',
-        typologie: document.getElementById('form-typologie').value,
-        nbPersonnes: document.getElementById('form-nb-personnes').value,
-        mineurs: document.getElementById('form-mineurs').value
+        inconnu: document.getElementById('form-inconnu')?.checked || false
+        // NOTE: departement, typologie, nbPersonnes, mineurs sont gérés via infoHistorique
       };
       
       // Données de l'intervention Transmission
@@ -295,6 +381,67 @@ function initTransmissionsForm() {
       let finalPersonneId = personneId;
       
       if (personneId) {
+        // Charger la personne existante pour gérer l'historisation
+        const personneExistante = await window.getPersonneById(personneId);
+        
+        // Détecter si les infos historisées ont changé
+        if (window.ajouterVersionInfos && personneExistante) {
+          const nouvellesInfos = {
+            departement: document.getElementById('form-departement')?.value || '',
+            typologie: document.getElementById('form-typologie').value,
+            nbPersonnes: document.getElementById('form-nb-personnes').value,
+            mineurs: document.getElementById('form-mineurs').value
+          };
+          
+          // Si la personne n'a pas d'historique (ancienne donnée), on doit l'initialiser
+          // avec la date de la PREMIÈRE intervention, pas la date actuelle
+          if (!personneExistante.infoHistorique || personneExistante.infoHistorique.length === 0) {
+            console.log('⚠️ Personne sans historique détectée - initialisation nécessaire');
+            
+            // Récupérer toutes les interventions et filtrer par personneId
+            const toutesInterventions = await window.getAllInterventions();
+            const interventions = toutesInterventions.filter(i => i.personneId === personneId);
+            
+            // Trouver la date de la première intervention
+            let premiereDateIntervention = selectedDate; // Par défaut, la date actuelle
+            if (interventions && interventions.length > 0) {
+              const dates = interventions.map(i => i.date).sort();
+              premiereDateIntervention = dates[0];
+              console.log(`📅 Première intervention trouvée: ${premiereDateIntervention}`);
+            }
+            
+            // Initialiser l'historique avec les ANCIENNES valeurs à la date de la première intervention
+            const anciennesInfos = {
+              departement: form.dataset.initialDepartement || '',
+              typologie: form.dataset.initialTypologie || '',
+              nbPersonnes: form.dataset.initialNbPersonnes || '',
+              mineurs: form.dataset.initialMineurs || ''
+            };
+            
+            personneExistante.infoHistorique = [{
+              dateDebut: premiereDateIntervention,
+              departement: anciennesInfos.departement,
+              typologie: anciennesInfos.typologie,
+              nbPersonnes: anciennesInfos.nbPersonnes,
+              mineurs: anciennesInfos.mineurs
+            }];
+            
+            console.log('📦 Historique initialisé avec anciennes valeurs:', personneExistante.infoHistorique);
+          }
+          
+          // Maintenant, ajouter la nouvelle version si différente
+          const historiqueMAJ = window.ajouterVersionInfos(
+            personneExistante, 
+            selectedDate, 
+            nouvellesInfos
+          );
+          
+          console.log('📋 Historique mis à jour:', historiqueMAJ);
+          
+          // Mettre à jour UNIQUEMENT l'historique, pas les champs directs
+          personneData.infoHistorique = historiqueMAJ;
+        }
+        
         // Mettre à jour la personne existante
         await window.updatePersonne(personneId, personneData);
         console.log('✅ Personne mise à jour, ID:', personneId);
@@ -302,6 +449,26 @@ function initTransmissionsForm() {
         // Créer ou récupérer la personne
         finalPersonneId = await window.creerOuRecupererPersonne(personneData);
         console.log('✅ Personne créée/récupérée, ID:', finalPersonneId);
+        
+        // Initialiser l'historique pour une nouvelle personne
+        if (window.ajouterVersionInfos) {
+          const personneCreee = await window.getPersonneById(finalPersonneId);
+          if (personneCreee) {
+            const infosInitiales = {
+              departement: document.getElementById('form-departement')?.value || '',
+              typologie: document.getElementById('form-typologie').value,
+              nbPersonnes: document.getElementById('form-nb-personnes').value,
+              mineurs: document.getElementById('form-mineurs').value
+            };
+            const historiqueInit = window.ajouterVersionInfos(
+              personneCreee,
+              selectedDate,
+              infosInitiales
+            );
+            await window.updatePersonne(finalPersonneId, { infoHistorique: historiqueInit });
+            console.log('📋 Historique initialisé pour nouvelle personne');
+          }
+        }
       }
       
       // Ajouter personneId à l'intervention
