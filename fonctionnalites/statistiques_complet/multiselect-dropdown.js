@@ -5,6 +5,28 @@
 (function() {
   'use strict';
 
+  // Gestionnaire global pour fermer les dropdowns
+  let globalClickHandlerAttached = false;
+  
+  function attachGlobalClickHandler() {
+    if (globalClickHandlerAttached) return;
+    
+    globalClickHandlerAttached = true;
+    
+    document.addEventListener('mousedown', (e) => {
+      // Ne pas fermer sur clic droit
+      if (e.button === 2) return;
+      
+      // Fermer tous les dropdowns si on clique en dehors
+      const clickedInsideDropdown = e.target.closest('.multiselect-wrapper');
+      if (!clickedInsideDropdown) {
+        document.querySelectorAll('.multiselect-wrapper.open').forEach(w => {
+          w.classList.remove('open');
+        });
+      }
+    });
+  }
+
   function createMultiSelectDropdown(selectElement) {
     // Ne pas transformer si déjà transformé
     if (selectElement.classList.contains('multiselect-transformed')) return;
@@ -121,13 +143,6 @@
       wrapper.classList.toggle('open', !isOpen);
     });
     
-    // Fermer le dropdown si on clique ailleurs
-    document.addEventListener('click', (e) => {
-      if (!wrapper.contains(e.target)) {
-        wrapper.classList.remove('open');
-      }
-    });
-    
     // Empêcher la fermeture si on clique dans le dropdown
     dropdown.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -165,6 +180,9 @@
   }
 
   function initMultiSelectDropdowns() {
+    // Attacher le gestionnaire global une seule fois
+    attachGlobalClickHandler();
+    
     // Attendre un peu pour s'assurer que le DOM est complètement chargé
     setTimeout(() => {
       // Cibler tous les selects multiples dans les statistiques
