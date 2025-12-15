@@ -1,6 +1,6 @@
 /**
- * Composant de menu déroulant avec sélection multiple
- * Transforme les select[multiple] en menus déroulants élégants
+ * Multi-Select Dropdown avec Checkboxes
+ * Transforme les select multiple en menus déroulants modernes
  */
 (function() {
   'use strict';
@@ -61,20 +61,49 @@
         // Déclencher l'événement change sur le select original
         selectElement.dispatchEvent(new Event('change', { bubbles: true }));
       });
+      
+      // Permettre de cliquer sur toute l'option pour cocher/décocher
+      optionDiv.addEventListener('click', (e) => {
+        if (e.target !== checkbox) {
+          checkbox.checked = !checkbox.checked;
+          option.selected = checkbox.checked;
+          updateButtonText();
+          selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
     });
+    
+    // Ajouter le bouton "Tout effacer" si il y a des options
+    if (selectElement.options.length > 0) {
+      const clearBtn = document.createElement('div');
+      clearBtn.className = 'multiselect-clear-btn';
+      clearBtn.textContent = 'Tout effacer';
+      clearBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        Array.from(selectElement.options).forEach(option => {
+          option.selected = false;
+        });
+        dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+          cb.checked = false;
+        });
+        updateButtonText();
+        selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      dropdown.appendChild(clearBtn);
+    }
     
     // Fonction pour mettre à jour le texte du bouton
     function updateButtonText() {
       const selectedOptions = Array.from(selectElement.selectedOptions);
       if (selectedOptions.length === 0) {
         buttonText.textContent = 'Sélectionner...';
-        buttonText.style.color = '#9ca3af';
+        buttonText.classList.remove('has-selection');
       } else if (selectedOptions.length === 1) {
         buttonText.textContent = selectedOptions[0].textContent;
-        buttonText.style.color = '#111827';
+        buttonText.classList.add('has-selection');
       } else {
-        buttonText.textContent = `${selectedOptions.length} sélectionné(s)`;
-        buttonText.style.color = '#111827';
+        buttonText.innerHTML = `${selectedOptions.length} sélectionné(s) <span class="multiselect-count">${selectedOptions.length}</span>`;
+        buttonText.classList.add('has-selection');
       }
     }
     
@@ -165,4 +194,3 @@
   // Exposer la fonction d'initialisation
   window.initMultiSelectDropdowns = initMultiSelectDropdowns;
 })();
-
