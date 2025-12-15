@@ -7,15 +7,22 @@
 
   // Gestionnaire global pour fermer les dropdowns
   let globalClickHandlerAttached = false;
+  let clickHandler = null;
+  let keyHandler = null;
   
   function attachGlobalClickHandler() {
     if (globalClickHandlerAttached) return;
     
     globalClickHandlerAttached = true;
     
-    // Utiliser un listener qui ne s'exécute QUE si des dropdowns sont ouverts
-    // et qui ne bloque PAS les autres événements (PAS de capture)
-    document.addEventListener('click', (e) => {
+    // Créer les handlers pour pouvoir les détacher si nécessaire
+    clickHandler = (e) => {
+      // Ne s'exécuter QUE dans l'onglet Statistiques
+      const statsTab = document.getElementById('statistiques-tab');
+      if (!statsTab || !statsTab.classList.contains('active')) {
+        return; // Ne rien faire si on n'est pas dans les stats
+      }
+      
       // Vérifier d'abord s'il y a des dropdowns ouverts
       const openDropdowns = document.querySelectorAll('.stats-filters-complete .multiselect-wrapper.open');
       if (openDropdowns.length === 0) return; // Ne rien faire si aucun dropdown ouvert
@@ -29,18 +36,21 @@
           w.classList.remove('open');
         });
       }
-    }); // PAS de capture: true pour ne pas bloquer les autres événements
+    };
     
-    // Fermer aussi sur Escape (seulement les dropdowns dans stats)
-    document.addEventListener('keydown', (e) => {
+    keyHandler = (e) => {
       if (e.key === 'Escape') {
         document.querySelectorAll('.stats-filters-complete .multiselect-wrapper.open').forEach(w => {
           w.classList.remove('open');
         });
       }
-    });
+    };
     
-    console.log('✅ Gestionnaire click pour dropdowns attaché (scope: .stats-filters-complete)');
+    // Attacher les handlers
+    document.addEventListener('click', clickHandler);
+    document.addEventListener('keydown', keyHandler);
+    
+    console.log('✅ Gestionnaire click pour dropdowns attaché (actif seulement dans onglet Statistiques)');
   }
 
   function createMultiSelectDropdown(selectElement) {
