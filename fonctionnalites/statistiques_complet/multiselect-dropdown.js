@@ -13,18 +13,34 @@
     
     globalClickHandlerAttached = true;
     
-    document.addEventListener('mousedown', (e) => {
-      // Ne pas fermer sur clic droit
-      if (e.button === 2) return;
+    // Utiliser un listener qui ne s'exécute QUE si des dropdowns sont ouverts
+    // et qui ne bloque PAS les autres événements (PAS de capture)
+    document.addEventListener('click', (e) => {
+      // Vérifier d'abord s'il y a des dropdowns ouverts
+      const openDropdowns = document.querySelectorAll('.stats-filters-complete .multiselect-wrapper.open');
+      if (openDropdowns.length === 0) return; // Ne rien faire si aucun dropdown ouvert
       
-      // Fermer tous les dropdowns si on clique en dehors
-      const clickedInsideDropdown = e.target.closest('.multiselect-wrapper');
+      // Vérifier si le clic est dans un dropdown
+      const clickedInsideDropdown = e.target.closest('.stats-filters-complete .multiselect-wrapper');
+      
+      // Fermer seulement si le clic est en dehors d'un dropdown
       if (!clickedInsideDropdown) {
-        document.querySelectorAll('.multiselect-wrapper.open').forEach(w => {
+        openDropdowns.forEach(w => {
+          w.classList.remove('open');
+        });
+      }
+    }); // PAS de capture: true pour ne pas bloquer les autres événements
+    
+    // Fermer aussi sur Escape (seulement les dropdowns dans stats)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.stats-filters-complete .multiselect-wrapper.open').forEach(w => {
           w.classList.remove('open');
         });
       }
     });
+    
+    console.log('✅ Gestionnaire click pour dropdowns attaché (scope: .stats-filters-complete)');
   }
 
   function createMultiSelectDropdown(selectElement) {
