@@ -66,6 +66,12 @@ async function rechargerDonneesOnglet(tabId) {
         // Les statistiques se rechargent manuellement avec le bouton "Appliquer"
         console.log('📊 Statistiques (pas de rechargement auto)');
         break;
+      
+      case 'archives':
+        if (typeof window.afficherToutesLesPersonnesArchives === 'function') {
+          window.afficherToutesLesPersonnesArchives();
+        }
+        break;
         
       default:
         console.log('⚠️ Onglet inconnu:', tabId);

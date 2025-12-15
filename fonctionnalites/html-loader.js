@@ -35,6 +35,11 @@
             insertMode: 'replace'
         },
         {
+            container: 'archives-tab-container',
+            file: 'fonctionnalites/archives_complet/archives-tab.html',
+            insertMode: 'replace'
+        },
+        {
             container: 'footer-container',
             file: 'fonctionnalites/interface_complet/footer.html',
             insertMode: 'replace'

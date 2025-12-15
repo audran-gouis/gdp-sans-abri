@@ -549,16 +549,24 @@
             `).join('')}
           </div>
           <div class="fusion-actions">
-            <button class="btn btn-secondary" onclick="ignorerGroupe(${index})">
+            <button class="btn btn-secondary btn-ignorer-groupe" data-groupe-index="${index}">
               Ignorer ce groupe
             </button>
-            <button class="btn btn-primary" onclick="fusionnerGroupe(${index})">
+            <button class="btn btn-primary btn-fusionner-groupe" data-groupe-index="${index}">
               <span>🔀</span>
               Fusionner vers la fiche sélectionnée
             </button>
           </div>
         </div>
       `).join('');
+
+      // Attacher les event listeners aux boutons d'action
+      document.querySelectorAll('.btn-ignorer-groupe').forEach(btn => {
+        btn.addEventListener('click', () => ignorerGroupe(parseInt(btn.dataset.groupeIndex)));
+      });
+      document.querySelectorAll('.btn-fusionner-groupe').forEach(btn => {
+        btn.addEventListener('click', () => fusionnerGroupe(parseInt(btn.dataset.groupeIndex)));
+      });
 
       // Gérer la sélection des cartes
       document.querySelectorAll('.personne-card input[type="radio"]').forEach(radio => {

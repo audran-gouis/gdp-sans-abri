@@ -1,0 +1,96 @@
+/* Styles pour l'option Attention */
+
+/* Checkbox Attention dans les formulaires */
+.checkbox-attention {
+  background-color: #fee2e2;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border: 2px solid #dc2626;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkbox-attention input[type="checkbox"] {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.checkbox-attention:hover {
+  background-color: #fecaca;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+
+.checkbox-attention span {
+  font-weight: 600;
+  color: #991b1b;
+  white-space: nowrap;
+}
+
+.checkbox-attention input[type="checkbox"]:checked ~ span {
+  color: #7f1d1d;
+}
+
+/* Badge Attention sur les fiches */
+.badge-attention {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4);
+  animation: pulse-attention 2s infinite;
+}
+
+@keyframes pulse-attention {
+  0%, 100% {
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.6);
+  }
+}
+
+/* Carte avec attention - bordure rouge et fond légèrement rouge */
+.transmission-card.has-attention {
+  border-left: 4px solid #dc2626;
+  background: linear-gradient(to right, #fee2e2 0%, #ffffff 10%);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
+}
+
+.transmission-card.has-attention:hover {
+  border-left-color: #b91c1c;
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.25);
+}
+
+.transmission-card.has-attention .card-header h3 {
+  color: #991b1b;
+}
+
+/* Animation au survol du badge attention */
+.badge-attention:hover {
+  transform: scale(1.05);
+  animation: none;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.5);
+}
+
+/* Pour les cartes dans les statistiques */
+.stats-card.has-attention {
+  border-left: 4px solid #dc2626;
+  background: linear-gradient(to right, #fee2e2 0%, #ffffff 10%);
+}
+
+/* Indicateur visuel attention pour les listes */
+.person-item.has-attention {
+  border-left: 4px solid #dc2626;
+  background-color: #fee2e2;
+}
+
+.person-item.has-attention:hover {
+  background-color: #fecaca;
+}
+

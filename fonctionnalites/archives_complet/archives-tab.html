@@ -1,0 +1,55 @@
+<!-- Onglet Archives -->
+<div id="archives-tab" class="tab-content">
+    <div class="content-card">
+        <div class="archives-header">
+            <h2>Archives</h2>
+            <p class="archives-info">Les fiches archivées ne sont plus visibles dans les autres onglets et ne comptent pas dans les statistiques.</p>
+        </div>
+        
+        <div class="filters-container">
+            <div class="filter-group">
+                <label for="filter-archives-nom">Nom :</label>
+                <input type="text" id="filter-archives-nom" class="filter-input" placeholder="Rechercher par nom" autocomplete="family-name">
+            </div>
+            
+            <div class="filter-group">
+                <label for="filter-archives-prenom">Prénom :</label>
+                <input type="text" id="filter-archives-prenom" class="filter-input" placeholder="Rechercher par prénom" autocomplete="given-name">
+            </div>
+            
+            <div class="filter-group">
+                <label for="filter-archives-ddn">Date de Naissance :</label>
+                <input type="date" id="filter-archives-ddn" class="filter-input">
+            </div>
+            
+            <div class="filter-group">
+                <label for="filter-archives-inconnu">Connus/Inconnus :</label>
+                <select id="filter-archives-inconnu" class="filter-input">
+                    <option value="">Tous</option>
+                    <option value="connus">Connus</option>
+                    <option value="inconnus">Inconnus</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="filter-archives-description">Description physique :</label>
+                <input type="text" id="filter-archives-description" class="filter-input" placeholder="Rechercher par description">
+            </div>
+            
+            <div class="filter-group">
+                <label for="filter-archives-typologie">Typologie :</label>
+                <input type="text" id="filter-archives-typologie" class="filter-input" placeholder="Rechercher par typologie">
+            </div>
+            
+            <div class="filter-group">
+                <label for="filter-archives-departement">Département :</label>
+                <input type="text" id="filter-archives-departement" class="filter-input" placeholder="Ex: 75, 93">
+            </div>
+        </div>
+        
+        <div id="archives-list" class="transmissions-container">
+            <p class="empty-message">Chargement...</p>
+        </div>
+    </div>
+</div>
+

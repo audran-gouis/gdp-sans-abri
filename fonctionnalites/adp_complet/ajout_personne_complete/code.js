@@ -17,6 +17,33 @@ async function findAdpByPersonAndDate(personneId, date) {
 }
 
 /**
+ * Récupère la dernière adresse utilisée pour une personne
+ * @param {number} personneId - L'ID de la personne
+ * @returns {Object|null} - Objet avec adresse et ville, ou null
+ */
+async function getDerniereAdresseAdp(personneId) {
+  try {
+    const toutesInterventions = await window.getAllInterventions();
+    const interventionsPersonne = toutesInterventions
+      .filter(i => i.personneId === personneId && (i.adresse || i.lieu))
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    if (interventionsPersonne.length === 0) {
+      return null;
+    }
+    
+    const derniereIntervention = interventionsPersonne[0];
+    return {
+      adresse: derniereIntervention.adresse || derniereIntervention.lieu || '',
+      ville: derniereIntervention.ville || ''
+    };
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la dernière adresse:', error);
+    return null;
+  }
+}
+
+/**
  * Édite une intervention ADP pour une personne
  * @param {number} personneId - L'ID de la personne dans la DB unifiée
  */
@@ -70,6 +97,11 @@ async function editTransmissionAdp(personneId) {
       document.getElementById('adp-form-signalement').value = existingAdp.signalement || '';
       document.getElementById('adp-form-transmission').value = existingAdp.observations || '';
       
+      // Checkbox Attention
+      if (document.getElementById('adp-form-attention')) {
+        document.getElementById('adp-form-attention').checked = existingAdp.attention || false;
+      }
+      
       // Checkboxes Orly
       if (existingAdp.orly) {
         document.getElementById('adp-form-premier-contact').checked = existingAdp.orly.premierContact || false;
@@ -87,7 +119,6 @@ async function editTransmissionAdp(personneId) {
         document.getElementById('adp-form-accomp-admin').checked = existingAdp.accompagnement.admin || false;
         document.getElementById('adp-form-accomp-medical').checked = existingAdp.accompagnement.medical || false;
         document.getElementById('adp-form-accomp-hebergement').checked = existingAdp.accompagnement.hebergement || false;
-        document.getElementById('adp-form-accomp-autre').checked = existingAdp.accompagnement.autre || false;
       }
       
       // Checkboxes Distribution
@@ -97,19 +128,35 @@ async function editTransmissionAdp(personneId) {
         document.getElementById('adp-form-distrib-hygiene').checked = existingAdp.distribution.hygiene || false;
         document.getElementById('adp-form-distrib-couvertures').checked = existingAdp.distribution.couvertures || false;
         document.getElementById('adp-form-distrib-duvet').checked = existingAdp.distribution.duvet || false;
-        document.getElementById('adp-form-distrib-autre').checked = existingAdp.distribution.autre || false;
       }
       
       document.getElementById('modal-adp').dataset.editId = existingAdp.id;
       console.log('🔖 editId défini à:', existingAdp.id);
+      
+      // Afficher le bouton de suppression en mode édition
+      const btnSupprimer = document.getElementById('btn-supprimer-adp');
+      if (btnSupprimer) btnSupprimer.style.display = 'inline-block';
     } else {
       // MODE CRÉATION : réinitialiser les champs d'intervention
       console.log('➕ Pas d\'ADP pour cette date - MODE CRÉATION');
       document.getElementById('adp-form-type-transmission').value = '';
-      document.getElementById('adp-form-adresse').value = '';
-      document.getElementById('adp-form-ville').value = '';
       document.getElementById('adp-form-signalement').value = '';
       document.getElementById('adp-form-transmission').value = '';
+      
+      // Cacher le bouton de suppression en mode création
+      const btnSupprimer = document.getElementById('btn-supprimer-adp');
+      if (btnSupprimer) btnSupprimer.style.display = 'none';
+      
+      // Charger automatiquement la dernière adresse utilisée
+      const derniereAdresse = await getDerniereAdresseAdp(personneId);
+      if (derniereAdresse) {
+        document.getElementById('adp-form-adresse').value = derniereAdresse.adresse || '';
+        document.getElementById('adp-form-ville').value = derniereAdresse.ville || '';
+        console.log('📍 Adresse chargée automatiquement:', derniereAdresse);
+      } else {
+        document.getElementById('adp-form-adresse').value = '';
+        document.getElementById('adp-form-ville').value = '';
+      }
       
       // Décocher toutes les checkboxes
       document.querySelectorAll('#modal-adp input[type="checkbox"]').forEach(cb => {
@@ -137,7 +184,15 @@ async function editTransmissionAdp(personneId) {
     // Ouvrir la modal
     const modal = document.getElementById('modal-adp');
     if (modal) {
-    modal.classList.add('show');
+      modal.classList.add('show');
+      
+      // Scroll vers le haut du formulaire
+      setTimeout(() => {
+        const modalBody = modal.querySelector('.modal-body');
+        if (modalBody) {
+          modalBody.scrollTop = 0;
+        }
+      }, 100);
     }
   } catch (error) {
     console.error('❌ Erreur lors du chargement:', error);
@@ -233,6 +288,10 @@ function initAdpForm() {
     delete modal.dataset.editId;
     delete modal.dataset.personneId;
     
+    // Cacher le bouton de suppression en mode création
+    const btnSupprimer = document.getElementById('btn-supprimer-adp');
+    if (btnSupprimer) btnSupprimer.style.display = 'none';
+    
     const dateAdp = document.getElementById('adp-date');
     if (dateAdp && !dateAdp.value) {
       dateAdp.value = getDateParDefaut();
@@ -240,6 +299,14 @@ function initAdpForm() {
     }
     
     modal.classList.add('show');
+    
+    // Scroll vers le haut du formulaire
+    setTimeout(() => {
+      const modalBody = modal.querySelector('.modal-body');
+      if (modalBody) {
+        modalBody.scrollTop = 0;
+      }
+    }, 100);
   });
   
   // Fermer la modal
@@ -257,6 +324,40 @@ function initAdpForm() {
   if (typeof window.initTypologieAutocomplete === 'function') {
     window.initTypologieAutocomplete();
     console.log('✅ Auto-complétion typologie initialisée pour ADP');
+  }
+  
+  // Event listener pour le bouton "Supprimer l'ADP"
+  const btnSupprimer = document.getElementById('btn-supprimer-adp');
+  if (btnSupprimer) {
+    btnSupprimer.addEventListener('click', async (e) => {
+      e.preventDefault();
+      
+      const editId = modal.dataset.editId;
+      if (!editId) {
+        console.warn('Aucune ADP à supprimer');
+        return;
+      }
+      
+      const confirmation = confirm('Êtes-vous sûr de vouloir supprimer cette ADP ? Cette action est irréversible.');
+      if (!confirmation) return;
+      
+      try {
+        console.log('🗑️ Suppression de l\'ADP ID:', editId);
+        await window.deleteIntervention(parseInt(editId));
+        alert('✅ ADP supprimée avec succès');
+        
+        // Fermer le modal
+        closeModal();
+        
+        // Rafraîchir la liste des ADP
+        if (window.afficherToutesLesPersonnesADP) {
+          await window.afficherToutesLesPersonnesADP();
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de la suppression:', error);
+        alert('Erreur lors de la suppression de l\'ADP');
+      }
+    });
   }
   
   // Soumettre le formulaire
@@ -289,6 +390,7 @@ function initAdpForm() {
         observations: document.getElementById('adp-form-transmission').value,
         date: selectedDate,
         type: 'adp',
+        attention: document.getElementById('adp-form-attention')?.checked || false,
       orly: {
           premierContact: document.getElementById('adp-form-premier-contact')?.checked || false,
         personnePresente: document.getElementById('adp-form-personne-presente')?.checked || false,
@@ -302,16 +404,14 @@ function initAdpForm() {
         orientation: document.getElementById('adp-form-accomp-orientation')?.checked || false,
         admin: document.getElementById('adp-form-accomp-admin')?.checked || false,
         medical: document.getElementById('adp-form-accomp-medical')?.checked || false,
-        hebergement: document.getElementById('adp-form-accomp-hebergement')?.checked || false,
-        autre: document.getElementById('adp-form-accomp-autre')?.checked || false
+        hebergement: document.getElementById('adp-form-accomp-hebergement')?.checked || false
       },
       distribution: {
         alimentaire: document.getElementById('adp-form-distrib-alimentaire')?.checked || false,
         vestimentaire: document.getElementById('adp-form-distrib-vestimentaire')?.checked || false,
         hygiene: document.getElementById('adp-form-distrib-hygiene')?.checked || false,
         couvertures: document.getElementById('adp-form-distrib-couvertures')?.checked || false,
-        duvet: document.getElementById('adp-form-distrib-duvet')?.checked || false,
-        autre: document.getElementById('adp-form-distrib-autre')?.checked || false
+        duvet: document.getElementById('adp-form-distrib-duvet')?.checked || false
       }
     };
     
@@ -394,6 +494,27 @@ function initAdpForm() {
       console.error('❌ Erreur lors de l\'enregistrement:', error);
       alert('Erreur lors de l\'enregistrement : ' + error.message);
     }
+  });
+  
+  // Initialiser tous les boutons d'historique des infos personnelles
+  if (typeof window.initTousBoutonsHistorique === 'function') {
+    window.initTousBoutonsHistorique(formAdp);
+  }
+  
+  // Initialiser les boutons d'historique par section
+  const btnsHistSection = formAdp.querySelectorAll('.btn-hist-section');
+  btnsHistSection.forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const section = btn.dataset.section;
+      const personneId = modal.dataset.personneId;
+      
+      if (personneId && typeof window.afficherHistoriqueInterventions === 'function') {
+        await window.afficherHistoriqueInterventions(parseInt(personneId), section);
+      } else {
+        alert('Veuillez d\'abord sélectionner ou créer une personne.');
+      }
+    });
   });
   
   console.log('✅ Formulaire ADP initialisé (Base Unifiée)');

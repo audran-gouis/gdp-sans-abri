@@ -25,7 +25,7 @@ async function afficherModaleDeplacement(interventionId, typeActuel, personneNom
     <div class="modal-content" style="max-width: 500px;">
       <div class="modal-header">
         <h2>Déplacer l'intervention</h2>
-        <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
+        <button class="modal-close">&times;</button>
       </div>
       <div class="modal-body" style="padding: 1.5rem;">
         <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
@@ -39,7 +39,7 @@ async function afficherModaleDeplacement(interventionId, typeActuel, personneNom
         <p style="margin-bottom: 1rem; color: #666; font-size: 0.95rem;">
           Sélectionnez le nouveau type d'intervention :
         </p>
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div class="btn-types-container" style="display: flex; flex-direction: column; gap: 0.75rem;">
           ${Object.entries(types)
             .filter(([key]) => key !== typeActuel)
             .map(([key, label]) => {
@@ -54,8 +54,8 @@ async function afficherModaleDeplacement(interventionId, typeActuel, personneNom
                   class="btn-deplacer-type" 
                   style="text-align: left; padding: 1rem; background: ${color.bg}; border: 2px solid ${color.border}; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #1f2937;"
                   data-nouveau-type="${key}"
-                  onmouseover="this.style.background='${color.hover}'; this.style.transform='translateX(5px)'"
-                  onmouseout="this.style.background='${color.bg}'; this.style.transform='translateX(0)'"
+                  data-color-bg="${color.bg}"
+                  data-color-hover="${color.hover}"
                 >
                   ${label}
                 </button>
@@ -63,7 +63,7 @@ async function afficherModaleDeplacement(interventionId, typeActuel, personneNom
             }).join('')}
         </div>
         <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
-          <button class="btn-secondary" onclick="this.closest('.modal').remove()">Annuler</button>
+          <button class="btn-annuler-deplacement btn-secondary">Annuler</button>
         </div>
       </div>
     </div>
@@ -72,12 +72,39 @@ async function afficherModaleDeplacement(interventionId, typeActuel, personneNom
   // Ajouter la modale au body
   document.body.appendChild(modal);
   
+  // Attacher l'événement au bouton de fermeture
+  const btnClose = modal.querySelector('.modal-close');
+  if (btnClose) {
+    btnClose.addEventListener('click', () => modal.remove());
+  }
+  
+  // Attacher l'événement au bouton Annuler
+  const btnAnnuler = modal.querySelector('.btn-annuler-deplacement');
+  if (btnAnnuler) {
+    btnAnnuler.addEventListener('click', () => modal.remove());
+  }
+  
   // Ajouter les événements aux boutons de type
   modal.querySelectorAll('[data-nouveau-type]').forEach(btn => {
+    // Événement click
     btn.addEventListener('click', async () => {
       const nouveauType = btn.dataset.nouveauType;
       await deplacerIntervention(interventionId, typeActuel, nouveauType, personneNom);
       modal.remove();
+    });
+    
+    // Événements hover
+    const bgColor = btn.dataset.colorBg;
+    const hoverColor = btn.dataset.colorHover;
+    
+    btn.addEventListener('mouseenter', () => {
+      btn.style.background = hoverColor;
+      btn.style.transform = 'translateX(5px)';
+    });
+    
+    btn.addEventListener('mouseleave', () => {
+      btn.style.background = bgColor;
+      btn.style.transform = 'translateX(0)';
     });
   });
   
@@ -111,7 +138,8 @@ async function deplacerIntervention(interventionId, typeActuel, nouveauType, per
       return;
     }
     
-    await window.changerTypeIntervention(interventionId, nouveauType);
+    // Utiliser updateIntervention pour changer le type
+    await window.updateIntervention(interventionId, { type: nouveauType });
     
     // Afficher un message de succès
     alert(`✅ Intervention déplacée avec succès vers ${nouveauTypeLabel}`);

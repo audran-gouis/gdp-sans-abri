@@ -85,10 +85,13 @@
       }
     });
 
-    // Afficher le bouton historique si la personne a un historique
-    const btnVoirHistorique = form.querySelector('[id*="btn-voir-historique"]');
-    if (btnVoirHistorique && personne.infoHistorique && personne.infoHistorique.length > 0) {
-      btnVoirHistorique.style.display = 'inline-block';
+    // Afficher les boutons historique si la personne a un historique
+    if (personne.infoHistorique && personne.infoHistorique.length > 0) {
+      // Afficher tous les boutons d'historique
+      const btnsHistorique = form.querySelectorAll('[id*="btn-voir-historique"]');
+      btnsHistorique.forEach(btn => {
+        btn.classList.add('has-history');
+      });
     }
   }
 
@@ -105,11 +108,11 @@
       delete form.dataset[initialKey];
     });
 
-    // Cacher le bouton historique
-    const btnVoirHistorique = form.querySelector('[id*="btn-voir-historique"]');
-    if (btnVoirHistorique) {
-      btnVoirHistorique.style.display = 'none';
-    }
+    // Cacher tous les boutons historique
+    const btnsHistorique = form.querySelectorAll('[id*="btn-voir-historique"]');
+    btnsHistorique.forEach(btn => {
+      btn.classList.remove('has-history');
+    });
 
     // Cacher l'alerte
     const alerteModif = form.querySelector('[id*="alerte-modification-infos"]');
@@ -168,14 +171,38 @@
     });
   }
 
+  /**
+   * Initialise tous les boutons d'historique d'un formulaire
+   * @param {HTMLFormElement} form - Le formulaire
+   */
+  function initTousBoutonsHistorique(form) {
+    if (!form) return;
+    
+    const btnsHistorique = form.querySelectorAll('[id*="btn-voir-historique"]');
+    btnsHistorique.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const personneId = form.dataset.personneId;
+        if (personneId && window.afficherHistoriqueModal) {
+          const personne = await window.getPersonneById(parseInt(personneId));
+          if (personne) {
+            window.afficherHistoriqueModal(personne);
+          }
+        }
+      });
+    });
+  }
+
   // Exposer les fonctions globalement
   window.initChangementHistorisation = initChangementHistorisation;
   window.chargerInfosHistoriques = chargerInfosHistoriques;
   window.resetInfosHistorisation = resetInfosHistorisation;
   window.gererHistorisationSauvegarde = gererHistorisationSauvegarde;
   window.initBoutonHistorique = initBoutonHistorique;
+  window.initTousBoutonsHistorique = initTousBoutonsHistorique;
 
   console.log('✅ Utilitaires historisation formulaire chargés');
 })();
+
 
 

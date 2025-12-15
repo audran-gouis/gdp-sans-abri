@@ -79,6 +79,9 @@ function handlePeriodTypeChange() {
   }
 }
 
+// Variable globale pour stocker la date de fin de la plage
+let currentDateFin = null;
+
 /**
  * Applique les filtres et affiche les statistiques
  */
@@ -120,6 +123,11 @@ async function applyFilters() {
     interventions = filterByPeriod(interventions);
     console.log('📋 Après filtre période:', interventions.length);
     
+    // Récupérer la date de fin de la plage pour l'historisation
+    const dateFin = getDateFinPlage();
+    currentDateFin = dateFin; // Stocker globalement pour utilisation dans showFilteredCards
+    console.log('📅 Date de fin de la plage:', dateFin);
+    
     // Créer un Map des personnes par ID
     const personnesMap = new Map();
     personnes.forEach(p => personnesMap.set(p.id, p));
@@ -136,19 +144,40 @@ async function applyFilters() {
     console.log('📋 Interventions enrichies:', interventionsEnrichies.length);
     
     // Appliquer les filtres détaillés
-    const interventionsFiltrees = applyDetailedFilters(interventionsEnrichies);
+    const interventionsFiltrees = applyDetailedFilters(interventionsEnrichies, dateFin);
     console.log('📋 Après filtres détaillés:', interventionsFiltrees.length);
     
     // Stocker les données filtrées pour affichage des cartes
     window.filteredStatsData = interventionsFiltrees;
     
     // Calculer et afficher les statistiques
-    displayStatistics(interventionsFiltrees, source);
+    displayStatistics(interventionsFiltrees, source, dateFin);
     
   } catch (error) {
     console.error('❌ Erreur lors de l\'application des filtres:', error);
     document.getElementById('stats-content').innerHTML = '<p style="color: red;">Erreur lors du chargement des données.</p>';
   }
+}
+
+/**
+ * Récupère la date de fin de la plage sélectionnée
+ */
+function getDateFinPlage() {
+  const periodType = document.getElementById('stats-period-type')?.value || 'day';
+  
+  if (periodType === 'day') {
+    return document.getElementById('stats-date')?.value || new Date().toISOString().split('T')[0];
+  } else if (periodType === 'range') {
+    return document.getElementById('stats-end-date')?.value || new Date().toISOString().split('T')[0];
+  } else if (periodType === 'month') {
+    const monthValue = document.getElementById('stats-month')?.value;
+    if (monthValue) {
+      const [year, month] = monthValue.split('-');
+      const lastDay = new Date(year, month, 0).getDate();
+      return `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+    }
+  }
+  return new Date().toISOString().split('T')[0];
 }
 
 /**
@@ -188,7 +217,7 @@ function filterByPeriod(interventions) {
 /**
  * Applique les filtres détaillés
  */
-function applyDetailedFilters(interventions) {
+function applyDetailedFilters(interventions, dateFin) {
   let filtered = interventions;
   
   // === FILTRES INFORMATIONS PERSONNELLES ===
@@ -233,7 +262,10 @@ function applyDetailedFilters(interventions) {
   if (filterDepartementSelect) {
     const selectedValues = Array.from(filterDepartementSelect.selectedOptions).map(opt => opt.value);
     if (selectedValues.length > 0) {
-      filtered = filtered.filter(item => selectedValues.includes(item.personne?.departement));
+      filtered = filtered.filter(item => {
+        const infos = window.getInfosALaDate ? window.getInfosALaDate(item.personne, dateFin) : item.personne;
+        return selectedValues.includes(infos?.departement || item.personne?.departement);
+      });
     }
   }
   
@@ -242,7 +274,10 @@ function applyDetailedFilters(interventions) {
   if (filterTypologieSelect) {
     const selectedValues = Array.from(filterTypologieSelect.selectedOptions).map(opt => opt.value);
     if (selectedValues.length > 0) {
-      filtered = filtered.filter(item => selectedValues.includes(item.personne?.typologie));
+      filtered = filtered.filter(item => {
+        const infos = window.getInfosALaDate ? window.getInfosALaDate(item.personne, dateFin) : item.personne;
+        return selectedValues.includes(infos?.typologie || item.personne?.typologie);
+      });
     }
   }
   
@@ -251,7 +286,10 @@ function applyDetailedFilters(interventions) {
   if (filterNbPersonnesSelect) {
     const selectedValues = Array.from(filterNbPersonnesSelect.selectedOptions).map(opt => opt.value);
     if (selectedValues.length > 0) {
-      filtered = filtered.filter(item => selectedValues.includes(item.personne?.nbPersonnes));
+      filtered = filtered.filter(item => {
+        const infos = window.getInfosALaDate ? window.getInfosALaDate(item.personne, dateFin) : item.personne;
+        return selectedValues.includes(infos?.nbPersonnes || item.personne?.nbPersonnes);
+      });
     }
   }
   
@@ -260,7 +298,10 @@ function applyDetailedFilters(interventions) {
   if (filterMineursSelect) {
     const selectedValues = Array.from(filterMineursSelect.selectedOptions).map(opt => opt.value);
     if (selectedValues.length > 0) {
-      filtered = filtered.filter(item => selectedValues.includes(item.personne?.mineurs));
+      filtered = filtered.filter(item => {
+        const infos = window.getInfosALaDate ? window.getInfosALaDate(item.personne, dateFin) : item.personne;
+        return selectedValues.includes(infos?.mineurs || item.personne?.mineurs);
+      });
     }
   }
   
@@ -350,7 +391,7 @@ function applyDetailedFilters(interventions) {
 /**
  * Affiche les statistiques calculées
  */
-function displayStatistics(interventions, source) {
+function displayStatistics(interventions, source, dateFin) {
   const container = document.getElementById('stats-content');
   if (!container) return;
   
@@ -405,11 +446,20 @@ function displayStatistics(interventions, source) {
   
   uniquePersonsMap.forEach(entry => {
     const personne = entry.personne;
-    let nbStr = String(personne.nbPersonnes || '1').replace('+', '');
+    
+    // Utiliser les informations à la date de fin de la plage
+    const infosALaDate = window.getInfosALaDate ? window.getInfosALaDate(personne, dateFin) : {
+      nbPersonnes: personne.nbPersonnes || '1',
+      mineurs: personne.mineurs || '0',
+      typologie: personne.typologie || '',
+      departement: personne.departement || ''
+    };
+    
+    let nbStr = String(infosALaDate.nbPersonnes || '1').replace('+', '');
     const nbPersonnes = parseInt(nbStr) || 1;
     totalNbPersonnes += nbPersonnes;
     
-    let minStr = String(personne.mineurs || '0').replace('+', '');
+    let minStr = String(infosALaDate.mineurs || '0').replace('+', '');
     const mineurs = parseInt(minStr) || 0;
     totalMineurs += mineurs;
   });
@@ -461,8 +511,15 @@ function displayStatistics(interventions, source) {
   
   uniquePersonsMap.forEach(entry => {
     const personne = entry.personne;
-    const typo = personne.typologie || 'non-renseigne';
-    let nbStr = String(personne.nbPersonnes || '1').replace('+', '');
+    
+    // Utiliser les informations à la date de fin de la plage
+    const infosALaDate = window.getInfosALaDate ? window.getInfosALaDate(personne, dateFin) : {
+      nbPersonnes: personne.nbPersonnes || '1',
+      typologie: personne.typologie || 'non-renseigne'
+    };
+    
+    const typo = infosALaDate.typologie || 'non-renseigne';
+    let nbStr = String(infosALaDate.nbPersonnes || '1').replace('+', '');
     const nbPersonnes = parseInt(nbStr) || 1;
     typologieStats[typo] = (typologieStats[typo] || 0) + nbPersonnes;
   });
@@ -479,11 +536,18 @@ function displayStatistics(interventions, source) {
   
   uniquePersonsMap.forEach(entry => {
     const personne = entry.personne;
-    const typo = personne.typologie || 'non-renseigne';
+    
+    // Utiliser les informations à la date de fin de la plage
+    const infosALaDate = window.getInfosALaDate ? window.getInfosALaDate(personne, dateFin) : {
+      nbPersonnes: personne.nbPersonnes || '1',
+      typologie: personne.typologie || 'non-renseigne'
+    };
+    
+    const typo = infosALaDate.typologie || 'non-renseigne';
     
     if (typologiesAvecEnfants.includes(typo)) {
       nbMenagesAvecEnfants++;
-      let nbStr = String(personne.nbPersonnes || '1').replace('+', '');
+      let nbStr = String(infosALaDate.nbPersonnes || '1').replace('+', '');
       const nbPersonnes = parseInt(nbStr) || 1;
       nbPersonnesAvecEnfants += nbPersonnes;
     }
@@ -765,7 +829,13 @@ function showFilteredCards() {
   persons.forEach(personEntry => {
     const personne = personEntry.personne;
     const card = document.createElement('div');
-    card.className = 'transmission-card';
+    
+    // Vérifier si la personne a l'option Attention cochée
+    const hasAttention = personEntry.interventions.some(intervention => intervention.attention === true);
+    card.className = hasAttention ? 'transmission-card has-attention' : 'transmission-card';
+    
+    // Badge Attention
+    const badgeAttention = hasAttention ? '<span class="badge badge-attention" title="Attention requise">⚠️ ATTENTION</span>' : '';
     
     // Badges pour les types d'intervention - Couleurs neutres
     let typeBadges = '';
@@ -802,10 +872,19 @@ function showFilteredCards() {
       ? personEntry._dates.map(d => formatDateDisplay(d)).join(', ')
       : '';
     
+    // Utiliser les informations à la date de fin de la plage pour l'affichage
+    const infosALaDate = window.getInfosALaDate ? window.getInfosALaDate(personne, currentDateFin) : {
+      nbPersonnes: personne.nbPersonnes || '',
+      mineurs: personne.mineurs || '',
+      typologie: personne.typologie || '',
+      departement: personne.departement || ''
+    };
+    
     card.innerHTML = `
       <div class="card-header">
         <h3>${displayName}</h3>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
+          ${badgeAttention}
           <span class="badge" style="background: #dc3545; color: white;">${passagesLabel}</span>
           ${typeBadges}
         </div>
@@ -823,22 +902,22 @@ function showFilteredCards() {
             <span class="card-value">${formatDateDisplay(personne.dateNaissance)}</span>
           </div>
         ` : ''}
-        ${personne.typologie ? `
+        ${infosALaDate.typologie ? `
           <div class="card-info">
             <span class="card-label">Typologie :</span>
-            <span class="card-value">${personne.typologie}</span>
+            <span class="card-value">${infosALaDate.typologie}</span>
           </div>
         ` : ''}
-        ${personne.nbPersonnes ? `
+        ${infosALaDate.nbPersonnes ? `
           <div class="card-info">
             <span class="card-label">Nb personnes :</span>
-            <span class="card-value">${personne.nbPersonnes}</span>
+            <span class="card-value">${infosALaDate.nbPersonnes}</span>
           </div>
         ` : ''}
-        ${personne.mineurs ? `
+        ${infosALaDate.mineurs ? `
           <div class="card-info">
             <span class="card-label">Dont mineurs :</span>
-            <span class="card-value">${personne.mineurs}</span>
+            <span class="card-value">${infosALaDate.mineurs}</span>
           </div>
         ` : ''}
         ${personne.descriptionPhysique ? `
@@ -847,10 +926,10 @@ function showFilteredCards() {
             <span class="card-value">${personne.descriptionPhysique}</span>
           </div>
         ` : ''}
-        ${personne.departement ? `
+        ${infosALaDate.departement ? `
           <div class="card-info">
             <span class="card-label">Département :</span>
-            <span class="card-value">${personne.departement}</span>
+            <span class="card-value">${infosALaDate.departement}</span>
           </div>
         ` : ''}
       </div>

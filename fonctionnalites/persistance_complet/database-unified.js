@@ -185,7 +185,9 @@
         typologie: infos.typologie || personne.typologie,
         nbPersonnes: infos.nbPersonnes || personne.nbPersonnes,
         mineurs: infos.mineurs || personne.mineurs,
-        infoHistorique: infos.infoHistorique || personne.infoHistorique || [], // ✅ AJOUT
+        infoHistorique: infos.infoHistorique || personne.infoHistorique || [],
+        archive: typeof infos.archive === 'boolean' ? infos.archive : (personne.archive || false), // ✅ AJOUT
+        dateArchivage: infos.dateArchivage || personne.dateArchivage, // ✅ AJOUT
         dateModification: new Date().toISOString()
       };
       const transaction = dbUnified.transaction([STORE_PERSONNES], 'readwrite');

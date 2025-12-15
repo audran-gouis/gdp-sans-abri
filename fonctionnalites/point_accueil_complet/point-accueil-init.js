@@ -31,6 +31,33 @@ async function findPAByPersonAndDate(personneId, date) {
 }
 
 /**
+ * Récupère la dernière adresse utilisée pour une personne
+ * @param {number} personneId - L'ID de la personne
+ * @returns {Object|null} - Objet avec adresse et ville, ou null
+ */
+async function getDerniereAdressePA(personneId) {
+  try {
+    const toutesInterventions = await window.getAllInterventions();
+    const interventionsPersonne = toutesInterventions
+      .filter(i => i.personneId === personneId && (i.adresse || i.lieu))
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    if (interventionsPersonne.length === 0) {
+      return null;
+    }
+    
+    const derniereIntervention = interventionsPersonne[0];
+    return {
+      adresse: derniereIntervention.adresse || derniereIntervention.lieu || '',
+      ville: derniereIntervention.ville || ''
+    };
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la dernière adresse:', error);
+    return null;
+  }
+}
+
+/**
  * Édite une intervention Point Accueil pour une personne
  * @param {number} personneId - L'ID de la personne dans la DB unifiée
  */
@@ -86,6 +113,11 @@ async function modifierFichePA(personneId) {
       document.getElementById('form-pa-signalement').value = existingPA.signalement || '';
       document.getElementById('form-pa-transmission').value = existingPA.observations || '';
       
+      // Checkbox Attention
+      if (document.getElementById('form-pa-attention')) {
+        document.getElementById('form-pa-attention').checked = existingPA.attention || false;
+      }
+      
       // Checkboxes Orly
       if (existingPA.orly) {
         document.getElementById('form-pa-premier-contact').checked = existingPA.orly.premierContact || false;
@@ -103,7 +135,6 @@ async function modifierFichePA(personneId) {
         document.getElementById('form-pa-accomp-admin').checked = existingPA.accompagnement.admin || false;
         document.getElementById('form-pa-accomp-medical').checked = existingPA.accompagnement.medical || false;
         document.getElementById('form-pa-accomp-hebergement').checked = existingPA.accompagnement.hebergement || false;
-        document.getElementById('form-pa-accomp-autre').checked = existingPA.accompagnement.autre || false;
       }
       
       // Checkboxes Distribution
@@ -113,19 +144,35 @@ async function modifierFichePA(personneId) {
         document.getElementById('form-pa-distrib-hygiene').checked = existingPA.distribution.hygiene || false;
         document.getElementById('form-pa-distrib-couvertures').checked = existingPA.distribution.couvertures || false;
         document.getElementById('form-pa-distrib-duvet').checked = existingPA.distribution.duvet || false;
-        document.getElementById('form-pa-distrib-autre').checked = existingPA.distribution.autre || false;
       }
       
       formPA.dataset.editId = existingPA.id;
       console.log('🔖 editId défini à:', existingPA.id);
+      
+      // Afficher le bouton de suppression en mode édition
+      const btnSupprimer = document.getElementById('btn-supprimer-pa');
+      if (btnSupprimer) btnSupprimer.style.display = 'inline-block';
     } else {
       // MODE CRÉATION : réinitialiser les champs d'intervention
       console.log('➕ Pas de fiche PA pour cette date - MODE CRÉATION');
       document.getElementById('form-pa-type-transmission').value = '';
-      document.getElementById('form-pa-adresse').value = '';
-      document.getElementById('form-pa-ville').value = '';
       document.getElementById('form-pa-signalement').value = '';
       document.getElementById('form-pa-transmission').value = '';
+      
+      // Cacher le bouton de suppression en mode création
+      const btnSupprimer = document.getElementById('btn-supprimer-pa');
+      if (btnSupprimer) btnSupprimer.style.display = 'none';
+      
+      // Charger automatiquement la dernière adresse utilisée
+      const derniereAdresse = await getDerniereAdressePA(personneId);
+      if (derniereAdresse) {
+        document.getElementById('form-pa-adresse').value = derniereAdresse.adresse || '';
+        document.getElementById('form-pa-ville').value = derniereAdresse.ville || '';
+        console.log('📍 Adresse chargée automatiquement:', derniereAdresse);
+      } else {
+        document.getElementById('form-pa-adresse').value = '';
+        document.getElementById('form-pa-ville').value = '';
+      }
       
       // Décocher toutes les checkboxes
       document.querySelectorAll('#modal-point-accueil input[type="checkbox"]').forEach(cb => {
@@ -154,6 +201,14 @@ async function modifierFichePA(personneId) {
     const modal = document.getElementById('modal-point-accueil');
     if (modal) {
       modal.classList.add('show');
+      
+      // Scroll vers le haut du formulaire
+      setTimeout(() => {
+        const modalBody = modal.querySelector('.modal-body');
+        if (modalBody) {
+          modalBody.scrollTop = 0;
+        }
+      }, 100);
     }
   } catch (error) {
     console.error('❌ Erreur lors du chargement:', error);
@@ -235,6 +290,10 @@ function initPointAccueilForm() {
     delete formPA.dataset.editId;
     delete formPA.dataset.personneId;
     
+    // Cacher le bouton de suppression en mode création
+    const btnSupprimer = document.getElementById('btn-supprimer-pa');
+    if (btnSupprimer) btnSupprimer.style.display = 'none';
+    
     const datePA = document.getElementById('pa-date');
     if (datePA && !datePA.value) {
       datePA.value = getDateParDefaut();
@@ -242,6 +301,14 @@ function initPointAccueilForm() {
     }
     
     modal.classList.add('show');
+    
+    // Scroll vers le haut du formulaire
+    setTimeout(() => {
+      const modalBody = modal.querySelector('.modal-body');
+      if (modalBody) {
+        modalBody.scrollTop = 0;
+      }
+    }, 100);
   });
   
   // Fermer la modal
@@ -280,6 +347,40 @@ function initPointAccueilForm() {
     });
   }
   
+  // Event listener pour le bouton "Supprimer la fiche"
+  const btnSupprimer = document.getElementById('btn-supprimer-pa');
+  if (btnSupprimer) {
+    btnSupprimer.addEventListener('click', async (e) => {
+      e.preventDefault();
+      
+      const editId = formPA.dataset.editId;
+      if (!editId) {
+        console.warn('Aucune fiche PA à supprimer');
+        return;
+      }
+      
+      const confirmation = confirm('Êtes-vous sûr de vouloir supprimer cette fiche Point Accueil ? Cette action est irréversible.');
+      if (!confirmation) return;
+      
+      try {
+        console.log('🗑️ Suppression de la fiche PA ID:', editId);
+        await window.deleteIntervention(parseInt(editId));
+        alert('✅ Fiche Point Accueil supprimée avec succès');
+        
+        // Fermer le modal
+        closeModal();
+        
+        // Rafraîchir la liste des fiches PA
+        if (window.afficherToutesLesPersonnesPA) {
+          await window.afficherToutesLesPersonnesPA();
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de la suppression:', error);
+        alert('Erreur lors de la suppression de la fiche Point Accueil');
+      }
+    });
+  }
+  
   // Soumettre le formulaire
   formPA.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -310,6 +411,7 @@ function initPointAccueilForm() {
         observations: document.getElementById('form-pa-transmission').value,
         date: selectedDate,
         type: 'pointAccueil',
+        attention: document.getElementById('form-pa-attention')?.checked || false,
         orly: {
           premierContact: document.getElementById('form-pa-premier-contact')?.checked || false,
           personnePresente: document.getElementById('form-pa-personne-presente')?.checked || false,
@@ -323,16 +425,14 @@ function initPointAccueilForm() {
           orientation: document.getElementById('form-pa-accomp-orientation')?.checked || false,
           admin: document.getElementById('form-pa-accomp-admin')?.checked || false,
           medical: document.getElementById('form-pa-accomp-medical')?.checked || false,
-          hebergement: document.getElementById('form-pa-accomp-hebergement')?.checked || false,
-          autre: document.getElementById('form-pa-accomp-autre')?.checked || false
+          hebergement: document.getElementById('form-pa-accomp-hebergement')?.checked || false
         },
         distribution: {
           alimentaire: document.getElementById('form-pa-distrib-alimentaire')?.checked || false,
           vestimentaire: document.getElementById('form-pa-distrib-vestimentaire')?.checked || false,
           hygiene: document.getElementById('form-pa-distrib-hygiene')?.checked || false,
           couvertures: document.getElementById('form-pa-distrib-couvertures')?.checked || false,
-          duvet: document.getElementById('form-pa-distrib-duvet')?.checked || false,
-          autre: document.getElementById('form-pa-distrib-autre')?.checked || false
+          duvet: document.getElementById('form-pa-distrib-duvet')?.checked || false
         }
       };
       
@@ -415,6 +515,27 @@ function initPointAccueilForm() {
       console.error('❌ Erreur lors de l\'enregistrement:', error);
       alert('Erreur lors de l\'enregistrement : ' + error.message);
     }
+  });
+  
+  // Initialiser tous les boutons d'historique des infos personnelles
+  if (typeof window.initTousBoutonsHistorique === 'function') {
+    window.initTousBoutonsHistorique(formPA);
+  }
+  
+  // Initialiser les boutons d'historique par section
+  const btnsHistSection = formPA.querySelectorAll('.btn-hist-section');
+  btnsHistSection.forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const section = btn.dataset.section;
+      const personneId = modal.dataset.personneId;
+      
+      if (personneId && typeof window.afficherHistoriqueInterventions === 'function') {
+        await window.afficherHistoriqueInterventions(parseInt(personneId), section);
+      } else {
+        alert('Veuillez d\'abord sélectionner ou créer une personne.');
+      }
+    });
   });
   
   console.log('✅ Formulaire Point Accueil initialisé (Base Unifiée)');

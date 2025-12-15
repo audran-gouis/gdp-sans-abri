@@ -26,3 +26,12 @@ traces/
 *.swo
 *~
 
+# Base de données et exports
+*.db
+*.sqlite
+*.sqlite3
+db-export/
+backup/
+exports/
+data-export/
+

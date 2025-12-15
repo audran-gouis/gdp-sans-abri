@@ -12,10 +12,13 @@
         <form id="form-point-accueil" class="modal-body">
             <!-- Section Informations Personnelles -->
             <div class="form-section" id="pa-section-info-perso">
-                <h3 class="collapsible">
-                    Informations Personnelles
-                    <span class="collapse-toggle">▼</span>
-                </h3>
+                <div class="section-header-with-button">
+                    <button type="button" id="btn-voir-historique-pa" class="btn-historique" title="Voir l'historique">⏱️</button>
+                    <h3 class="collapsible">
+                        Informations Personnelles
+                        <span class="collapse-toggle">▼</span>
+                    </h3>
+                </div>
                 <div class="form-grid collapsible-content" id="pa-grid-info-perso">
                     <div class="form-group">
                         <label for="form-pa-nom">Nom :</label>
@@ -43,13 +46,8 @@
                             <span>Personne inconnue</span>
                         </label>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Section Situation -->
-            <div class="form-section">
-                <h3>Situation</h3>
-                <div class="form-grid">
+                    
+                    <!-- Informations historisées -->
                     <div class="form-group">
                         <label for="form-pa-departement">Département d'origine :</label>
                         <select id="form-pa-departement" class="form-input" name="departement">
@@ -200,7 +198,10 @@
             
             <!-- Section Données de Transmission -->
             <div class="form-section">
-                <h3>Données de Transmission</h3>
+                <div class="section-header-with-button">
+                    <button type="button" class="btn-historique btn-hist-section" data-section="transmission" title="Voir l'historique">⏱️</button>
+                    <h3>Données de Transmission</h3>
+                </div>
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="form-pa-type-transmission">Type de Transmission :</label>
@@ -221,7 +222,56 @@
                     
                     <div class="form-group">
                         <label for="form-pa-ville">Ville :</label>
-                        <input type="text" id="form-pa-ville" class="form-input" name="ville">
+                        <select id="form-pa-ville" class="form-input" name="ville">
+                            <option value="">Sélectionner...</option>
+                            <option value="Ablon-sur-Seine">Ablon-sur-Seine</option>
+                            <option value="Alfortville">Alfortville</option>
+                            <option value="Arcueil">Arcueil</option>
+                            <option value="Boissy-Saint-Léger">Boissy-Saint-Léger</option>
+                            <option value="Bonneuil-sur-Marne">Bonneuil-sur-Marne</option>
+                            <option value="Bry-sur-Marne">Bry-sur-Marne</option>
+                            <option value="Cachan">Cachan</option>
+                            <option value="Champigny-sur-Marne">Champigny-sur-Marne</option>
+                            <option value="Charenton-le-Pont">Charenton-le-Pont</option>
+                            <option value="Chennevières-sur-Marne">Chennevières-sur-Marne</option>
+                            <option value="Chevilly-Larue">Chevilly-Larue</option>
+                            <option value="Choisy-le-Roi">Choisy-le-Roi</option>
+                            <option value="Créteil">Créteil</option>
+                            <option value="Fontenay-sous-Bois">Fontenay-sous-Bois</option>
+                            <option value="Fresnes">Fresnes</option>
+                            <option value="Gentilly">Gentilly</option>
+                            <option value="Ivry-sur-Seine">Ivry-sur-Seine</option>
+                            <option value="Joinville-le-Pont">Joinville-le-Pont</option>
+                            <option value="L'Haÿ-les-Roses">L'Haÿ-les-Roses</option>
+                            <option value="La Queue-en-Brie">La Queue-en-Brie</option>
+                            <option value="Le Kremlin-Bicêtre">Le Kremlin-Bicêtre</option>
+                            <option value="Le Perreux-sur-Marne">Le Perreux-sur-Marne</option>
+                            <option value="Le Plessis-Trévise">Le Plessis-Trévise</option>
+                            <option value="Limeil-Brévannes">Limeil-Brévannes</option>
+                            <option value="Maisons-Alfort">Maisons-Alfort</option>
+                            <option value="Mandres-les-Roses">Mandres-les-Roses</option>
+                            <option value="Marolles-en-Brie">Marolles-en-Brie</option>
+                            <option value="Nogent-sur-Marne">Nogent-sur-Marne</option>
+                            <option value="Noiseau">Noiseau</option>
+                            <option value="Orly">Orly</option>
+                            <option value="Ormesson-sur-Marne">Ormesson-sur-Marne</option>
+                            <option value="Périgny">Périgny</option>
+                            <option value="Rungis">Rungis</option>
+                            <option value="Saint-Mandé">Saint-Mandé</option>
+                            <option value="Saint-Maur-des-Fossés">Saint-Maur-des-Fossés</option>
+                            <option value="Saint-Maurice">Saint-Maurice</option>
+                            <option value="Santeny">Santeny</option>
+                            <option value="Sucy-en-Brie">Sucy-en-Brie</option>
+                            <option value="Thiais">Thiais</option>
+                            <option value="Valenton">Valenton</option>
+                            <option value="Villecresnes">Villecresnes</option>
+                            <option value="Villejuif">Villejuif</option>
+                            <option value="Villeneuve-le-Roi">Villeneuve-le-Roi</option>
+                            <option value="Villeneuve-Saint-Georges">Villeneuve-Saint-Georges</option>
+                            <option value="Villiers-sur-Marne">Villiers-sur-Marne</option>
+                            <option value="Vincennes">Vincennes</option>
+                            <option value="Vitry-sur-Seine">Vitry-sur-Seine</option>
+                        </select>
                     </div>
                     
                     <div class="form-group">
@@ -230,6 +280,11 @@
                             <option value="">Sélectionner...</option>
                             <option value="115">115</option>
                             <option value="partenaires">Partenaires</option>
+                            <option value="tiers">Tiers</option>
+                            <option value="auto-signalement">Auto-signalement</option>
+                            <option value="pm">PM</option>
+                            <option value="equipe-sanitaire">Equipe Sanitaire</option>
+                            <option value="astreinte">Astreinte</option>
                         </select>
                     </div>
                 </div>
@@ -237,7 +292,10 @@
             
             <!-- Section Type d'intervention -->
             <div class="form-section">
-                <h3>Type d'intervention</h3>
+                <div class="section-header-with-button">
+                    <button type="button" class="btn-historique btn-hist-section" data-section="type-intervention" title="Voir l'historique">⏱️</button>
+                    <h3>Type d'intervention</h3>
+                </div>
                 <div class="form-grid">
                     <div class="form-group full-width">
                         <div class="checkbox-group">
@@ -265,6 +323,10 @@
                                 <input type="checkbox" id="form-pa-refus-contact" class="form-checkbox">
                                 <span>Refus de contact</span>
                             </label>
+                            <label class="checkbox-label checkbox-attention">
+                                <input type="checkbox" id="form-pa-attention" class="form-checkbox">
+                                <span>⚠️ Attention</span>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -272,7 +334,10 @@
             
             <!-- Section Accompagnement -->
             <div class="form-section">
-                <h3>Accompagnement</h3>
+                <div class="section-header-with-button">
+                    <button type="button" class="btn-historique btn-hist-section" data-section="accompagnement" title="Voir l'historique">⏱️</button>
+                    <h3>Accompagnement</h3>
+                </div>
                 <div class="form-grid">
                     <div class="form-group full-width">
                         <div class="checkbox-group">
@@ -296,10 +361,6 @@
                                 <input type="checkbox" id="form-pa-accomp-hebergement" class="form-checkbox">
                                 <span>Hébergement</span>
                             </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="form-pa-accomp-autre" class="form-checkbox">
-                                <span>Autre</span>
-                            </label>
                         </div>
                     </div>
                 </div>
@@ -307,7 +368,10 @@
             
             <!-- Section Distribution -->
             <div class="form-section">
-                <h3>Distribution</h3>
+                <div class="section-header-with-button">
+                    <button type="button" class="btn-historique btn-hist-section" data-section="distribution" title="Voir l'historique">⏱️</button>
+                    <h3>Distribution</h3>
+                </div>
                 <div class="form-grid">
                     <div class="form-group full-width">
                         <div class="checkbox-group">
@@ -331,10 +395,6 @@
                                 <input type="checkbox" id="form-pa-distrib-duvet" class="form-checkbox">
                                 <span>Duvet</span>
                             </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="form-pa-distrib-autre" class="form-checkbox">
-                                <span>Autre</span>
-                            </label>
                         </div>
                     </div>
                 </div>
@@ -342,7 +402,10 @@
             
             <!-- Section Contenu -->
             <div class="form-section">
-                <h3>Contenu de la transmission</h3>
+                <div class="section-header-with-button">
+                    <button type="button" class="btn-historique btn-hist-section" data-section="contenu" title="Voir l'historique">⏱️</button>
+                    <h3>Contenu de la transmission</h3>
+                </div>
                 <div class="form-grid">
                     <div class="form-group full-width">
                         <label for="form-pa-transmission">Commentaires :</label>
@@ -352,6 +415,7 @@
             </div>
 
             <div class="modal-footer">
+                <button type="button" class="btn-danger" id="btn-supprimer-pa" style="display: none; margin-right: auto;">Supprimer la fiche</button>
                 <button type="button" class="btn-secondary" id="pa-btn-annuler">Annuler</button>
                 <button type="submit" class="btn-primary">Enregistrer</button>
             </div>

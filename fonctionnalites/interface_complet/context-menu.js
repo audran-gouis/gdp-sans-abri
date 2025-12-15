@@ -23,6 +23,9 @@
       <button class="context-menu-item duplicate" data-action="duplicate">
         <span>Doublon</span>
       </button>
+      <button class="context-menu-item archive" data-action="archive">
+        <span>Archiver</span>
+      </button>
     `;
 
     document.body.appendChild(menu);
@@ -118,9 +121,11 @@
       return;
     }
 
-    // Ne gérer que l'action doublon
+    // Gérer les actions
     if (action === 'duplicate') {
       handleDuplicate(personneId, type);
+    } else if (action === 'archive') {
+      handleArchive(personneId);
     }
 
     hideContextMenu();
@@ -144,6 +149,52 @@
     } catch (error) {
       console.error('Erreur lors de l\'ouverture de la modale:', error);
       alert('Erreur lors de l\'ouverture de la modale');
+    }
+  }
+
+  /**
+   * Gère l'archivage d'une fiche
+   */
+  async function handleArchive(personneId) {
+    try {
+      const personneIdNum = parseInt(personneId);
+      const personne = await window.getPersonneById(personneIdNum);
+      
+      if (!personne) {
+        alert('Erreur : Personne non trouvée');
+        return;
+      }
+      
+      const nom = personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim();
+      
+      if (!confirm(`Voulez-vous archiver la fiche de ${nom} ?\n\nLa fiche ne sera plus visible dans les listes et ne comptera plus dans les statistiques.\n\nVous pourrez la restaurer depuis l'onglet Archives.`)) {
+        return;
+      }
+      
+      // Archiver la personne
+      await window.updatePersonne(personneIdNum, {
+        archive: true,
+        dateArchivage: new Date().toISOString()
+      });
+      
+      console.log('✅ Personne archivée:', personneIdNum);
+      
+      // Rafraîchir l'affichage
+      if (typeof window.afficherToutesLesPersonnesTransmissions === 'function') {
+        await window.afficherToutesLesPersonnesTransmissions();
+      }
+      if (typeof window.afficherToutesLesPersonnesADP === 'function') {
+        await window.afficherToutesLesPersonnesADP();
+      }
+      if (typeof window.afficherToutesLesPersonnesPA === 'function') {
+        await window.afficherToutesLesPersonnesPA();
+      }
+      
+      alert(`Fiche archivée !\n\n${nom} a été déplacé(e) vers les archives.`);
+      
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'archivage:', error);
+      alert('Erreur lors de l\'archivage : ' + error.message);
     }
   }
 

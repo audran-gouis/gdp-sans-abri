@@ -134,6 +134,30 @@ function genererBadgesSources(sources) {
 }
 
 /**
+ * Vérifie si une fiche a l'option Attention cochée
+ */
+function ficheAAttention(fiche) {
+  // Vérifier dans toutes les transmissions de la personne
+  const toutesTransmissions = [
+    ...(fiche.transmissions || []),
+    ...(fiche.adp || []),
+    ...(fiche.pointAccueil || [])
+  ];
+  
+  return toutesTransmissions.some(t => t.attention === true);
+}
+
+/**
+ * Génère le badge Attention si nécessaire
+ */
+function genererBadgeAttention(fiche) {
+  if (ficheAAttention(fiche)) {
+    return '<span class="badge badge-attention" title="Attention requise">⚠️ ATTENTION</span>';
+  }
+  return '';
+}
+
+/**
  * Applique les filtres sur les fiches pour Transmissions
  */
 function applyTransmissionsFilters(fiches) {
@@ -245,16 +269,19 @@ async function afficherToutesFichesTransmissions() {
     const transmission = fiche.transmissions.find(t => t.dateTransmission === selectedDate);
     const stats = compterTransmissionsParDate(fiche, selectedDate, 'transmissions');
     const badgeCount = genererBadgeTransmissions(stats, selectedDate);
+    const badgeAttention = genererBadgeAttention(fiche);
+    const hasAttention = ficheAAttention(fiche);
     
     // Déterminer l'ID à utiliser pour le bouton
     const btnId = fiche.transmissions[0]?.id || 0;
     const personId = fiche.personId;
     
     return `
-      <div class="transmission-card">
+      <div class="transmission-card ${hasAttention ? 'has-attention' : ''}">
         <div class="card-header">
           <h3>${fiche.inconnu ? 'Inconnu' : `${fiche.prenom || ''} ${fiche.nom || ''}`.trim()}</h3>
           <div class="card-badges">
+            ${badgeAttention}
             ${badgeCount}
             ${badges}
           </div>
@@ -311,16 +338,19 @@ async function afficherToutesFichesADP() {
     const selectedDate = document.getElementById('adp-date')?.value;
     const stats = compterTransmissionsParDate(fiche, selectedDate, 'adp');
     const badgeCount = genererBadgeTransmissions(stats, selectedDate);
+    const badgeAttention = genererBadgeAttention(fiche);
+    const hasAttention = ficheAAttention(fiche);
     
     // Déterminer l'ID à utiliser pour le bouton
     const btnId = fiche.adp[0]?.id || 0;
     const personId = fiche.personId;
     
     return `
-      <div class="transmission-card">
+      <div class="transmission-card ${hasAttention ? 'has-attention' : ''}">
         <div class="card-header">
           <h3>${fiche.inconnu ? 'Inconnu' : `${fiche.prenom || ''} ${fiche.nom || ''}`.trim()}</h3>
           <div class="card-badges">
+            ${badgeAttention}
             ${badgeCount}
             ${badges}
           </div>
@@ -377,16 +407,19 @@ async function afficherToutesFichesPA() {
     const selectedDate = document.getElementById('pa-date')?.value;
     const stats = compterTransmissionsParDate(fiche, selectedDate, 'pointAccueil');
     const badgeCount = genererBadgeTransmissions(stats, selectedDate);
+    const badgeAttention = genererBadgeAttention(fiche);
+    const hasAttention = ficheAAttention(fiche);
     
     // Déterminer l'ID à utiliser pour le bouton
     const btnId = fiche.pointAccueil[0]?.id || 0;
     const personId = fiche.personId;
     
     return `
-      <div class="transmission-card">
+      <div class="transmission-card ${hasAttention ? 'has-attention' : ''}">
         <div class="card-header">
           <h3>${fiche.inconnu ? 'Inconnu' : `${fiche.prenom || ''} ${fiche.nom || ''}`.trim()}</h3>
           <div class="card-badges">
+            ${badgeAttention}
             ${badgeCount}
             ${badges}
           </div>
@@ -432,6 +465,8 @@ if (typeof window !== 'undefined') {
   window.afficherToutesFichesTransmissions = afficherToutesFichesTransmissions;
   window.afficherToutesFichesADP = afficherToutesFichesADP;
   window.afficherToutesFichesPA = afficherToutesFichesPA;
+  window.ficheAAttention = ficheAAttention;
+  window.genererBadgeAttention = genererBadgeAttention;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -444,7 +479,9 @@ if (typeof module !== 'undefined' && module.exports) {
     applyTransmissionsFilters,
     afficherToutesFichesTransmissions,
     afficherToutesFichesADP,
-    afficherToutesFichesPA
+    afficherToutesFichesPA,
+    ficheAAttention,
+    genererBadgeAttention
   };
 }
 

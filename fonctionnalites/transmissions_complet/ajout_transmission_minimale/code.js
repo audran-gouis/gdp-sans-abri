@@ -31,6 +31,35 @@ async function findTransmissionByPersonAndDate(personneId, date) {
 }
 
 /**
+ * Récupère la dernière adresse utilisée pour une personne
+ * @param {number} personneId - L'ID de la personne
+ * @returns {Object|null} - Objet avec adresse et ville, ou null
+ */
+async function getDerniereAdresse(personneId) {
+  try {
+    // Récupérer toutes les interventions de la personne
+    const toutesInterventions = await window.getAllInterventions();
+    const interventionsPersonne = toutesInterventions
+      .filter(i => i.personneId === personneId && (i.adresse || i.lieu))
+      .sort((a, b) => new Date(b.date) - new Date(a.date)); // Plus récent en premier
+    
+    if (interventionsPersonne.length === 0) {
+      return null;
+    }
+    
+    // Récupérer la première intervention avec une adresse
+    const derniereIntervention = interventionsPersonne[0];
+    return {
+      adresse: derniereIntervention.adresse || derniereIntervention.lieu || '',
+      ville: derniereIntervention.ville || ''
+    };
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la dernière adresse:', error);
+    return null;
+  }
+}
+
+/**
  * Édite une transmission existante
  * @param {number} personneId - L'ID de la personne dans la DB unifiée
  */
@@ -96,6 +125,11 @@ async function editTransmission(personneId) {
       document.getElementById('form-signalement').value = existingTransmission.signalement || '';
       document.getElementById('form-transmission').value = existingTransmission.transmission || existingTransmission.observations || '';
       
+      // Checkbox Attention
+      if (document.getElementById('form-attention')) {
+        document.getElementById('form-attention').checked = existingTransmission.attention || false;
+      }
+      
       // Checkboxes Orly
       if (existingTransmission.orly) {
         document.getElementById('form-premier-contact').checked = existingTransmission.orly.premierContact || false;
@@ -113,7 +147,6 @@ async function editTransmission(personneId) {
         document.getElementById('form-accomp-admin').checked = existingTransmission.accompagnement.admin || false;
         document.getElementById('form-accomp-medical').checked = existingTransmission.accompagnement.medical || false;
         document.getElementById('form-accomp-hebergement').checked = existingTransmission.accompagnement.hebergement || false;
-        document.getElementById('form-accomp-autre').checked = existingTransmission.accompagnement.autre || false;
       }
       
       // Checkboxes Distribution
@@ -123,17 +156,33 @@ async function editTransmission(personneId) {
         document.getElementById('form-distrib-hygiene').checked = existingTransmission.distribution.hygiene || false;
         document.getElementById('form-distrib-couvertures').checked = existingTransmission.distribution.couvertures || false;
         document.getElementById('form-distrib-duvet').checked = existingTransmission.distribution.duvet || false;
-        document.getElementById('form-distrib-autre').checked = existingTransmission.distribution.autre || false;
       }
       
       document.getElementById('form-modal-transmission').dataset.editId = existingTransmission.id;
+      
+      // Afficher le bouton de suppression en mode édition
+      const btnSupprimer = document.getElementById('btn-supprimer-transmission');
+      if (btnSupprimer) btnSupprimer.style.display = 'inline-block';
     } else {
       // Nouvelle transmission pour cette date - réinitialiser les champs de transmission
       document.getElementById('form-type-transmission').value = '';
-      document.getElementById('form-adresse').value = '';
-      document.getElementById('form-ville').value = '';
       document.getElementById('form-signalement').value = '';
       document.getElementById('form-transmission').value = '';
+      
+      // Cacher le bouton de suppression en mode création
+      const btnSupprimer = document.getElementById('btn-supprimer-transmission');
+      if (btnSupprimer) btnSupprimer.style.display = 'none';
+      
+      // Charger automatiquement la dernière adresse utilisée
+      const derniereAdresse = await getDerniereAdresse(personneId);
+      if (derniereAdresse) {
+        document.getElementById('form-adresse').value = derniereAdresse.adresse || '';
+        document.getElementById('form-ville').value = derniereAdresse.ville || '';
+        console.log('📍 Adresse chargée automatiquement:', derniereAdresse);
+      } else {
+        document.getElementById('form-adresse').value = '';
+        document.getElementById('form-ville').value = '';
+      }
       
       // Décocher toutes les checkboxes
       document.querySelectorAll('#modal-ajout input[type="checkbox"]').forEach(cb => cb.checked = false);
@@ -147,6 +196,14 @@ async function editTransmission(personneId) {
     const modal = document.getElementById('modal-ajout');
     if (modal) {
       modal.classList.add('show');
+      
+      // Scroll vers le haut du formulaire
+      setTimeout(() => {
+        const modalBody = modal.querySelector('.modal-body');
+        if (modalBody) {
+          modalBody.scrollTop = 0;
+        }
+      }, 100);
     }
   } catch (error) {
     console.error('❌ Erreur lors du chargement:', error);
@@ -242,6 +299,10 @@ function initTransmissionsForm() {
     const alerteModif = document.getElementById('alerte-modification-infos');
     if (alerteModif) alerteModif.style.display = 'none';
     
+    // Cacher le bouton de suppression en mode création
+    const btnSupprimer = document.getElementById('btn-supprimer-transmission');
+    if (btnSupprimer) btnSupprimer.style.display = 'none';
+    
     // Initialiser la date du sélecteur de transmission avec la date par défaut
     const dateTransmission = document.getElementById('transmissions-date');
     if (dateTransmission && !dateTransmission.value) {
@@ -250,6 +311,14 @@ function initTransmissionsForm() {
     }
     
     modal.classList.add('show');
+    
+    // Scroll vers le haut du formulaire
+    setTimeout(() => {
+      const modalBody = modal.querySelector('.modal-body');
+      if (modalBody) {
+        modalBody.scrollTop = 0;
+      }
+    }, 100);
   });
   
   // Fermer la modal
@@ -320,6 +389,40 @@ function initTransmissionsForm() {
     });
   }
   
+  // Event listener pour le bouton "Supprimer la transmission"
+  const btnSupprimer = document.getElementById('btn-supprimer-transmission');
+  if (btnSupprimer) {
+    btnSupprimer.addEventListener('click', async (e) => {
+      e.preventDefault();
+      
+      const editId = form.dataset.editId;
+      if (!editId) {
+        console.warn('Aucune transmission à supprimer');
+        return;
+      }
+      
+      const confirmation = confirm('Êtes-vous sûr de vouloir supprimer cette transmission ? Cette action est irréversible.');
+      if (!confirmation) return;
+      
+      try {
+        console.log('🗑️ Suppression de la transmission ID:', editId);
+        await window.deleteIntervention(parseInt(editId));
+        alert('✅ Transmission supprimée avec succès');
+        
+        // Fermer le modal
+        closeModal();
+        
+        // Rafraîchir la liste des transmissions
+        if (window.afficherToutesLesPersonnesTransmissions) {
+          await window.afficherToutesLesPersonnesTransmissions();
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de la suppression:', error);
+        alert('Erreur lors de la suppression de la transmission');
+      }
+    });
+  }
+  
   // Soumettre le formulaire
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -352,6 +455,7 @@ function initTransmissionsForm() {
         observations: document.getElementById('form-transmission').value, // Alias pour compatibilité
         date: selectedDate,
         type: 'transmissions',
+        attention: document.getElementById('form-attention')?.checked || false,
         orly: {
           premierContact: document.getElementById('form-premier-contact')?.checked || false,
           personnePresente: document.getElementById('form-personne-presente')?.checked || false,
@@ -365,16 +469,14 @@ function initTransmissionsForm() {
           orientation: document.getElementById('form-accomp-orientation')?.checked || false,
           admin: document.getElementById('form-accomp-admin')?.checked || false,
           medical: document.getElementById('form-accomp-medical')?.checked || false,
-          hebergement: document.getElementById('form-accomp-hebergement')?.checked || false,
-          autre: document.getElementById('form-accomp-autre')?.checked || false
+          hebergement: document.getElementById('form-accomp-hebergement')?.checked || false
         },
         distribution: {
           alimentaire: document.getElementById('form-distrib-alimentaire')?.checked || false,
           vestimentaire: document.getElementById('form-distrib-vestimentaire')?.checked || false,
           hygiene: document.getElementById('form-distrib-hygiene')?.checked || false,
           couvertures: document.getElementById('form-distrib-couvertures')?.checked || false,
-          duvet: document.getElementById('form-distrib-duvet')?.checked || false,
-          autre: document.getElementById('form-distrib-autre')?.checked || false
+          duvet: document.getElementById('form-distrib-duvet')?.checked || false
         }
       };
       
@@ -499,6 +601,27 @@ function initTransmissionsForm() {
       console.error('❌ Erreur lors de l\'enregistrement:', error);
       alert('Erreur lors de l\'enregistrement : ' + error.message);
     }
+  });
+  
+  // Initialiser tous les boutons d'historique des infos personnelles
+  if (typeof window.initTousBoutonsHistorique === 'function') {
+    window.initTousBoutonsHistorique(form);
+  }
+  
+  // Initialiser les boutons d'historique par section
+  const btnsHistSection = form.querySelectorAll('.btn-hist-section');
+  btnsHistSection.forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const section = btn.dataset.section;
+      const personneId = form.dataset.personneId;
+      
+      if (personneId && typeof window.afficherHistoriqueInterventions === 'function') {
+        await window.afficherHistoriqueInterventions(parseInt(personneId), section);
+      } else {
+        alert('Veuillez d\'abord sélectionner ou créer une personne.');
+      }
+    });
   });
   
   console.log('✅ Formulaire Transmissions initialisé');

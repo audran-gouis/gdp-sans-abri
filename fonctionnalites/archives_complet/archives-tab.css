@@ -1,0 +1,99 @@
+/* Styles pour l'onglet Archives */
+
+.archives-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border-color, #e5e7eb);
+}
+
+.archives-header h2 {
+  color: var(--primary-blue, #2563eb);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.archives-info {
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Badge archive sur les cartes */
+.archive-badge {
+  background: var(--primary-blue, #2563eb);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+/* Badge info (date archivage) */
+.badge-info {
+  background: var(--bg-color-light, #f8fafc);
+  color: var(--text-secondary, #6b7280);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+/* Style spécifique pour les cartes archivées */
+.transmission-card.archived {
+  border-left: 4px solid var(--primary-blue, #2563eb);
+  opacity: 0.95;
+}
+
+.transmission-card.archived .card-header {
+  background: var(--bg-color-light, #f8fafc);
+}
+
+/* Bouton de restauration */
+.btn-restore {
+  background: var(--primary-blue, #2563eb);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+}
+
+.btn-restore:hover {
+  background: var(--primary-blue-dark, #1d4ed8);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+}
+
+.btn-restore:active {
+  transform: translateY(0);
+}
+
+/* Message vide pour les archives */
+.empty-archives {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 8px;
+  border: 2px dashed var(--border-color, #e5e7eb);
+}
+
+.empty-archives h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary, #1f2937);
+  font-weight: 600;
+}
+
+.empty-archives p {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #6b7280);
+  margin: 0;
+}
+

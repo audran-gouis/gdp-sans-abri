@@ -269,6 +269,9 @@
    * @param {Object} personne - La personne
    */
   function afficherHistoriqueModal(personne) {
+    // Variable pour éviter les double-clics - DÉCLARER EN PREMIER
+    let isClosing = false;
+    
     const historique = getHistoriqueFormate(personne);
     
     if (historique.length === 0) {
@@ -311,7 +314,7 @@
       </div>
     `;
 
-    // Créer et afficher une modale simple
+    // Créer le modal
     const modal = document.createElement('div');
     modal.style.cssText = `
       position: fixed;
@@ -334,25 +337,420 @@
       max-width: 800px;
       width: 90%;
     `;
-    content.innerHTML = html + `
-      <div style="margin-top: 1.5rem; text-align: right;">
-        <button id="btn-close-historique" style="background: #2563eb; color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 6px; cursor: pointer;">
-          Fermer
-        </button>
-      </div>
-    `;
     
-    modal.appendChild(content);
-    document.body.appendChild(modal);
+    // Insérer le tableau d'historique
+    content.innerHTML = html;
     
-    // Fermer au clic
-    document.getElementById('btn-close-historique').addEventListener('click', () => {
-      document.body.removeChild(modal);
+    // Fonction pour fermer le modal
+    const closeModal = () => {
+      if (isClosing) return;
+      isClosing = true;
+      
+      modal.style.opacity = '0';
+      modal.style.transition = 'opacity 0.2s ease-out';
+      
+      setTimeout(() => {
+        if (document.body.contains(modal)) {
+          document.body.removeChild(modal);
+        }
+      }, 200);
+    };
+    
+    // Créer le bouton de fermeture
+    const footerDiv = document.createElement('div');
+    footerDiv.style.cssText = 'margin-top: 1.5rem; text-align: right;';
+    
+    const btnClose = document.createElement('button');
+    btnClose.textContent = 'Fermer';
+    btnClose.type = 'button';
+    btnClose.style.cssText = 'background: #2563eb; color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1rem;';
+    
+    btnClose.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeModal();
     });
     
-    modal.addEventListener('click', (e) => {
+    footerDiv.appendChild(btnClose);
+    content.appendChild(footerDiv);
+    
+    content.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+    });
+    
+    modal.appendChild(content);
+    
+    modal.style.opacity = '0';
+    document.body.appendChild(modal);
+    
+    requestAnimationFrame(() => {
+      modal.style.transition = 'opacity 0.2s ease-in';
+      modal.style.opacity = '1';
+    });
+    
+    modal.addEventListener('mousedown', (e) => {
       if (e.target === modal) {
-        document.body.removeChild(modal);
+        e.preventDefault();
+        closeModal();
+      }
+    });
+  }
+
+  /**
+   * Affiche l'historique des interventions d'une personne pour une section donnée
+   * @param {number} personneId - ID de la personne
+   * @param {string} section - Section concernée (transmission, accompagnement, etc.)
+   */
+  async function afficherHistoriqueInterventions(personneId, section) {
+    if (!personneId) {
+      alert('Veuillez d\'abord sélectionner ou créer une personne.');
+      return;
+    }
+
+    try {
+      // Récupérer la personne et toutes ses interventions
+      const personne = await window.getPersonneById(personneId);
+      if (!personne) {
+        alert('Personne non trouvée.');
+        return;
+      }
+
+      // Récupérer toutes les interventions de cette personne
+      const toutesInterventions = await window.getAllInterventions();
+      const interventions = toutesInterventions
+        .filter(i => i.personneId === personneId)
+        .sort((a, b) => new Date(b.date) - new Date(a.date)); // Plus récent en premier
+
+      if (interventions.length === 0) {
+        alert('Aucune intervention trouvée pour cette personne.');
+        return;
+      }
+
+      // Générer le contenu selon la section
+      const titre = getTitreSection(section);
+      const html = genererHTMLHistoriqueSection(interventions, section, titre, personne);
+
+      // Afficher dans un modal (même s'il n'y a pas de données, le modal affichera un message approprié)
+      afficherModalHistoriqueSection(html);
+    } catch (error) {
+      console.error('Erreur lors de l\'affichage de l\'historique:', error);
+      alert('Erreur lors de l\'affichage de l\'historique.');
+    }
+  }
+
+  /**
+   * Retourne le titre d'une section
+   */
+  function getTitreSection(section) {
+    const titres = {
+      'infos-perso': 'Informations Personnelles',
+      'transmission': 'Données de Transmission',
+      'type-intervention': 'Type d\'intervention',
+      'accompagnement': 'Accompagnement',
+      'distribution': 'Distribution',
+      'contenu': 'Contenu de la transmission'
+    };
+    return titres[section] || section;
+  }
+
+  /**
+   * Vérifie si une intervention a des données pour une section
+   */
+  function interventionADesDonnees(intervention, section) {
+    switch (section) {
+      case 'transmission':
+        return (intervention.lieu && intervention.lieu.trim() !== '') || 
+               (intervention.adresse && intervention.adresse.trim() !== '') ||
+               (intervention.ville && intervention.ville.trim() !== '') ||
+               (intervention.signalement && intervention.signalement.trim() !== '');
+      
+      case 'type-intervention':
+        return (intervention.typeIntervention && intervention.typeIntervention.trim() !== '') ||
+               (intervention.typeTransmission && intervention.typeTransmission.trim() !== '');
+      
+      case 'accompagnement':
+        // Si c'est un tableau (ancien format)
+        if (Array.isArray(intervention.accompagnement)) {
+          return intervention.accompagnement.length > 0;
+        }
+        // Si c'est un objet (nouveau format)
+        if (intervention.accompagnement && typeof intervention.accompagnement === 'object') {
+          return Object.values(intervention.accompagnement).some(val => val === true);
+        }
+        return false;
+      
+      case 'distribution':
+        // Si c'est un tableau (ancien format)
+        if (Array.isArray(intervention.distribution)) {
+          return intervention.distribution.length > 0;
+        }
+        // Si c'est un objet (nouveau format)
+        if (intervention.distribution && typeof intervention.distribution === 'object') {
+          return Object.values(intervention.distribution).some(val => val === true);
+        }
+        return false;
+      
+      case 'contenu':
+        return (intervention.contenu && intervention.contenu.trim() !== '') ||
+               (intervention.transmission && intervention.transmission.trim() !== '') ||
+               (intervention.observations && intervention.observations.trim() !== '');
+      
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Génère le HTML pour l'historique d'une section
+   */
+  function genererHTMLHistoriqueSection(interventions, section, titre, personne) {
+    // Filtrer les interventions qui ont des données pour cette section
+    const interventionsAvecDonnees = interventions.filter(interv => 
+      interventionADesDonnees(interv, section)
+    );
+
+    let html = `
+      <div style="max-height: 500px; overflow-y: auto;">
+        <h3 style="margin-top: 0;">Historique - ${titre}</h3>
+        <p style="color: #666; margin-bottom: 1rem;">
+          <strong>${personne.nom || ''} ${personne.prenom || ''}</strong>
+        </p>
+    `;
+
+    if (interventionsAvecDonnees.length === 0) {
+      html += `
+        <div style="padding: 2rem; text-align: center; color: #9ca3af;">
+          <p>Aucune donnée enregistrée pour cette section.</p>
+        </div>
+      `;
+    } else {
+      html += `
+        <p style="color: #666; margin-bottom: 1rem; font-size: 0.9rem;">
+          ${interventionsAvecDonnees.length} intervention(s) avec données
+        </p>
+      `;
+
+      interventionsAvecDonnees.forEach((interv, index) => {
+        const isRecent = index === 0;
+        const dateFormatee = new Date(interv.date).toLocaleDateString('fr-FR');
+        
+        html += `
+          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; ${isRecent ? 'background: #eff6ff; border-color: #2563eb;' : 'background: white;'}">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <strong style="color: #2563eb;">📅 ${dateFormatee}</strong>
+              ${isRecent ? '<span style="color: #2563eb; font-size: 0.9rem;">✨ Plus récent</span>' : ''}
+            </div>
+            ${genererContenuSection(interv, section)}
+          </div>
+        `;
+      });
+    }
+
+    html += `</div>`;
+    return html;
+  }
+
+  /**
+   * Génère le contenu spécifique pour chaque section
+   */
+  function genererContenuSection(intervention, section) {
+    switch (section) {
+      case 'transmission':
+        let htmlTransmission = '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
+        
+        if (intervention.typeTransmission && intervention.typeTransmission.trim() !== '') {
+          htmlTransmission += `<p style="margin: 0;"><strong>Type:</strong> ${intervention.typeTransmission}</p>`;
+        }
+        
+        if (intervention.lieu && intervention.lieu.trim() !== '') {
+          htmlTransmission += `<p style="margin: 0;"><strong>Lieu:</strong> ${intervention.lieu}</p>`;
+        }
+        
+        if (intervention.adresse && intervention.adresse.trim() !== '') {
+          htmlTransmission += `<p style="margin: 0;"><strong>Adresse:</strong> ${intervention.adresse}</p>`;
+        }
+        
+        if (intervention.ville && intervention.ville.trim() !== '') {
+          htmlTransmission += `<p style="margin: 0;"><strong>Ville:</strong> ${intervention.ville}</p>`;
+        }
+        
+        if (intervention.signalement && intervention.signalement.trim() !== '') {
+          htmlTransmission += `<p style="margin: 0;"><strong>Signalement:</strong> ${intervention.signalement}</p>`;
+        }
+        
+        htmlTransmission += '</div>';
+        return htmlTransmission;
+      
+      case 'type-intervention':
+        const typeInterv = intervention.typeIntervention || intervention.typeTransmission;
+        if (typeInterv && typeInterv.trim() !== '') {
+          return `<p style="margin: 0;"><strong>Type:</strong> ${typeInterv}</p>`;
+        }
+        return '<p style="margin: 0; color: #9ca3af;">Aucune donnée</p>';
+      
+      case 'accompagnement':
+        let accompagnements = [];
+        
+        // Format objet (nouveau)
+        if (intervention.accompagnement && typeof intervention.accompagnement === 'object' && !Array.isArray(intervention.accompagnement)) {
+          const labels = {
+            ecoute: 'Écoute',
+            orientation: 'Orientation',
+            admin: 'Démarches administratives',
+            medical: 'Médical',
+            hebergement: 'Hébergement',
+            autre: 'Autre'
+          };
+          accompagnements = Object.entries(intervention.accompagnement)
+            .filter(([key, val]) => val === true)
+            .map(([key]) => labels[key] || key);
+        }
+        // Format tableau (ancien)
+        else if (Array.isArray(intervention.accompagnement)) {
+          accompagnements = intervention.accompagnement;
+        }
+        
+        if (accompagnements.length > 0) {
+          return `
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+              ${accompagnements.map(acc => `<span style="display: inline-block; background: #dbeafe; color: #1e40af; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.9rem;">✓ ${acc}</span>`).join('')}
+            </div>
+          `;
+        }
+        return '<p style="margin: 0; color: #9ca3af;">Aucun accompagnement</p>';
+      
+      case 'distribution':
+        let distributions = [];
+        
+        // Format objet (nouveau)
+        if (intervention.distribution && typeof intervention.distribution === 'object' && !Array.isArray(intervention.distribution)) {
+          const labels = {
+            alimentaire: 'Alimentaire',
+            vestimentaire: 'Vestimentaire',
+            hygiene: 'Hygiène',
+            couvertures: 'Couvertures',
+            duvet: 'Duvet',
+            autre: 'Autre'
+          };
+          distributions = Object.entries(intervention.distribution)
+            .filter(([key, val]) => val === true)
+            .map(([key]) => labels[key] || key);
+        }
+        // Format tableau (ancien)
+        else if (Array.isArray(intervention.distribution)) {
+          distributions = intervention.distribution;
+        }
+        
+        if (distributions.length > 0) {
+          return `
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+              ${distributions.map(dist => `<span style="display: inline-block; background: #dcfce7; color: #166534; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.9rem;">📦 ${dist}</span>`).join('')}
+            </div>
+          `;
+        }
+        return '<p style="margin: 0; color: #9ca3af;">Aucune distribution</p>';
+      
+      case 'contenu':
+        const contenu = intervention.contenu || intervention.transmission || intervention.observations || '';
+        if (contenu.trim() !== '') {
+          return `
+            <div style="background: #f9fafb; padding: 0.75rem; border-radius: 4px; border-left: 3px solid #2563eb;">
+              <p style="margin: 0; white-space: pre-wrap; color: #374151;">${contenu}</p>
+            </div>
+          `;
+        }
+        return '<p style="margin: 0; color: #9ca3af;">Aucun contenu</p>';
+      
+      default:
+        return '<p>Section non reconnue</p>';
+    }
+  }
+
+  /**
+   * Affiche un modal avec le contenu d'historique
+   */
+  function afficherModalHistoriqueSection(html) {
+    // Variable pour éviter les double-clics
+    let isClosing = false;
+    
+    // Créer le modal
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    `;
+    
+    const content = document.createElement('div');
+    content.style.cssText = `
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      max-width: 800px;
+      width: 90%;
+    `;
+    
+    // Insérer le contenu
+    content.innerHTML = html;
+    
+    // Fonction pour fermer le modal
+    const closeModal = () => {
+      if (isClosing) return;
+      isClosing = true;
+      
+      modal.style.opacity = '0';
+      modal.style.transition = 'opacity 0.2s ease-out';
+      
+      setTimeout(() => {
+        if (document.body.contains(modal)) {
+          document.body.removeChild(modal);
+        }
+      }, 200);
+    };
+    
+    // Créer le bouton de fermeture
+    const footerDiv = document.createElement('div');
+    footerDiv.style.cssText = 'margin-top: 1.5rem; text-align: right;';
+    
+    const btnClose = document.createElement('button');
+    btnClose.textContent = 'Fermer';
+    btnClose.type = 'button';
+    btnClose.style.cssText = 'background: #2563eb; color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1rem;';
+    
+    btnClose.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeModal();
+    });
+    
+    footerDiv.appendChild(btnClose);
+    content.appendChild(footerDiv);
+    
+    content.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+    });
+    
+    modal.appendChild(content);
+    
+    modal.style.opacity = '0';
+    document.body.appendChild(modal);
+    
+    requestAnimationFrame(() => {
+      modal.style.transition = 'opacity 0.2s ease-in';
+      modal.style.opacity = '1';
+    });
+    
+    modal.addEventListener('mousedown', (e) => {
+      if (e.target === modal) {
+        e.preventDefault();
+        closeModal();
       }
     });
   }
@@ -366,6 +764,7 @@
   window.nettoyerHistorique = nettoyerHistorique;
   window.migrerVersHistorique = migrerVersHistorique;
   window.afficherHistoriqueModal = afficherHistoriqueModal;
+  window.afficherHistoriqueInterventions = afficherHistoriqueInterventions;
 
   console.log('✅ Système d\'historisation des informations chargé');
 })();

@@ -4,6 +4,32 @@
  */
 
 /**
+ * Vérifie si une personne a l'option Attention cochée dans au moins une intervention
+ */
+function personneAAttention(personne) {
+  if (!personne) return false;
+  
+  // Vérifier dans toutes les interventions de la personne
+  const toutesInterventions = [
+    ...(personne.transmissions || []),
+    ...(personne.adp || []),
+    ...(personne.pointAccueil || [])
+  ];
+  
+  return toutesInterventions.some(intervention => intervention.attention === true);
+}
+
+/**
+ * Génère le badge Attention HTML si nécessaire
+ */
+function genererBadgeAttention(personne) {
+  if (personneAAttention(personne)) {
+    return '<span class="badge badge-attention" title="Attention requise">⚠️ ATTENTION</span>';
+  }
+  return '';
+}
+
+/**
  * Calcule la distance de Levenshtein entre deux chaînes
  * @param {string} str1 - Première chaîne
  * @param {string} str2 - Deuxième chaîne
@@ -405,8 +431,11 @@ async function afficherToutesLesPersonnesTransmissions() {
   const personnes = await chargerToutesLesPersonnesAvecInterventions();
   const selectedDate = document.getElementById('transmissions-date')?.value;
 
+  // Filtrer les personnes archivées
+  const personnesNonArchivees = personnes.filter(p => !p.archive);
+
   // Appliquer les filtres
-  const personnesFiltrees = applyTransmissionsFilters(personnes);
+  const personnesFiltrees = applyTransmissionsFilters(personnesNonArchivees);
 
   if (personnesFiltrees.length === 0) {
     container.innerHTML = '<p class="empty-message">Aucune personne pour le moment</p>';
@@ -417,6 +446,8 @@ async function afficherToutesLesPersonnesTransmissions() {
     const badges = genererBadgesSourcesParDate(personne, selectedDate);
     const stats = compterInterventionsParDate(personne, selectedDate, 'transmissions');
     const badgeCount = genererBadgeInterventions(stats, selectedDate);
+    const badgeAttention = genererBadgeAttention(personne);
+    const hasAttention = personneAAttention(personne);
     
     // Récupérer les infos historiques valides pour cette date
     const infosALaDate = window.getInfosALaDate ? 
@@ -436,10 +467,11 @@ async function afficherToutesLesPersonnesTransmissions() {
     const personneNom = personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim() || 'Non renseigné';
 
     return `
-      <div class="transmission-card" data-personne-id="${personne.id}">
+      <div class="transmission-card ${hasAttention ? 'has-attention' : ''}" data-personne-id="${personne.id}">
         <div class="card-header">
           <h3>${personneNom}</h3>
           <div class="card-badges">
+            ${badgeAttention}
             ${badgeCount}
             ${badges}
           </div>
@@ -496,8 +528,11 @@ async function afficherToutesLesPersonnesADP() {
 
   const personnes = await chargerToutesLesPersonnesAvecInterventions();
 
+  // Filtrer les personnes archivées
+  const personnesNonArchivees = personnes.filter(p => !p.archive);
+
   // Appliquer les filtres
-  const personnesFiltrees = applyAdpFilters(personnes);
+  const personnesFiltrees = applyAdpFilters(personnesNonArchivees);
 
   if (personnesFiltrees.length === 0) {
     container.innerHTML = '<p class="empty-message">Aucune personne pour le moment</p>';
@@ -509,6 +544,8 @@ async function afficherToutesLesPersonnesADP() {
     const badges = genererBadgesSourcesParDate(personne, selectedDate);
     const stats = compterInterventionsParDate(personne, selectedDate, 'adp');
     const badgeCount = genererBadgeInterventions(stats, selectedDate);
+    const badgeAttention = genererBadgeAttention(personne);
+    const hasAttention = personneAAttention(personne);
     
     // Récupérer les infos historiques valides pour cette date
     const infosALaDate = window.getInfosALaDate ? 
@@ -528,10 +565,11 @@ async function afficherToutesLesPersonnesADP() {
     const personneNom = personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim() || 'Non renseigné';
 
     return `
-      <div class="transmission-card" data-personne-id="${personne.id}">
+      <div class="transmission-card ${hasAttention ? 'has-attention' : ''}" data-personne-id="${personne.id}">
         <div class="card-header">
           <h3>${personneNom}</h3>
           <div class="card-badges">
+            ${badgeAttention}
             ${badgeCount}
             ${badges}
           </div>
@@ -588,8 +626,11 @@ async function afficherToutesLesPersonnesPA() {
 
   const personnes = await chargerToutesLesPersonnesAvecInterventions();
 
+  // Filtrer les personnes archivées
+  const personnesNonArchivees = personnes.filter(p => !p.archive);
+
   // Appliquer les filtres
-  const personnesFiltrees = applyPAFilters(personnes);
+  const personnesFiltrees = applyPAFilters(personnesNonArchivees);
 
   if (personnesFiltrees.length === 0) {
     container.innerHTML = '<p class="empty-message">Aucune personne pour le moment</p>';
@@ -601,6 +642,8 @@ async function afficherToutesLesPersonnesPA() {
     const badges = genererBadgesSourcesParDate(personne, selectedDate);
     const stats = compterInterventionsParDate(personne, selectedDate, 'pointAccueil');
     const badgeCount = genererBadgeInterventions(stats, selectedDate);
+    const badgeAttention = genererBadgeAttention(personne);
+    const hasAttention = personneAAttention(personne);
     
     // Récupérer les infos historiques valides pour cette date
     const infosALaDate = window.getInfosALaDate ? 
@@ -620,10 +663,11 @@ async function afficherToutesLesPersonnesPA() {
     const personneNom = personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim() || 'Non renseigné';
 
     return `
-      <div class="transmission-card" data-personne-id="${personne.id}">
+      <div class="transmission-card ${hasAttention ? 'has-attention' : ''}" data-personne-id="${personne.id}">
         <div class="card-header">
           <h3>${personneNom}</h3>
           <div class="card-badges">
+            ${badgeAttention}
             ${badgeCount}
             ${badges}
           </div>
@@ -673,6 +717,7 @@ async function afficherToutesLesPersonnesPA() {
 
 // Exports
 if (typeof window !== 'undefined') {
+  window.fuzzyMatch = fuzzyMatch;
   window.chargerToutesLesPersonnesAvecInterventions = chargerToutesLesPersonnesAvecInterventions;
   window.genererBadgesSources = genererBadgesSources;
   window.genererBadgesSourcesParDate = genererBadgesSourcesParDate;
@@ -688,6 +733,7 @@ if (typeof window !== 'undefined') {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    fuzzyMatch,
     chargerToutesLesPersonnesAvecInterventions,
     genererBadgesSources,
     genererBadgesSourcesParDate,

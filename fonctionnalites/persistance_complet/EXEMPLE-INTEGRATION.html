@@ -29,7 +29,7 @@
 -->
 
 <button 
-  onclick="ouvrirGestionDoublons()" 
+  id="btn-ouvrir-doublons"
   style="
     position: fixed;
     bottom: 100px;
@@ -45,11 +45,23 @@
     transition: all 0.3s;
     z-index: 1000;
   "
-  onmouseover="this.style.transform='translateY(-2px)'"
-  onmouseout="this.style.transform='translateY(0)'"
 >
   🔍 Gérer les doublons
 </button>
+
+<script>
+  // Attacher l'event listener pour le bouton
+  document.getElementById('btn-ouvrir-doublons')?.addEventListener('click', () => {
+    ouvrirGestionDoublons();
+  });
+  
+  // Effets hover via JavaScript
+  const btn = document.getElementById('btn-ouvrir-doublons');
+  if (btn) {
+    btn.addEventListener('mouseenter', () => btn.style.transform = 'translateY(-2px)');
+    btn.addEventListener('mouseleave', () => btn.style.transform = 'translateY(0)');
+  }
+</script>
 
 <!-- 
   ALTERNATIVE : AJOUTER UN LIEN DANS LE MENU DE NAVIGATION
@@ -59,10 +71,18 @@
 
 <nav>
   <!-- Vos liens existants -->
-  <a href="#" onclick="ouvrirGestionDoublons(); return false;">
+  <a href="#" id="nav-link-doublons">
     🔍 Doublons
   </a>
 </nav>
+
+<script>
+  // Attacher l'event listener pour le lien
+  document.getElementById('nav-link-doublons')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    ouvrirGestionDoublons();
+  });
+</script>
 
 <!-- 
   MODIFICATION DU CODE EXISTANT
@@ -210,25 +230,42 @@ window.addEventListener('load', async () => {
 -->
 
 <div class="menu-admin">
-  <button onclick="toggleMenuAdmin()">⚙️ Administration</button>
+  <button id="btn-toggle-menu-admin">⚙️ Administration</button>
   <div id="menu-admin-dropdown" style="display: none;">
-    <a href="#" onclick="ouvrirGestionDoublons(); return false;">
+    <a href="#" id="menu-link-gerer-doublons">
       🔍 Gérer les doublons
     </a>
-    <a href="#" onclick="afficherStatistiquesDoublons(); return false;">
+    <a href="#" id="menu-link-stats-doublons">
       📊 Statistiques doublons
     </a>
-    <a href="#" onclick="exporterRapportDoublons(); return false;">
+    <a href="#" id="menu-link-export-doublons">
       💾 Exporter le rapport
     </a>
   </div>
 </div>
 
 <script>
-function toggleMenuAdmin() {
+// Toggle menu admin
+document.getElementById('btn-toggle-menu-admin')?.addEventListener('click', () => {
   const menu = document.getElementById('menu-admin-dropdown');
   menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-}
+});
+
+// Liens du menu
+document.getElementById('menu-link-gerer-doublons')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  ouvrirGestionDoublons();
+});
+
+document.getElementById('menu-link-stats-doublons')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  afficherStatistiquesDoublons();
+});
+
+document.getElementById('menu-link-export-doublons')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  exporterRapportDoublons();
+});
 
 async function afficherStatistiquesDoublons() {
   const rapport = await genererRapportDoublons();
