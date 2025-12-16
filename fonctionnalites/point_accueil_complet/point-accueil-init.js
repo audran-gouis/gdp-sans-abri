@@ -23,11 +23,53 @@ function getDateParDefaut() {
  * Trouve une intervention Point Accueil par personneId et date
  */
 async function findPAByPersonAndDate(personneId, date) {
-  const interventions = await window.getInterventionsByPersonneAndDate(personneId, date);
-  console.log('🔍 Recherche PA pour personneId:', personneId, 'date:', date);
+  // S'assurer que personneId est un nombre
+  const pid = typeof personneId === 'string' ? parseInt(personneId, 10) : personneId;
+  const interventions = await window.getInterventionsByPersonneAndDate(pid, date);
+  console.log('🔍 Recherche PA pour personneId:', pid, 'date:', date, '- trouvé:', interventions?.length || 0, 'interventions');
   const found = interventions.find(i => i.type === 'pointAccueil');
   console.log('🔍 PA trouvée:', found ? `ID ${found.id}` : 'Aucune');
   return found;
+}
+
+/**
+ * Trouve une intervention Point Accueil par personneId, date ET typeTransmission
+ */
+async function findPAByPersonDateAndType(personneId, date, typeTransmission) {
+  // S'assurer que personneId est un nombre
+  const pid = typeof personneId === 'string' ? parseInt(personneId, 10) : personneId;
+  
+  // Vérifier que les paramètres requis sont valides
+  if (!pid || !date) {
+    console.warn('🔍 Paramètres invalides pour findPAByPersonDateAndType:', { pid, date, typeTransmission });
+    return null;
+  }
+  
+  // Si typeTransmission est vide, utiliser findPAByPersonAndDate
+  if (!typeTransmission || (typeof typeTransmission === 'string' && typeTransmission.trim() === '')) {
+    console.log('🔍 typeTransmission vide, utilisation de findPAByPersonAndDate');
+    return await findPAByPersonAndDate(pid, date);
+  }
+  
+  console.log('🔍 Recherche PA pour personneId:', pid, 'date:', date, 'typeTransmission:', typeTransmission);
+  
+  try {
+    // Utiliser la nouvelle fonction si disponible
+    if (typeof window.getInterventionByFullKey === 'function') {
+      const intervention = await window.getInterventionByFullKey(pid, date, 'pointAccueil', typeTransmission);
+      console.log('🔍 Résultat via getInterventionByFullKey:', intervention ? `ID ${intervention.id}` : 'Aucune');
+      return intervention;
+    }
+    
+    // Fallback : chercher parmi toutes les interventions de cette date
+    const interventions = await window.getInterventionsByPersonneAndDate(pid, date);
+    const found = interventions.find(i => i.type === 'pointAccueil' && i.typeTransmission === typeTransmission);
+    console.log('🔍 Résultat via filtrage:', found ? `ID ${found.id}` : 'Aucune');
+    return found;
+  } catch (error) {
+    console.error('Erreur lors de la recherche PA:', error);
+    return null;
+  }
 }
 
 /**
@@ -58,11 +100,198 @@ async function getDerniereAdressePA(personneId) {
 }
 
 /**
+ * Réinitialise les champs du formulaire PA pour une nouvelle transmission
+ * @param {string} date - La date au format YYYY-MM-DD
+ * @param {string} typeTransmission - Le type de transmission (Jour/Nuit/Coordo)
+ */
+function resetPAFormFieldsForNewTransmission(date, typeTransmission) {
+  console.log('🔄 Réinitialisation du formulaire PA pour nouvelle transmission');
+  
+  // Réinitialiser l'ID d'édition
+  const editIdField = document.getElementById('edit-pa-id');
+  if (editIdField) editIdField.value = '';
+  
+  // Mettre à jour la date et le type de transmission
+  const dateField = document.getElementById('form-pa-date');
+  if (dateField) dateField.value = date;
+  
+  const typeField = document.getElementById('form-pa-type-transmission');
+  if (typeField) typeField.value = typeTransmission;
+  
+  // Réinitialiser les champs de transmission (garder les infos personnelles)
+  const fieldsToReset = [
+    'form-pa-lieu-rencontre',
+    'form-pa-aller-vers',
+    'form-pa-commentaires'
+  ];
+  
+  fieldsToReset.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (field) field.value = '';
+  });
+  
+  // Réinitialiser les checkboxes d'accompagnement
+  const accompCheckboxes = document.querySelectorAll('#modal-point-accueil input[name="accompagnement"]');
+  accompCheckboxes.forEach(cb => cb.checked = false);
+  
+  // Réinitialiser les checkboxes de distribution
+  const distribCheckboxes = document.querySelectorAll('#modal-point-accueil input[name="distribution"]');
+  distribCheckboxes.forEach(cb => cb.checked = false);
+  
+  // Réinitialiser les checkboxes de motif intervention
+  const motifCheckboxes = document.querySelectorAll('#modal-point-accueil input[name="motifIntervention"]');
+  motifCheckboxes.forEach(cb => cb.checked = false);
+  
+  // Réinitialiser le checkbox Attention
+  const attentionCheckbox = document.getElementById('form-pa-attention');
+  if (attentionCheckbox) attentionCheckbox.checked = false;
+  
+  console.log('✅ Formulaire PA réinitialisé pour nouvelle transmission');
+}
+
+/**
+ * Charge les données Point Accueil pour une date et un type donnés
+ * @param {number} personneId - L'ID de la personne
+ * @param {string} date - La date au format YYYY-MM-DD
+ * @param {string} typeTransmission - Le type de transmission (Jour/Nuit/Coordo)
+ */
+async function loadPADataForDate(personneId, date, typeTransmission) {
+  // S'assurer que personneId est un nombre
+  const pid = typeof personneId === 'string' ? parseInt(personneId, 10) : personneId;
+  
+  console.log('📅 loadPADataForDate appelé avec:', { personneId: pid, date, typeTransmission });
+  
+  try {
+    // Chercher si une fiche PA existe pour cette personne à cette date avec ce type
+    const existingPA = await findPAByPersonDateAndType(pid, date, typeTransmission);
+    
+    console.log('📋 PA trouvée:', existingPA ? `ID ${existingPA.id}` : 'Aucune', existingPA);
+    
+    // Mettre à jour le sélecteur de type de transmission
+    const typeSelect = document.getElementById('form-pa-type-transmission');
+    if (typeSelect && typeTransmission) {
+      typeSelect.value = typeTransmission;
+    }
+    const formPA = document.getElementById('form-point-accueil');
+    
+    if (existingPA) {
+      // Remplir les champs de l'intervention existante
+      document.getElementById('form-pa-type-transmission').value = existingPA.typeTransmission || '';
+      document.getElementById('form-pa-adresse').value = existingPA.lieu || '';
+      document.getElementById('form-pa-ville').value = existingPA.ville || '';
+      document.getElementById('form-pa-signalement').value = existingPA.signalement || '';
+      document.getElementById('form-pa-transmission').value = existingPA.observations || '';
+      
+      // Checkbox Attention
+      if (document.getElementById('form-pa-attention')) {
+        document.getElementById('form-pa-attention').checked = existingPA.attention || false;
+      }
+      
+      // Checkboxes Orly
+      if (existingPA.orly) {
+        ['form-pa-premier-contact', 'form-pa-personne-presente', 'form-pa-pnt', 'form-pa-maraude', 'form-pa-veille', 'form-pa-refus-contact'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            const key = id.replace('form-pa-', '').replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+            el.checked = existingPA.orly[key] || false;
+          }
+        });
+      } else {
+        ['form-pa-premier-contact', 'form-pa-personne-presente', 'form-pa-pnt', 'form-pa-maraude', 'form-pa-veille', 'form-pa-refus-contact'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.checked = false;
+        });
+      }
+      
+      // Checkboxes Accompagnement
+      if (existingPA.accompagnement) {
+        const accompMap = {
+          'form-pa-accomp-hygiene': 'hygiene',
+          'form-pa-accomp-accueil-jour': 'accueilJour',
+          'form-pa-accomp-admin': 'admin',
+          'form-pa-accomp-hebergement': 'hebergement',
+          'form-pa-accomp-medical': 'medical'
+        };
+        Object.entries(accompMap).forEach(([id, key]) => {
+          const el = document.getElementById(id);
+          if (el) el.checked = existingPA.accompagnement[key] || false;
+        });
+      } else {
+        ['form-pa-accomp-hygiene', 'form-pa-accomp-accueil-jour', 'form-pa-accomp-admin', 'form-pa-accomp-hebergement', 'form-pa-accomp-medical'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.checked = false;
+        });
+      }
+      
+      // Checkboxes Distribution
+      if (existingPA.distribution) {
+        const distribMap = {
+          'form-pa-distrib-boisson': 'boisson',
+          'form-pa-distrib-alimentaire': 'alimentaire',
+          'form-pa-distrib-duvet': 'duvet',
+          'form-pa-distrib-couverture-survie': 'couvertureSurvie',
+          'form-pa-distrib-bonnets-gants': 'bonnetsGants',
+          'form-pa-distrib-sous-vetements': 'sousVetements',
+          'form-pa-distrib-kits-hygiene': 'kitsHygiene'
+        };
+        Object.entries(distribMap).forEach(([id, key]) => {
+          const el = document.getElementById(id);
+          if (el) el.checked = existingPA.distribution[key] || false;
+        });
+      } else {
+        ['form-pa-distrib-boisson', 'form-pa-distrib-alimentaire', 'form-pa-distrib-duvet', 'form-pa-distrib-couverture-survie', 'form-pa-distrib-bonnets-gants', 'form-pa-distrib-sous-vetements', 'form-pa-distrib-kits-hygiene'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.checked = false;
+        });
+      }
+      
+      formPA.dataset.editId = existingPA.id;
+      
+      // Afficher le bouton de suppression en mode édition
+      const btnSupprimer = document.getElementById('btn-supprimer-pa');
+      if (btnSupprimer) btnSupprimer.style.display = 'inline-block';
+    } else {
+      // Pas de transmission pour cette date - réinitialiser les champs
+      document.getElementById('form-pa-type-transmission').value = '';
+      document.getElementById('form-pa-signalement').value = '';
+      document.getElementById('form-pa-transmission').value = '';
+      
+      // Cacher le bouton de suppression
+      const btnSupprimer = document.getElementById('btn-supprimer-pa');
+      if (btnSupprimer) btnSupprimer.style.display = 'none';
+      
+      // Charger automatiquement la dernière adresse utilisée
+      const derniereAdresse = await getDerniereAdressePA(personneId);
+      if (derniereAdresse) {
+        document.getElementById('form-pa-adresse').value = derniereAdresse.adresse || '';
+        document.getElementById('form-pa-ville').value = derniereAdresse.ville || '';
+      } else {
+        document.getElementById('form-pa-adresse').value = '';
+        document.getElementById('form-pa-ville').value = '';
+      }
+      
+      // Décocher toutes les checkboxes de transmission
+      document.querySelectorAll('#modal-point-accueil .checkbox-group input[type="checkbox"]').forEach(cb => cb.checked = false);
+      
+      delete formPA.dataset.editId;
+    }
+    
+    console.log('✅ Données PA chargées pour date:', date);
+  } catch (error) {
+    console.error('Erreur lors du chargement des données PA pour la date:', error);
+  }
+}
+window.loadPADataForDate = loadPADataForDate;
+
+/**
  * Édite une intervention Point Accueil pour une personne
  * @param {number} personneId - L'ID de la personne dans la DB unifiée
+ * @param {string} date - Date optionnelle
+ * @param {boolean} consultationMode - Mode consultation
+ * @param {string} newTypeTransmission - Type à pré-sélectionner pour une nouvelle PA
  */
-async function modifierFichePA(personneId) {
-  console.log('📝 Compléter le Point Accueil pour personne ID:', personneId);
+async function modifierFichePA(personneId, date = null, consultationMode = false, newTypeTransmission = null) {
+  console.log('📝 Compléter le Point Accueil pour personne ID:', personneId, 'newType:', newTypeTransmission);
   
   try {
     // Charger la personne depuis la DB unifiée
@@ -79,7 +308,19 @@ async function modifierFichePA(personneId) {
     console.log('📅 Date sélectionnée:', selectedDate);
     
     // Chercher si une fiche PA existe pour cette personne à cette date
-    const existingPA = await findPAByPersonAndDate(personneId, selectedDate);
+    // Si newTypeTransmission est fourni, on cherche pour ce type spécifique
+    let existingPA = null;
+    if (newTypeTransmission) {
+      // Chercher une PA pour le type spécifique demandé
+      existingPA = await findPAByPersonDateAndType(personneId, selectedDate, newTypeTransmission.charAt(0).toUpperCase() + newTypeTransmission.slice(1));
+      console.log('🆕 Création nouvelle PA type:', newTypeTransmission, '- Existante:', existingPA ? 'oui' : 'non');
+    } else {
+      // Comportement normal : chercher la première PA pour cette date (tous types)
+      existingPA = await findPAByPersonAndDate(personneId, selectedDate);
+    }
+    
+    // Déterminer le type de transmission courant
+    let currentTypeTransmission = existingPA?.typeTransmission || (newTypeTransmission ? newTypeTransmission.charAt(0).toUpperCase() + newTypeTransmission.slice(1) : 'Jour');
     
     console.log('📋 PA existante:', existingPA ? `ID ${existingPA.id}` : 'Aucune');
     
@@ -130,20 +371,44 @@ async function modifierFichePA(personneId) {
       
       // Checkboxes Accompagnement
       if (existingPA.accompagnement) {
-        document.getElementById('form-pa-accomp-ecoute').checked = existingPA.accompagnement.ecoute || false;
-        document.getElementById('form-pa-accomp-orientation').checked = existingPA.accompagnement.orientation || false;
-        document.getElementById('form-pa-accomp-admin').checked = existingPA.accompagnement.admin || false;
-        document.getElementById('form-pa-accomp-medical').checked = existingPA.accompagnement.medical || false;
-        document.getElementById('form-pa-accomp-hebergement').checked = existingPA.accompagnement.hebergement || false;
+        const hygieneEl = document.getElementById('form-pa-accomp-hygiene');
+        if (hygieneEl) hygieneEl.checked = existingPA.accompagnement.hygiene || false;
+        
+        const accueilJourEl = document.getElementById('form-pa-accomp-accueil-jour');
+        if (accueilJourEl) accueilJourEl.checked = existingPA.accompagnement.accueilJour || false;
+        
+        const adminEl = document.getElementById('form-pa-accomp-admin');
+        if (adminEl) adminEl.checked = existingPA.accompagnement.admin || false;
+        
+        const hebergementEl = document.getElementById('form-pa-accomp-hebergement');
+        if (hebergementEl) hebergementEl.checked = existingPA.accompagnement.hebergement || false;
+        
+        const medicalEl = document.getElementById('form-pa-accomp-medical');
+        if (medicalEl) medicalEl.checked = existingPA.accompagnement.medical || false;
       }
       
       // Checkboxes Distribution
       if (existingPA.distribution) {
-        document.getElementById('form-pa-distrib-alimentaire').checked = existingPA.distribution.alimentaire || false;
-        document.getElementById('form-pa-distrib-vestimentaire').checked = existingPA.distribution.vestimentaire || false;
-        document.getElementById('form-pa-distrib-hygiene').checked = existingPA.distribution.hygiene || false;
-        document.getElementById('form-pa-distrib-couvertures').checked = existingPA.distribution.couvertures || false;
-        document.getElementById('form-pa-distrib-duvet').checked = existingPA.distribution.duvet || false;
+        const boissonEl = document.getElementById('form-pa-distrib-boisson');
+        if (boissonEl) boissonEl.checked = existingPA.distribution.boisson || false;
+        
+        const alimentaireEl = document.getElementById('form-pa-distrib-alimentaire');
+        if (alimentaireEl) alimentaireEl.checked = existingPA.distribution.alimentaire || false;
+        
+        const duvetEl = document.getElementById('form-pa-distrib-duvet');
+        if (duvetEl) duvetEl.checked = existingPA.distribution.duvet || false;
+        
+        const couvertureSurvieEl = document.getElementById('form-pa-distrib-couverture-survie');
+        if (couvertureSurvieEl) couvertureSurvieEl.checked = existingPA.distribution.couvertureSurvie || false;
+        
+        const bonnetsGantsEl = document.getElementById('form-pa-distrib-bonnets-gants');
+        if (bonnetsGantsEl) bonnetsGantsEl.checked = existingPA.distribution.bonnetsGants || false;
+        
+        const sousVetementsEl = document.getElementById('form-pa-distrib-sous-vetements');
+        if (sousVetementsEl) sousVetementsEl.checked = existingPA.distribution.sousVetements || false;
+        
+        const kitsHygieneEl = document.getElementById('form-pa-distrib-kits-hygiene');
+        if (kitsHygieneEl) kitsHygieneEl.checked = existingPA.distribution.kitsHygiene || false;
       }
       
       formPA.dataset.editId = existingPA.id;
@@ -155,7 +420,8 @@ async function modifierFichePA(personneId) {
     } else {
       // MODE CRÉATION : réinitialiser les champs d'intervention
       console.log('➕ Pas de fiche PA pour cette date - MODE CRÉATION');
-      document.getElementById('form-pa-type-transmission').value = '';
+      // Si un type est pré-sélectionné via newTypeTransmission, l'utiliser
+      document.getElementById('form-pa-type-transmission').value = newTypeTransmission ? newTypeTransmission.charAt(0).toUpperCase() + newTypeTransmission.slice(1) : '';
       document.getElementById('form-pa-signalement').value = '';
       document.getElementById('form-pa-transmission').value = '';
       
@@ -202,11 +468,49 @@ async function modifierFichePA(personneId) {
     if (modal) {
       modal.classList.add('show');
       
-      // Scroll vers le haut du formulaire
+      // RESTAURER les boutons Annuler et Enregistrer (pourraient être cachés par mode consultation)
+      const btnAnnuler = document.getElementById('pa-btn-annuler');
+      if (btnAnnuler) btnAnnuler.style.display = '';
+      const btnEnregistrer = modal.querySelector('button[type="submit"]');
+      if (btnEnregistrer) btnEnregistrer.style.display = '';
+      
+      // Retirer le bouton Fermer si présent (depuis mode consultation)
+      const btnFermerConsultation = modal.querySelector('.btn-fermer-consultation');
+      if (btnFermerConsultation) btnFermerConsultation.remove();
+      
+      // Scroll vers le haut du formulaire et replier la section Informations Personnelles
       setTimeout(() => {
         const modalBody = modal.querySelector('.modal-body');
         if (modalBody) {
           modalBody.scrollTop = 0;
+        }
+        // Réinitialiser les gestionnaires de collapse puis replier la section
+        if (window.initSectionCollapse) {
+          window.initSectionCollapse();
+        }
+        setTimeout(() => {
+          if (window.replierSection) {
+            window.replierSection('pa-section-info-perso');
+          }
+        }, 50);
+        
+        // Initialiser le navigateur de dates
+        if (window.initDateNavigator) {
+          window.initDateNavigator({
+            type: 'pointAccueil',
+            personneId: personneId,
+            currentDate: selectedDate,
+            currentTypeTransmission: currentTypeTransmission,
+            hideToday: consultationMode, // En mode consultation, ne pas afficher la date du jour
+            onDateChange: async (newDate, newTypeTransmission, isNewTransmission) => {
+              if (isNewTransmission) {
+                console.log('➕ Création nouvelle transmission PA:', newTypeTransmission, 'pour', newDate);
+                resetPAFormFieldsForNewTransmission(newDate, newTypeTransmission);
+              } else {
+                await loadPADataForDate(personneId, newDate, newTypeTransmission);
+              }
+            }
+          });
         }
       }, 100);
     }
@@ -215,11 +519,37 @@ async function modifierFichePA(personneId) {
     alert('Erreur lors du chargement des données');
   }
 }
+window.modifierFichePA = modifierFichePA;
 
 /**
  * Initialise les filtres Point Accueil
  */
 function initPAFilters() {
+  // Initialiser la date du jour pour le sélecteur
+  const dateInput = document.getElementById('pa-date');
+  if (dateInput && !dateInput.value) {
+    const today = new Date();
+    const currentHour = today.getHours();
+    
+    // Si entre minuit et 3h, utiliser la veille
+    if (currentHour >= 0 && currentHour < 3) {
+      today.setDate(today.getDate() - 1);
+    }
+    
+    dateInput.value = today.toISOString().split('T')[0];
+    console.log('📅 Date PA initialisée à:', dateInput.value);
+  }
+  
+  // Ajouter listener pour rechargement au changement de date
+  if (dateInput && !dateInput._listenersAttached) {
+    dateInput.addEventListener('change', () => {
+      if (typeof window.afficherToutesLesPersonnesPA === 'function') {
+        window.afficherToutesLesPersonnesPA();
+      }
+    });
+    dateInput._listenersAttached = true;
+  }
+  
   const filterNom = document.getElementById('pa-filter-nom');
   const filterPrenom = document.getElementById('pa-filter-prenom');
   const filterDdn = document.getElementById('pa-filter-ddn');
@@ -294,6 +624,19 @@ function initPointAccueilForm() {
     const btnSupprimer = document.getElementById('btn-supprimer-pa');
     if (btnSupprimer) btnSupprimer.style.display = 'none';
     
+    // RESTAURER les boutons Annuler et Enregistrer (pourraient être cachés par mode consultation)
+    const btnAnnulerModal = document.getElementById('pa-btn-annuler');
+    if (btnAnnulerModal) btnAnnulerModal.style.display = '';
+    const btnEnregistrer = modal.querySelector('button[type="submit"]');
+    if (btnEnregistrer) btnEnregistrer.style.display = '';
+    
+    // Retirer le bouton Fermer si présent (depuis mode consultation)
+    const btnFermerConsultation = modal.querySelector('.btn-fermer-consultation');
+    if (btnFermerConsultation) btnFermerConsultation.remove();
+    
+    // Cacher le navigateur de dates en mode création et réinitialiser le titre
+    if (window.resetModalTitle) window.resetModalTitle('pointAccueil');
+    
     const datePA = document.getElementById('pa-date');
     if (datePA && !datePA.value) {
       datePA.value = getDateParDefaut();
@@ -302,12 +645,22 @@ function initPointAccueilForm() {
     
     modal.classList.add('show');
     
-    // Scroll vers le haut du formulaire
+    // Scroll vers le haut du formulaire (sans replier la section pour Ajouter)
     setTimeout(() => {
       const modalBody = modal.querySelector('.modal-body');
       if (modalBody) {
         modalBody.scrollTop = 0;
       }
+      // Réinitialiser les gestionnaires de collapse
+      if (window.initSectionCollapse) {
+        window.initSectionCollapse();
+      }
+      // S'assurer que la section Informations Personnelles est dépliée pour Ajouter
+      setTimeout(() => {
+        if (window.deplierSection) {
+          window.deplierSection('pa-section-info-perso');
+        }
+      }, 50);
     }, 100);
   });
   
@@ -421,18 +774,20 @@ function initPointAccueilForm() {
           refusContact: document.getElementById('form-pa-refus-contact')?.checked || false
         },
         accompagnement: {
-          ecoute: document.getElementById('form-pa-accomp-ecoute')?.checked || false,
-          orientation: document.getElementById('form-pa-accomp-orientation')?.checked || false,
+          hygiene: document.getElementById('form-pa-accomp-hygiene')?.checked || false,
+          accueilJour: document.getElementById('form-pa-accomp-accueil-jour')?.checked || false,
           admin: document.getElementById('form-pa-accomp-admin')?.checked || false,
-          medical: document.getElementById('form-pa-accomp-medical')?.checked || false,
-          hebergement: document.getElementById('form-pa-accomp-hebergement')?.checked || false
+          hebergement: document.getElementById('form-pa-accomp-hebergement')?.checked || false,
+          medical: document.getElementById('form-pa-accomp-medical')?.checked || false
         },
         distribution: {
+          boisson: document.getElementById('form-pa-distrib-boisson')?.checked || false,
           alimentaire: document.getElementById('form-pa-distrib-alimentaire')?.checked || false,
-          vestimentaire: document.getElementById('form-pa-distrib-vestimentaire')?.checked || false,
-          hygiene: document.getElementById('form-pa-distrib-hygiene')?.checked || false,
-          couvertures: document.getElementById('form-pa-distrib-couvertures')?.checked || false,
-          duvet: document.getElementById('form-pa-distrib-duvet')?.checked || false
+          duvet: document.getElementById('form-pa-distrib-duvet')?.checked || false,
+          couvertureSurvie: document.getElementById('form-pa-distrib-couverture-survie')?.checked || false,
+          bonnetsGants: document.getElementById('form-pa-distrib-bonnets-gants')?.checked || false,
+          sousVetements: document.getElementById('form-pa-distrib-sous-vetements')?.checked || false,
+          kitsHygiene: document.getElementById('form-pa-distrib-kits-hygiene')?.checked || false
         }
       };
       
@@ -501,15 +856,33 @@ function initPointAccueilForm() {
         await window.updateIntervention(parseInt(editId), interventionData);
         console.log('✅ Intervention PA mise à jour, ID:', editId);
       } else {
-        // Créer une nouvelle intervention
-        const interventionId = await window.ajouterIntervention(interventionData);
-        console.log('✅ Nouvelle intervention PA créée, ID:', interventionId);
+        // Vérifier si une PA existe déjà avec ce typeTransmission pour cette date
+        const existingForType = await findPAByPersonDateAndType(
+          finalPersonneId, 
+          selectedDate, 
+          interventionData.typeTransmission
+        );
+        
+        if (existingForType) {
+          // Mettre à jour l'existante au lieu d'en créer une nouvelle
+          await window.updateIntervention(existingForType.id, interventionData);
+          console.log('✅ Intervention PA mise à jour (existante), ID:', existingForType.id);
+        } else {
+          // Créer une nouvelle intervention
+          const interventionId = await window.ajouterIntervention(interventionData);
+          console.log('✅ Nouvelle intervention PA créée, ID:', interventionId);
+        }
       }
       
       // Fermer la modal et rafraîchir
       closeModal();
       await window.afficherToutesLesPersonnesPA();
       console.log('✅ Point Accueil enregistré avec succès');
+      
+      // Rafraîchir le navigateur de dates pour mettre à jour les onglets
+      if (typeof window.refreshNavigator === 'function') {
+        await window.refreshNavigator('pointAccueil');
+      }
       
     } catch (error) {
       console.error('❌ Erreur lors de l\'enregistrement:', error);

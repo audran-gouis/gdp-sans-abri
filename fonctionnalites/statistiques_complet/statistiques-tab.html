@@ -90,6 +90,13 @@
                             <option value="inconnus">Inconnus</option>
                         </select>
                     </div>
+                    
+                    <div class="filter-group">
+                        <label for="stats-filter-attention">
+                            <input type="checkbox" id="stats-filter-attention" class="form-checkbox" style="margin-right: 0.5rem;">
+                            <span>Attention uniquement</span>
+                        </label>
+                    </div>
                 </div>
             </div>
             
@@ -248,9 +255,7 @@
                         <select id="stats-filter-type-transmission" class="filter-input" multiple size="5">
                             <option value="jour">Jour</option>
                             <option value="nuit">Nuit</option>
-                            <option value="information">Information</option>
-                            <option value="signalement">Signalement</option>
-                            <option value="suivi">Suivi</option>
+                            <option value="coordo">Coordo</option>
                         </select>
                     </div>
                     
@@ -298,22 +303,24 @@
                     <div class="filter-group">
                         <label for="stats-filter-accompagnement">Accompagnement :</label>
                         <select id="stats-filter-accompagnement" class="filter-input" multiple size="5">
-                            <option value="ecoute">Écoute</option>
-                            <option value="orientation">Orientation</option>
-                            <option value="admin">Démarche administrative</option>
+                            <option value="hygiene">Hygiène</option>
+                            <option value="accueilJour">Accueil de jour</option>
+                            <option value="admin">Administratif</option>
+                            <option value="hebergement">Hébergement (CHU + LHSS)</option>
                             <option value="medical">Médical</option>
-                            <option value="hebergement">Hébergement</option>
                         </select>
                     </div>
                     
                     <div class="filter-group">
                         <label for="stats-filter-distribution">Distribution :</label>
-                        <select id="stats-filter-distribution" class="filter-input" multiple size="5">
+                        <select id="stats-filter-distribution" class="filter-input" multiple size="7">
+                            <option value="boisson">Boisson (Eau, Café, Thé)</option>
                             <option value="alimentaire">Alimentaire</option>
-                            <option value="vestimentaire">Vestimentaire</option>
-                            <option value="hygiene">Hygiène</option>
-                            <option value="couvertures">Couvertures</option>
-                            <option value="duvet">Duvet</option>
+                            <option value="duvet">Duvets</option>
+                            <option value="couvertureSurvie">Couverture de survie</option>
+                            <option value="bonnetsGants">Bonnets/Gants/Tour de Cou</option>
+                            <option value="sousVetements">Sous-vêtements</option>
+                            <option value="kitsHygiene">Kits d'hygiène</option>
                         </select>
                     </div>
                 </div>

@@ -9,11 +9,53 @@
  * Trouve une intervention ADP par personneId et date
  */
 async function findAdpByPersonAndDate(personneId, date) {
-  const interventions = await window.getInterventionsByPersonneAndDate(personneId, date);
-  console.log('🔍 Recherche ADP pour personneId:', personneId, 'date:', date);
+  // S'assurer que personneId est un nombre
+  const pid = typeof personneId === 'string' ? parseInt(personneId, 10) : personneId;
+  const interventions = await window.getInterventionsByPersonneAndDate(pid, date);
+  console.log('🔍 Recherche ADP pour personneId:', pid, 'date:', date, '- trouvé:', interventions?.length || 0, 'interventions');
   const found = interventions.find(i => i.type === 'adp');
   console.log('🔍 ADP trouvée:', found ? `ID ${found.id}` : 'Aucune');
   return found;
+}
+
+/**
+ * Trouve une ADP par personId, date ET typeTransmission
+ */
+async function findAdpByPersonDateAndType(personneId, date, typeTransmission) {
+  // S'assurer que personneId est un nombre
+  const pid = typeof personneId === 'string' ? parseInt(personneId, 10) : personneId;
+  
+  // Vérifier que les paramètres requis sont valides
+  if (!pid || !date) {
+    console.warn('🔍 Paramètres invalides pour findAdpByPersonDateAndType:', { pid, date, typeTransmission });
+    return null;
+  }
+  
+  // Si typeTransmission est vide, utiliser findAdpByPersonAndDate
+  if (!typeTransmission || (typeof typeTransmission === 'string' && typeTransmission.trim() === '')) {
+    console.log('🔍 typeTransmission vide, utilisation de findAdpByPersonAndDate');
+    return await findAdpByPersonAndDate(pid, date);
+  }
+  
+  console.log('🔍 Recherche ADP pour personneId:', pid, 'date:', date, 'typeTransmission:', typeTransmission);
+  
+  try {
+    // Utiliser la nouvelle fonction si disponible
+    if (typeof window.getInterventionByFullKey === 'function') {
+      const intervention = await window.getInterventionByFullKey(pid, date, 'adp', typeTransmission);
+      console.log('🔍 Résultat via getInterventionByFullKey:', intervention ? `ID ${intervention.id}` : 'Aucune');
+      return intervention;
+    }
+    
+    // Fallback : chercher parmi toutes les interventions de cette date
+    const interventions = await window.getInterventionsByPersonneAndDate(pid, date);
+    const found = interventions.find(i => i.type === 'adp' && i.typeTransmission === typeTransmission);
+    console.log('🔍 Résultat via filtrage:', found ? `ID ${found.id}` : 'Aucune');
+    return found;
+  } catch (error) {
+    console.error('Erreur lors de la recherche ADP:', error);
+    return null;
+  }
 }
 
 /**
@@ -44,11 +86,197 @@ async function getDerniereAdresseAdp(personneId) {
 }
 
 /**
+ * Réinitialise les champs du formulaire ADP pour une nouvelle transmission
+ * @param {string} date - La date au format YYYY-MM-DD
+ * @param {string} typeTransmission - Le type de transmission (Jour/Nuit/Coordo)
+ */
+function resetAdpFormFieldsForNewTransmission(date, typeTransmission) {
+  console.log('🔄 Réinitialisation du formulaire ADP pour nouvelle transmission');
+  
+  // Réinitialiser l'ID d'édition
+  const editIdField = document.getElementById('edit-adp-id');
+  if (editIdField) editIdField.value = '';
+  
+  // Mettre à jour la date et le type de transmission
+  const dateField = document.getElementById('adp-form-date');
+  if (dateField) dateField.value = date;
+  
+  const typeField = document.getElementById('adp-form-type-transmission');
+  if (typeField) typeField.value = typeTransmission;
+  
+  // Réinitialiser les champs de transmission (garder les infos personnelles)
+  const fieldsToReset = [
+    'adp-form-lieu-rencontre',
+    'adp-form-aller-vers',
+    'adp-form-commentaires'
+  ];
+  
+  fieldsToReset.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (field) field.value = '';
+  });
+  
+  // Réinitialiser les checkboxes d'accompagnement
+  const accompCheckboxes = document.querySelectorAll('#modal-adp input[name="accompagnement"]');
+  accompCheckboxes.forEach(cb => cb.checked = false);
+  
+  // Réinitialiser les checkboxes de distribution
+  const distribCheckboxes = document.querySelectorAll('#modal-adp input[name="distribution"]');
+  distribCheckboxes.forEach(cb => cb.checked = false);
+  
+  // Réinitialiser les checkboxes de motif intervention
+  const motifCheckboxes = document.querySelectorAll('#modal-adp input[name="motifIntervention"]');
+  motifCheckboxes.forEach(cb => cb.checked = false);
+  
+  // Réinitialiser le checkbox Attention
+  const attentionCheckbox = document.getElementById('adp-form-attention');
+  if (attentionCheckbox) attentionCheckbox.checked = false;
+  
+  console.log('✅ Formulaire ADP réinitialisé pour nouvelle transmission');
+}
+
+/**
+ * Charge les données ADP pour une date et un type donnés
+ * @param {number} personneId - L'ID de la personne
+ * @param {string} date - La date au format YYYY-MM-DD
+ * @param {string} typeTransmission - Le type de transmission (Jour/Nuit/Coordo)
+ */
+async function loadAdpDataForDate(personneId, date, typeTransmission) {
+  // S'assurer que personneId est un nombre
+  const pid = typeof personneId === 'string' ? parseInt(personneId, 10) : personneId;
+  
+  console.log('📅 loadAdpDataForDate appelé avec:', { personneId: pid, date, typeTransmission });
+  
+  try {
+    // Chercher si une ADP existe pour cette personne à cette date avec ce type
+    const existingAdp = await findAdpByPersonDateAndType(pid, date, typeTransmission);
+    
+    console.log('📋 ADP trouvée:', existingAdp ? `ID ${existingAdp.id}` : 'Aucune', existingAdp);
+    
+    // Mettre à jour le sélecteur de type de transmission
+    const typeSelect = document.getElementById('adp-form-type-transmission');
+    if (typeSelect && typeTransmission) {
+      typeSelect.value = typeTransmission;
+    }
+    
+    if (existingAdp) {
+      // Remplir les champs de l'intervention existante
+      document.getElementById('adp-form-type-transmission').value = existingAdp.typeTransmission || '';
+      document.getElementById('adp-form-adresse').value = existingAdp.lieu || '';
+      document.getElementById('adp-form-ville').value = existingAdp.ville || '';
+      document.getElementById('adp-form-signalement').value = existingAdp.signalement || '';
+      document.getElementById('adp-form-transmission').value = existingAdp.observations || '';
+      
+      // Checkbox Attention
+      if (document.getElementById('adp-form-attention')) {
+        document.getElementById('adp-form-attention').checked = existingAdp.attention || false;
+      }
+      
+      // Checkboxes Orly
+      if (existingAdp.orly) {
+        ['adp-form-premier-contact', 'adp-form-personne-presente', 'adp-form-pnt', 'adp-form-maraude', 'adp-form-veille', 'adp-form-refus-contact'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            const key = id.replace('adp-form-', '').replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+            el.checked = existingAdp.orly[key] || false;
+          }
+        });
+      } else {
+        ['adp-form-premier-contact', 'adp-form-personne-presente', 'adp-form-pnt', 'adp-form-maraude', 'adp-form-veille', 'adp-form-refus-contact'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.checked = false;
+        });
+      }
+      
+      // Checkboxes Accompagnement
+      if (existingAdp.accompagnement) {
+        const accompMap = {
+          'adp-form-accomp-hygiene': 'hygiene',
+          'adp-form-accomp-accueil-jour': 'accueilJour',
+          'adp-form-accomp-admin': 'admin',
+          'adp-form-accomp-hebergement': 'hebergement',
+          'adp-form-accomp-medical': 'medical'
+        };
+        Object.entries(accompMap).forEach(([id, key]) => {
+          const el = document.getElementById(id);
+          if (el) el.checked = existingAdp.accompagnement[key] || false;
+        });
+      } else {
+        ['adp-form-accomp-hygiene', 'adp-form-accomp-accueil-jour', 'adp-form-accomp-admin', 'adp-form-accomp-hebergement', 'adp-form-accomp-medical'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.checked = false;
+        });
+      }
+      
+      // Checkboxes Distribution
+      if (existingAdp.distribution) {
+        const distribMap = {
+          'adp-form-distrib-boisson': 'boisson',
+          'adp-form-distrib-alimentaire': 'alimentaire',
+          'adp-form-distrib-duvet': 'duvet',
+          'adp-form-distrib-couverture-survie': 'couvertureSurvie',
+          'adp-form-distrib-bonnets-gants': 'bonnetsGants',
+          'adp-form-distrib-sous-vetements': 'sousVetements',
+          'adp-form-distrib-kits-hygiene': 'kitsHygiene'
+        };
+        Object.entries(distribMap).forEach(([id, key]) => {
+          const el = document.getElementById(id);
+          if (el) el.checked = existingAdp.distribution[key] || false;
+        });
+      } else {
+        ['adp-form-distrib-boisson', 'adp-form-distrib-alimentaire', 'adp-form-distrib-duvet', 'adp-form-distrib-couverture-survie', 'adp-form-distrib-bonnets-gants', 'adp-form-distrib-sous-vetements', 'adp-form-distrib-kits-hygiene'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.checked = false;
+        });
+      }
+      
+      document.getElementById('modal-adp').dataset.editId = existingAdp.id;
+      
+      // Afficher le bouton de suppression en mode édition
+      const btnSupprimer = document.getElementById('btn-supprimer-adp');
+      if (btnSupprimer) btnSupprimer.style.display = 'inline-block';
+    } else {
+      // Pas de transmission pour cette date - réinitialiser les champs
+      document.getElementById('adp-form-type-transmission').value = '';
+      document.getElementById('adp-form-signalement').value = '';
+      document.getElementById('adp-form-transmission').value = '';
+      
+      // Cacher le bouton de suppression
+      const btnSupprimer = document.getElementById('btn-supprimer-adp');
+      if (btnSupprimer) btnSupprimer.style.display = 'none';
+      
+      // Charger automatiquement la dernière adresse utilisée
+      const derniereAdresse = await getDerniereAdresseAdp(personneId);
+      if (derniereAdresse) {
+        document.getElementById('adp-form-adresse').value = derniereAdresse.adresse || '';
+        document.getElementById('adp-form-ville').value = derniereAdresse.ville || '';
+      } else {
+        document.getElementById('adp-form-adresse').value = '';
+        document.getElementById('adp-form-ville').value = '';
+      }
+      
+      // Décocher toutes les checkboxes de transmission
+      document.querySelectorAll('#modal-adp .checkbox-group input[type="checkbox"]').forEach(cb => cb.checked = false);
+      
+      delete document.getElementById('modal-adp').dataset.editId;
+    }
+    
+    console.log('✅ Données ADP chargées pour date:', date);
+  } catch (error) {
+    console.error('Erreur lors du chargement des données ADP pour la date:', error);
+  }
+}
+window.loadAdpDataForDate = loadAdpDataForDate;
+
+/**
  * Édite une intervention ADP pour une personne
  * @param {number} personneId - L'ID de la personne dans la DB unifiée
+ * @param {string} date - Date optionnelle
+ * @param {boolean} consultationMode - Mode consultation
+ * @param {string} newTypeTransmission - Type à pré-sélectionner pour une nouvelle ADP
  */
-async function editTransmissionAdp(personneId) {
-  console.log('📝 Compléter l\'ADP pour personne ID:', personneId);
+async function editTransmissionAdp(personneId, date = null, consultationMode = false, newTypeTransmission = null) {
+  console.log('📝 Compléter l\'ADP pour personne ID:', personneId, 'newType:', newTypeTransmission);
   
   try {
     // Charger la personne depuis la DB unifiée
@@ -65,7 +293,16 @@ async function editTransmissionAdp(personneId) {
     console.log('📅 Date sélectionnée:', selectedDate);
     
     // Chercher si une ADP existe pour cette personne à cette date
-    const existingAdp = await findAdpByPersonAndDate(personneId, selectedDate);
+    // Si newTypeTransmission est fourni, on cherche pour ce type spécifique
+    let existingAdp = null;
+    if (newTypeTransmission) {
+      // Chercher une ADP pour le type spécifique demandé
+      existingAdp = await findAdpByPersonDateAndType(personneId, selectedDate, newTypeTransmission.charAt(0).toUpperCase() + newTypeTransmission.slice(1));
+      console.log('🆕 Création nouvelle ADP type:', newTypeTransmission, '- Existante:', existingAdp ? 'oui' : 'non');
+    } else {
+      // Comportement normal : chercher la première ADP pour cette date
+      existingAdp = await findAdpByPersonAndDate(personneId, selectedDate);
+    }
     
     console.log('📋 ADP existante:', existingAdp ? `ID ${existingAdp.id}` : 'Aucune');
     
@@ -114,20 +351,44 @@ async function editTransmissionAdp(personneId) {
       
       // Checkboxes Accompagnement
       if (existingAdp.accompagnement) {
-        document.getElementById('adp-form-accomp-ecoute').checked = existingAdp.accompagnement.ecoute || false;
-        document.getElementById('adp-form-accomp-orientation').checked = existingAdp.accompagnement.orientation || false;
-        document.getElementById('adp-form-accomp-admin').checked = existingAdp.accompagnement.admin || false;
-        document.getElementById('adp-form-accomp-medical').checked = existingAdp.accompagnement.medical || false;
-        document.getElementById('adp-form-accomp-hebergement').checked = existingAdp.accompagnement.hebergement || false;
+        const hygieneEl = document.getElementById('adp-form-accomp-hygiene');
+        if (hygieneEl) hygieneEl.checked = existingAdp.accompagnement.hygiene || false;
+        
+        const accueilJourEl = document.getElementById('adp-form-accomp-accueil-jour');
+        if (accueilJourEl) accueilJourEl.checked = existingAdp.accompagnement.accueilJour || false;
+        
+        const adminEl = document.getElementById('adp-form-accomp-admin');
+        if (adminEl) adminEl.checked = existingAdp.accompagnement.admin || false;
+        
+        const hebergementEl = document.getElementById('adp-form-accomp-hebergement');
+        if (hebergementEl) hebergementEl.checked = existingAdp.accompagnement.hebergement || false;
+        
+        const medicalEl = document.getElementById('adp-form-accomp-medical');
+        if (medicalEl) medicalEl.checked = existingAdp.accompagnement.medical || false;
       }
       
       // Checkboxes Distribution
       if (existingAdp.distribution) {
-        document.getElementById('adp-form-distrib-alimentaire').checked = existingAdp.distribution.alimentaire || false;
-        document.getElementById('adp-form-distrib-vestimentaire').checked = existingAdp.distribution.vestimentaire || false;
-        document.getElementById('adp-form-distrib-hygiene').checked = existingAdp.distribution.hygiene || false;
-        document.getElementById('adp-form-distrib-couvertures').checked = existingAdp.distribution.couvertures || false;
-        document.getElementById('adp-form-distrib-duvet').checked = existingAdp.distribution.duvet || false;
+        const boissonEl = document.getElementById('adp-form-distrib-boisson');
+        if (boissonEl) boissonEl.checked = existingAdp.distribution.boisson || false;
+        
+        const alimentaireEl = document.getElementById('adp-form-distrib-alimentaire');
+        if (alimentaireEl) alimentaireEl.checked = existingAdp.distribution.alimentaire || false;
+        
+        const duvetEl = document.getElementById('adp-form-distrib-duvet');
+        if (duvetEl) duvetEl.checked = existingAdp.distribution.duvet || false;
+        
+        const couvertureSurvieEl = document.getElementById('adp-form-distrib-couverture-survie');
+        if (couvertureSurvieEl) couvertureSurvieEl.checked = existingAdp.distribution.couvertureSurvie || false;
+        
+        const bonnetsGantsEl = document.getElementById('adp-form-distrib-bonnets-gants');
+        if (bonnetsGantsEl) bonnetsGantsEl.checked = existingAdp.distribution.bonnetsGants || false;
+        
+        const sousVetementsEl = document.getElementById('adp-form-distrib-sous-vetements');
+        if (sousVetementsEl) sousVetementsEl.checked = existingAdp.distribution.sousVetements || false;
+        
+        const kitsHygieneEl = document.getElementById('adp-form-distrib-kits-hygiene');
+        if (kitsHygieneEl) kitsHygieneEl.checked = existingAdp.distribution.kitsHygiene || false;
       }
       
       document.getElementById('modal-adp').dataset.editId = existingAdp.id;
@@ -139,7 +400,8 @@ async function editTransmissionAdp(personneId) {
     } else {
       // MODE CRÉATION : réinitialiser les champs d'intervention
       console.log('➕ Pas d\'ADP pour cette date - MODE CRÉATION');
-      document.getElementById('adp-form-type-transmission').value = '';
+      // Si un type est pré-sélectionné via newTypeTransmission, l'utiliser
+      document.getElementById('adp-form-type-transmission').value = newTypeTransmission ? newTypeTransmission.charAt(0).toUpperCase() + newTypeTransmission.slice(1) : '';
       document.getElementById('adp-form-signalement').value = '';
       document.getElementById('adp-form-transmission').value = '';
       
@@ -186,11 +448,52 @@ async function editTransmissionAdp(personneId) {
     if (modal) {
       modal.classList.add('show');
       
-      // Scroll vers le haut du formulaire
+      // RESTAURER les boutons Annuler et Enregistrer (pourraient être cachés par mode consultation)
+      const btnAnnuler = document.getElementById('adp-btn-annuler');
+      if (btnAnnuler) btnAnnuler.style.display = '';
+      const btnEnregistrer = modal.querySelector('button[type="submit"]');
+      if (btnEnregistrer) btnEnregistrer.style.display = '';
+      
+      // Retirer le bouton Fermer si présent (depuis mode consultation)
+      const btnFermerConsultation = modal.querySelector('.btn-fermer-consultation');
+      if (btnFermerConsultation) btnFermerConsultation.remove();
+      
+      // Scroll vers le haut du formulaire et replier la section Informations Personnelles
       setTimeout(() => {
         const modalBody = modal.querySelector('.modal-body');
         if (modalBody) {
           modalBody.scrollTop = 0;
+        }
+        // Réinitialiser les gestionnaires de collapse puis replier la section
+        if (window.initSectionCollapse) {
+          window.initSectionCollapse();
+        }
+        setTimeout(() => {
+          if (window.replierSection) {
+            window.replierSection('adp-section-info-perso');
+          }
+        }, 50);
+        
+        // Initialiser le navigateur de dates
+        if (window.initDateNavigator) {
+          const currentTypeTransmission = existingAdp?.typeTransmission || 
+            document.getElementById('adp-form-type-transmission')?.value || '';
+          
+          window.initDateNavigator({
+            type: 'adp',
+            personneId: personneId,
+            currentDate: selectedDate,
+            currentTypeTransmission: currentTypeTransmission,
+            hideToday: consultationMode, // En mode consultation, ne pas afficher la date du jour
+            onDateChange: async (newDate, newTypeTransmission, isNewTransmission) => {
+              if (isNewTransmission) {
+                console.log('➕ Création nouvelle transmission ADP:', newTypeTransmission, 'pour', newDate);
+                resetAdpFormFieldsForNewTransmission(newDate, newTypeTransmission);
+              } else {
+                await loadAdpDataForDate(personneId, newDate, newTypeTransmission);
+              }
+            }
+          });
         }
       }, 100);
     }
@@ -199,11 +502,37 @@ async function editTransmissionAdp(personneId) {
     alert('Erreur lors du chargement des données');
   }
 }
+window.editTransmissionAdp = editTransmissionAdp;
 
 /**
  * Initialise les filtres ADP
  */
 function initAdpFilters() {
+  // Initialiser la date du jour pour le sélecteur
+  const dateInput = document.getElementById('adp-date');
+  if (dateInput && !dateInput.value) {
+    const today = new Date();
+    const currentHour = today.getHours();
+    
+    // Si entre minuit et 3h, utiliser la veille
+    if (currentHour >= 0 && currentHour < 3) {
+      today.setDate(today.getDate() - 1);
+    }
+    
+    dateInput.value = today.toISOString().split('T')[0];
+    console.log('📅 Date ADP initialisée à:', dateInput.value);
+  }
+  
+  // Ajouter listener pour rechargement au changement de date
+  if (dateInput && !dateInput._listenersAttached) {
+    dateInput.addEventListener('change', () => {
+      if (typeof window.afficherToutesLesPersonnesADP === 'function') {
+        window.afficherToutesLesPersonnesADP();
+      }
+    });
+    dateInput._listenersAttached = true;
+  }
+  
   const filterNom = document.getElementById('adp-filter-nom');
   const filterPrenom = document.getElementById('adp-filter-prenom');
   const filterDdn = document.getElementById('adp-filter-ddn');
@@ -292,6 +621,19 @@ function initAdpForm() {
     const btnSupprimer = document.getElementById('btn-supprimer-adp');
     if (btnSupprimer) btnSupprimer.style.display = 'none';
     
+    // RESTAURER les boutons Annuler et Enregistrer (pourraient être cachés par mode consultation)
+    const btnAnnulerModal = document.getElementById('adp-btn-annuler');
+    if (btnAnnulerModal) btnAnnulerModal.style.display = '';
+    const btnEnregistrer = modal.querySelector('button[type="submit"]');
+    if (btnEnregistrer) btnEnregistrer.style.display = '';
+    
+    // Retirer le bouton Fermer si présent (depuis mode consultation)
+    const btnFermerConsultation = modal.querySelector('.btn-fermer-consultation');
+    if (btnFermerConsultation) btnFermerConsultation.remove();
+    
+    // Cacher le navigateur de dates en mode création et réinitialiser le titre
+    if (window.resetModalTitle) window.resetModalTitle('adp');
+    
     const dateAdp = document.getElementById('adp-date');
     if (dateAdp && !dateAdp.value) {
       dateAdp.value = getDateParDefaut();
@@ -300,12 +642,22 @@ function initAdpForm() {
     
     modal.classList.add('show');
     
-    // Scroll vers le haut du formulaire
+    // Scroll vers le haut du formulaire (sans replier la section pour Ajouter)
     setTimeout(() => {
       const modalBody = modal.querySelector('.modal-body');
       if (modalBody) {
         modalBody.scrollTop = 0;
       }
+      // Réinitialiser les gestionnaires de collapse
+      if (window.initSectionCollapse) {
+        window.initSectionCollapse();
+      }
+      // S'assurer que la section Informations Personnelles est dépliée pour Ajouter
+      setTimeout(() => {
+        if (window.deplierSection) {
+          window.deplierSection('adp-section-info-perso');
+        }
+      }, 50);
     }, 100);
   });
   
@@ -400,18 +752,20 @@ function initAdpForm() {
         refusContact: document.getElementById('adp-form-refus-contact')?.checked || false
       },
       accompagnement: {
-        ecoute: document.getElementById('adp-form-accomp-ecoute')?.checked || false,
-        orientation: document.getElementById('adp-form-accomp-orientation')?.checked || false,
+        hygiene: document.getElementById('adp-form-accomp-hygiene')?.checked || false,
+        accueilJour: document.getElementById('adp-form-accomp-accueil-jour')?.checked || false,
         admin: document.getElementById('adp-form-accomp-admin')?.checked || false,
-        medical: document.getElementById('adp-form-accomp-medical')?.checked || false,
-        hebergement: document.getElementById('adp-form-accomp-hebergement')?.checked || false
+        hebergement: document.getElementById('adp-form-accomp-hebergement')?.checked || false,
+        medical: document.getElementById('adp-form-accomp-medical')?.checked || false
       },
       distribution: {
+        boisson: document.getElementById('adp-form-distrib-boisson')?.checked || false,
         alimentaire: document.getElementById('adp-form-distrib-alimentaire')?.checked || false,
-        vestimentaire: document.getElementById('adp-form-distrib-vestimentaire')?.checked || false,
-        hygiene: document.getElementById('adp-form-distrib-hygiene')?.checked || false,
-        couvertures: document.getElementById('adp-form-distrib-couvertures')?.checked || false,
-        duvet: document.getElementById('adp-form-distrib-duvet')?.checked || false
+        duvet: document.getElementById('adp-form-distrib-duvet')?.checked || false,
+        couvertureSurvie: document.getElementById('adp-form-distrib-couverture-survie')?.checked || false,
+        bonnetsGants: document.getElementById('adp-form-distrib-bonnets-gants')?.checked || false,
+        sousVetements: document.getElementById('adp-form-distrib-sous-vetements')?.checked || false,
+        kitsHygiene: document.getElementById('adp-form-distrib-kits-hygiene')?.checked || false
       }
     };
     
@@ -480,15 +834,33 @@ function initAdpForm() {
         await window.updateIntervention(parseInt(editId), interventionData);
         console.log('✅ Intervention ADP mise à jour, ID:', editId);
       } else {
-        // Créer une nouvelle intervention
-        const interventionId = await window.ajouterIntervention(interventionData);
-        console.log('✅ Nouvelle intervention ADP créée, ID:', interventionId);
+        // Vérifier si une ADP existe déjà avec ce typeTransmission pour cette date
+        const existingForType = await findAdpByPersonDateAndType(
+          finalPersonneId, 
+          selectedDate, 
+          interventionData.typeTransmission
+        );
+        
+        if (existingForType) {
+          // Mettre à jour l'existante au lieu d'en créer une nouvelle
+          await window.updateIntervention(existingForType.id, interventionData);
+          console.log('✅ Intervention ADP mise à jour (existante), ID:', existingForType.id);
+        } else {
+          // Créer une nouvelle intervention
+          const interventionId = await window.ajouterIntervention(interventionData);
+          console.log('✅ Nouvelle intervention ADP créée, ID:', interventionId);
+        }
       }
       
       // Fermer la modal et rafraîchir
       closeModal();
       await window.afficherToutesLesPersonnesADP();
       console.log('✅ ADP enregistrée avec succès');
+      
+      // Rafraîchir le navigateur de dates pour mettre à jour les onglets
+      if (typeof window.refreshNavigator === 'function') {
+        await window.refreshNavigator('adp');
+      }
       
     } catch (error) {
       console.error('❌ Erreur lors de l\'enregistrement:', error);

@@ -1,11 +1,36 @@
-<!-- Modal Ajout Transmission -->
+<!-- Modal Transmission (Maraudes) -->
 <div id="modal-ajout" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>Nouvelle Personne</h2>
+            <div class="modal-title-with-date">
+                <h2 id="modal-titre-personne">Ajouter / Modifier une personne</h2>
+                <!-- Sélecteur de date (menu déroulant) -->
+                <div class="date-navigator" id="date-navigator-transmissions" style="display: none;">
+                    <button type="button" class="btn-nav-date" id="btn-date-prev" title="Date précédente">◀</button>
+                    <select id="select-date-transmission" class="select-date-nav">
+                        <!-- Options remplies dynamiquement -->
+                    </select>
+                    <button type="button" class="btn-nav-date" id="btn-date-next" title="Date suivante">▶</button>
+                </div>
+                <!-- Onglets Type de Transmission -->
+                <div class="transmission-tabs" id="transmission-tabs" style="display: none;">
+                    <button type="button" class="transmission-tab" data-type="Jour">
+                        <span class="tab-label">Jour</span>
+                        <span class="tab-indicator" id="tab-indicator-jour"></span>
+                    </button>
+                    <button type="button" class="transmission-tab" data-type="Nuit">
+                        <span class="tab-label">Nuit</span>
+                        <span class="tab-indicator" id="tab-indicator-nuit"></span>
+                    </button>
+                    <button type="button" class="transmission-tab" data-type="Coordo">
+                        <span class="tab-label">Coordo</span>
+                        <span class="tab-indicator" id="tab-indicator-coordo"></span>
+                    </button>
+                </div>
+            </div>
             <div class="modal-actions">
-                <button class="modal-expand" id="btn-expand" title="Agrandir">⛶</button>
-                <button class="modal-close">&times;</button>
+                <button type="button" class="modal-expand" id="btn-expand" title="Agrandir">⛶</button>
+                <button type="button" class="modal-close">&times;</button>
             </div>
         </div>
         
@@ -14,7 +39,7 @@
             <div class="form-section" id="section-info-perso">
                 <div class="section-header-with-button">
                     <button type="button" id="btn-voir-historique" class="btn-historique" title="Voir l'historique">⏱️</button>
-                    <h3 class="section-header collapsible">
+                    <h3 class="collapsible">
                         Informations Personnelles
                         <span class="collapse-toggle">▼</span>
                     </h3>
@@ -22,17 +47,17 @@
                 <div class="form-grid collapsible-content" id="grid-info-perso">
                     <div class="form-group">
                         <label for="form-nom">Nom :</label>
-                        <input type="text" id="form-nom" class="form-input" autocomplete="family-name">
+                        <input type="text" id="form-nom" class="form-input" name="nom">
                     </div>
                     
                     <div class="form-group">
                         <label for="form-prenom">Prénom :</label>
-                        <input type="text" id="form-prenom" class="form-input" autocomplete="given-name">
+                        <input type="text" id="form-prenom" class="form-input" name="prenom">
                     </div>
                     
                     <div class="form-group">
                         <label for="form-ddn">Date de Naissance :</label>
-                        <input type="date" id="form-ddn" class="form-input">
+                        <input type="date" id="form-ddn" class="form-input" name="dateNaissance">
                     </div>
                     
                     <div class="form-group">
@@ -158,7 +183,7 @@
                     
                     <div class="form-group">
                         <label for="form-typologie">Typologie de Ménages :</label>
-                        <select id="form-typologie" class="form-input">
+                        <select id="form-typologie" class="form-input" name="typologie">
                             <option value="">Sélectionner...</option>
                             <option value="homme-seul">Homme Seul</option>
                             <option value="femme-seule">Femme seule</option>
@@ -171,7 +196,7 @@
                     
                     <div class="form-group">
                         <label for="form-nb-personnes">Nombre de Personnes :</label>
-                        <select id="form-nb-personnes" class="form-input">
+                        <select id="form-nb-personnes" class="form-input" name="nbPersonnes">
                             <option value="">Sélectionner...</option>
                             <option value="1">1</option>
                             <option value="2">2</option>
@@ -184,7 +209,7 @@
                     
                     <div class="form-group">
                         <label for="form-mineurs">dont Mineurs :</label>
-                        <select id="form-mineurs" class="form-input">
+                        <select id="form-mineurs" class="form-input" name="mineurs">
                             <option value="">Sélectionner...</option>
                             <option value="0">0</option>
                             <option value="1">1</option>
@@ -205,24 +230,22 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="form-type-transmission">Type de Transmission :</label>
-                        <select id="form-type-transmission" class="form-input">
+                        <select id="form-type-transmission" class="form-input" name="typeTransmission">
                             <option value="">Sélectionner...</option>
                             <option value="jour">Jour</option>
                             <option value="nuit">Nuit</option>
-                            <option value="information">Information</option>
-                            <option value="signalement">Signalement</option>
-                            <option value="suivi">Suivi</option>
+                            <option value="coordo">Coordo</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
                         <label for="form-adresse">Adresse :</label>
-                        <input type="text" id="form-adresse" class="form-input" placeholder="Adresse">
+                        <input type="text" id="form-adresse" class="form-input" name="adresse">
                     </div>
                     
                     <div class="form-group">
                         <label for="form-ville">Ville :</label>
-                        <select id="form-ville" class="form-input">
+                        <select id="form-ville" class="form-input" name="ville">
                             <option value="">Sélectionner...</option>
                             <option value="Ablon-sur-Seine">Ablon-sur-Seine</option>
                             <option value="Alfortville">Alfortville</option>
@@ -276,7 +299,7 @@
                     
                     <div class="form-group">
                         <label for="form-signalement">Signalement :</label>
-                        <select id="form-signalement" class="form-input">
+                        <select id="form-signalement" class="form-input" name="signalement">
                             <option value="">Sélectionner...</option>
                             <option value="115">115</option>
                             <option value="partenaires">Partenaires</option>
@@ -338,24 +361,24 @@
                     <div class="form-group full-width">
                         <div class="checkbox-group">
                             <label class="checkbox-label">
-                                <input type="checkbox" id="form-accomp-ecoute" class="form-checkbox">
-                                <span>Écoute</span>
+                                <input type="checkbox" id="form-accomp-hygiene" class="form-checkbox">
+                                <span>Hygiène</span>
                             </label>
                             <label class="checkbox-label">
-                                <input type="checkbox" id="form-accomp-orientation" class="form-checkbox">
-                                <span>Orientation</span>
+                                <input type="checkbox" id="form-accomp-accueil-jour" class="form-checkbox">
+                                <span>Accueil de jour</span>
                             </label>
                             <label class="checkbox-label">
                                 <input type="checkbox" id="form-accomp-admin" class="form-checkbox">
-                                <span>Démarche administrative</span>
+                                <span>Administratif</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-accomp-hebergement" class="form-checkbox">
+                                <span>Hébergement (CHU + LHSS)</span>
                             </label>
                             <label class="checkbox-label">
                                 <input type="checkbox" id="form-accomp-medical" class="form-checkbox">
                                 <span>Médical</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="form-accomp-hebergement" class="form-checkbox">
-                                <span>Hébergement</span>
                             </label>
                         </div>
                     </div>
@@ -372,24 +395,32 @@
                     <div class="form-group full-width">
                         <div class="checkbox-group">
                             <label class="checkbox-label">
+                                <input type="checkbox" id="form-distrib-boisson" class="form-checkbox">
+                                <span>Boisson (Eau, Café, Thé)</span>
+                            </label>
+                            <label class="checkbox-label">
                                 <input type="checkbox" id="form-distrib-alimentaire" class="form-checkbox">
                                 <span>Alimentaire</span>
                             </label>
                             <label class="checkbox-label">
-                                <input type="checkbox" id="form-distrib-vestimentaire" class="form-checkbox">
-                                <span>Vestimentaire</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="form-distrib-hygiene" class="form-checkbox">
-                                <span>Hygiène</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="form-distrib-couvertures" class="form-checkbox">
-                                <span>Couvertures</span>
-                            </label>
-                            <label class="checkbox-label">
                                 <input type="checkbox" id="form-distrib-duvet" class="form-checkbox">
-                                <span>Duvet</span>
+                                <span>Duvets</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-distrib-couverture-survie" class="form-checkbox">
+                                <span>Couverture de survie</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-distrib-bonnets-gants" class="form-checkbox">
+                                <span>Bonnets/Gants/Tour de Cou</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-distrib-sous-vetements" class="form-checkbox">
+                                <span>Sous-vêtements</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-distrib-kits-hygiene" class="form-checkbox">
+                                <span>Kits d'hygiène</span>
                             </label>
                         </div>
                     </div>
@@ -409,11 +440,36 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Case Attention -->
+            <div class="form-section" style="border-top: 2px solid #f0f0f0; padding-top: 1rem;">
+                <div class="form-group full-width">
+                    <label class="checkbox-attention">
+                        <input type="checkbox" id="form-attention" class="form-checkbox">
+                        <span>Attention</span>
+                    </label>
+                </div>
+            </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn-danger" id="btn-supprimer-transmission" style="display: none; margin-right: auto;">Supprimer la transmission</button>
-                <button type="button" class="btn-secondary" id="btn-annuler">Annuler</button>
-                <button type="submit" class="btn-primary">Enregistrer</button>
+                <button type="button" class="btn-danger" id="btn-supprimer-transmission" style="display: none;">Supprimer la transmission</button>
+                
+                <!-- Bouton ajouter nouvelle transmission -->
+                <div class="add-transmission-container" id="add-transmission-container" style="display: none;">
+                    <button type="button" class="btn-add-transmission" id="btn-add-transmission-transmissions">
+                        + Nouvelle transmission pour ce jour
+                    </button>
+                    <div class="add-transmission-dropdown" id="add-transmission-dropdown-transmissions" style="display: none;">
+                        <button type="button" class="dropdown-item" data-type="Jour">Jour</button>
+                        <button type="button" class="dropdown-item" data-type="Nuit">Nuit</button>
+                        <button type="button" class="dropdown-item" data-type="Coordo">Coordo</button>
+                    </div>
+                </div>
+                
+                <div class="footer-right-buttons">
+                    <button type="button" class="btn-secondary" id="btn-annuler">Annuler</button>
+                    <button type="submit" class="btn-primary">Enregistrer</button>
+                </div>
             </div>
         </form>
     </div>

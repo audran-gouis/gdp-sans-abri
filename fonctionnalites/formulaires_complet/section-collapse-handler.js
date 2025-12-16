@@ -23,12 +23,23 @@
   }
 
   function setupCollapseHandlers() {
+    // Chercher tous les h3 qui ont un .collapse-toggle
     const sections = document.querySelectorAll('.form-section h3');
     
     console.log(`📋 ${sections.length} sections de formulaire trouvées`);
+    
+    let collapsibleCount = 0;
 
     sections.forEach(header => {
-      // Retirer les anciens listeners
+      const toggle = header.querySelector('.collapse-toggle');
+      if (!toggle) {
+        // Ce n'est pas une section collapsible
+        return;
+      }
+      
+      collapsibleCount++;
+      
+      // Retirer les anciens listeners en remplaçant par un clone
       const newHeader = header.cloneNode(true);
       header.parentNode.replaceChild(newHeader, header);
 
@@ -36,12 +47,24 @@
         e.preventDefault();
         e.stopPropagation();
 
-        const section = this.parentElement;
-        const grid = section.querySelector('.form-grid');
-        const toggle = section.querySelector('.collapse-toggle');
+        // Trouver la section parente (peut être dans .section-header-with-button ou directement)
+        let section = this.closest('.form-section');
+        
+        if (!section) {
+          console.warn('⚠️ Section parente non trouvée');
+          return;
+        }
 
-        if (!grid || !toggle) {
-          console.warn('⚠️ Grid ou toggle non trouvé pour', section.id);
+        const grid = section.querySelector('.form-grid, .collapsible-content');
+        const toggleIcon = this.querySelector('.collapse-toggle');
+
+        if (!grid) {
+          console.warn('⚠️ Grid/contenu non trouvé pour', section.id);
+          return;
+        }
+
+        if (!toggleIcon) {
+          console.warn('⚠️ Toggle non trouvé dans', this);
           return;
         }
 
@@ -51,18 +74,18 @@
         if (isCollapsed) {
           // Déplier
           grid.classList.remove('collapsed');
-          toggle.classList.remove('collapsed');
-          console.log('📂 Section dépliée:', section.id);
+          toggleIcon.classList.remove('collapsed');
+          console.log('📂 Section dépliée:', section.id || 'sans id');
         } else {
           // Replier
           grid.classList.add('collapsed');
-          toggle.classList.add('collapsed');
-          console.log('📁 Section repliée:', section.id);
+          toggleIcon.classList.add('collapsed');
+          console.log('📁 Section repliée:', section.id || 'sans id');
         }
       });
     });
 
-    console.log('✅ Gestionnaires de repliement initialisés');
+    console.log(`✅ Gestionnaires de repliement initialisés (${collapsibleCount} sections collapsibles)`);
   }
 
   // Fonction utilitaire pour replier une section spécifique
@@ -73,13 +96,15 @@
       return;
     }
 
-    const grid = section.querySelector('.form-grid');
+    const grid = section.querySelector('.form-grid, .collapsible-content');
     const toggle = section.querySelector('.collapse-toggle');
 
     if (grid && toggle) {
       grid.classList.add('collapsed');
       toggle.classList.add('collapsed');
       console.log('📁 Section repliée:', sectionId);
+    } else {
+      console.warn('⚠️ Grid ou toggle non trouvé dans la section:', sectionId);
     }
   };
 
@@ -91,13 +116,15 @@
       return;
     }
 
-    const grid = section.querySelector('.form-grid');
+    const grid = section.querySelector('.form-grid, .collapsible-content');
     const toggle = section.querySelector('.collapse-toggle');
 
     if (grid && toggle) {
       grid.classList.remove('collapsed');
       toggle.classList.remove('collapsed');
       console.log('📂 Section dépliée:', sectionId);
+    } else {
+      console.warn('⚠️ Grid ou toggle non trouvé dans la section:', sectionId);
     }
   };
 

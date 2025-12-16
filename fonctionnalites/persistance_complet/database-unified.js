@@ -2,7 +2,7 @@
   'use strict';
 
   const DB_NAME_UNIFIED = 'MaraudesUnifiedDB';
-  const DB_VERSION_UNIFIED = 3; // Version 3 : Ajout historisation
+  const DB_VERSION_UNIFIED = 5; // Version 5 : Correction index unique pour plusieurs transmissions par jour
   const STORE_PERSONNES = 'personnes';
   const STORE_INTERVENTIONS = 'interventions';
 
@@ -18,13 +18,13 @@
       const request = indexedDB.open(DB_NAME_UNIFIED, DB_VERSION_UNIFIED);
 
       request.onerror = () => {
-        console.error('❌ Erreur ouverture DB Unifiée');
+        console.error('Erreur ouverture DB Unifiée');
         reject(request.error);
       };
 
       request.onsuccess = (event) => {
         dbUnified = event.target.result;
-        console.log('✅ Base Unifiée ouverte');
+        console.log('Base Unifiée ouverte');
         resolve(dbUnified);
       };
 
@@ -33,7 +33,7 @@
         const oldVersion = event.oldVersion;
         const transaction = event.target.transaction;
 
-        console.log(`🔄 Mise à jour DB: v${oldVersion} → v${DB_VERSION_UNIFIED}`);
+        console.log(`Mise à jour DB: v${oldVersion} → v${DB_VERSION_UNIFIED}`);
 
         // Store pour les personnes
         if (!db.objectStoreNames.contains(STORE_PERSONNES)) {
@@ -46,12 +46,12 @@
           personnesStore.createIndex('prenom', 'prenom', { unique: false });
           personnesStore.createIndex('dateNaissance', 'dateNaissance', { unique: false });
           personnesStore.createIndex('inconnu', 'inconnu', { unique: false });
-          console.log('✅ Object store Personnes créé');
+          console.log('Object store Personnes créé');
         }
         
         // Migration v2 -> v3 : Ajouter le système d'historisation
         if (oldVersion < 3 && db.objectStoreNames.contains(STORE_PERSONNES)) {
-          console.log('🔄 Migration v2 -> v3 : Ajout système d\'historisation');
+          console.log('Migration v2 -> v3 : Ajout système d\'historisation');
           // La migration des données se fera au niveau applicatif
           // lors du chargement de chaque personne
         }
@@ -66,24 +66,49 @@
           interventionsStore.createIndex('personneId', 'personneId', { unique: false });
           interventionsStore.createIndex('date', 'date', { unique: false });
           interventionsStore.createIndex('type', 'type', { unique: false });
-          interventionsStore.createIndex('personneId_date_type', ['personneId', 'date', 'type'], { unique: true });
-          console.log('✅ Object store Interventions créé');
+          interventionsStore.createIndex('personneId_date_type', ['personneId', 'date', 'type'], { unique: false });
+          interventionsStore.createIndex('personneId_date_type_typeTransmission', ['personneId', 'date', 'type', 'typeTransmission'], { unique: true });
+          console.log('Object store Interventions créé');
         } else {
           // Migration v1 -> v2 : Ajouter l'index composé s'il n'existe pas
           interventionsStore = transaction.objectStore(STORE_INTERVENTIONS);
           if (oldVersion < 2 && !interventionsStore.indexNames.contains('personneId_date_type')) {
             try {
-              interventionsStore.createIndex('personneId_date_type', ['personneId', 'date', 'type'], { unique: true });
-              console.log('✅ Index personneId_date_type ajouté');
+              interventionsStore.createIndex('personneId_date_type', ['personneId', 'date', 'type'], { unique: false });
+              console.log('Index personneId_date_type ajouté');
             } catch (error) {
-              console.warn('⚠️ Erreur création index (probablement des doublons):', error.message);
-              // Si ça échoue à cause de doublons, créer l'index non-unique
+              console.warn('Erreur création index personneId_date_type:', error.message);
+            }
+          }
+          
+          // Migration v3 -> v4 : Ajouter l'index avec typeTransmission pour plusieurs transmissions par jour
+          if (oldVersion < 4 && !interventionsStore.indexNames.contains('personneId_date_type_typeTransmission')) {
+            try {
+              interventionsStore.createIndex('personneId_date_type_typeTransmission', ['personneId', 'date', 'type', 'typeTransmission'], { unique: true });
+              console.log('Index personneId_date_type_typeTransmission ajouté');
+            } catch (error) {
+              console.warn('Erreur création index personneId_date_type_typeTransmission:', error.message);
+              // Créer en non-unique si erreur
               try {
-                interventionsStore.createIndex('personneId_date_type', ['personneId', 'date', 'type'], { unique: false });
-                console.log('✅ Index personneId_date_type ajouté (non-unique)');
+                interventionsStore.createIndex('personneId_date_type_typeTransmission', ['personneId', 'date', 'type', 'typeTransmission'], { unique: false });
+                console.log('Index personneId_date_type_typeTransmission ajouté (non-unique)');
               } catch (e) {
-                console.error('❌ Impossible de créer l\'index:', e);
+                console.error('Impossible de créer l\'index:', e);
               }
+            }
+          }
+          
+          // Migration v4 -> v5 : Corriger l'index personneId_date_type pour le rendre non-unique
+          if (oldVersion < 5 && interventionsStore.indexNames.contains('personneId_date_type')) {
+            try {
+              // Supprimer l'ancien index (potentiellement unique)
+              interventionsStore.deleteIndex('personneId_date_type');
+              console.log('Ancien index personneId_date_type supprimé');
+              // Recréer avec unique: false
+              interventionsStore.createIndex('personneId_date_type', ['personneId', 'date', 'type'], { unique: false });
+              console.log('Index personneId_date_type recréé avec unique: false');
+            } catch (error) {
+              console.warn('Erreur migration index personneId_date_type:', error.message);
             }
           }
         }
@@ -92,66 +117,46 @@
   };
 
   const genererPersonId = (personne) => {
-    if (personne.inconnu) {
-      return `inconnu_${(personne.descriptionPhysique || '').substring(0, 50).replace(/\s/g, '_').toLowerCase()}`;
-    }
-    const nom = (personne.nom || '').toLowerCase().trim();
-    const prenom = (personne.prenom || '').toLowerCase().trim();
-    const ddn = personne.dateNaissance || '';
-    return `${nom}_${prenom}_${ddn}`;
+    // NOUVELLE LOGIQUE : Toujours générer un ID unique basé sur timestamp + random
+    // L'utilisateur gérera manuellement les doublons via l'outil dédié
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8);
+    return `person_${timestamp}_${random}`;
   };
 
   const creerOuRecupererPersonne = async (infos) => {
     await initDatabaseUnified();
+    
+    // NE PLUS CHERCHER LES DOUBLONS - Toujours créer une nouvelle personne
+    // L'utilisateur gérera manuellement les doublons via l'outil dédié
     const personId = genererPersonId(infos);
 
     return new Promise((resolve, reject) => {
       const transaction = dbUnified.transaction([STORE_PERSONNES], 'readwrite');
       const store = transaction.objectStore(STORE_PERSONNES);
-      const index = store.index('personId');
-      const request = index.get(personId);
 
-      request.onsuccess = async () => {
-        let personne = request.result;
-        if (personne) {
-          // Mettre à jour les infos de la personne si elle existe
-          const updatedPersonne = {
-            ...personne,
-            nom: infos.nom || personne.nom,
-            prenom: infos.prenom || personne.prenom,
-            dateNaissance: infos.dateNaissance || personne.dateNaissance,
-            descriptionPhysique: infos.descriptionPhysique || personne.descriptionPhysique,
-            inconnu: typeof infos.inconnu === 'boolean' ? infos.inconnu : personne.inconnu,
-            departement: infos.departement || personne.departement,
-            typologie: infos.typologie || personne.typologie,
-            nbPersonnes: infos.nbPersonnes || personne.nbPersonnes,
-            mineurs: infos.mineurs || personne.mineurs,
-            dateModification: new Date().toISOString()
-          };
-          await updatePersonne(personne.id, updatedPersonne);
-          resolve(personne.id);
-        } else {
-          // Créer une nouvelle personne
-          const nouvellePersonne = {
-            personId,
-            nom: infos.nom || '',
-            prenom: infos.prenom || '',
-            dateNaissance: infos.dateNaissance || '',
-            descriptionPhysique: infos.descriptionPhysique || '',
-            inconnu: infos.inconnu || false,
-            departement: infos.departement || '',
-            typologie: infos.typologie || '',
-            nbPersonnes: infos.nbPersonnes || '',
-            mineurs: infos.mineurs || '',
-            dateCreation: new Date().toISOString(),
-            dateModification: new Date().toISOString()
-          };
-          const addRequest = store.add(nouvellePersonne);
-          addRequest.onsuccess = () => resolve(addRequest.result);
-          addRequest.onerror = () => reject(addRequest.error);
-        }
+      // Créer TOUJOURS une nouvelle personne avec un ID unique
+      const nouvellePersonne = {
+        personId,
+        nom: infos.nom || '',
+        prenom: infos.prenom || '',
+        dateNaissance: infos.dateNaissance || '',
+        descriptionPhysique: infos.descriptionPhysique || '',
+        inconnu: infos.inconnu || false,
+        departement: infos.departement || '',
+        typologie: infos.typologie || '',
+        nbPersonnes: infos.nbPersonnes || '',
+        mineurs: infos.mineurs || '',
+        dateCreation: new Date().toISOString(),
+        dateModification: new Date().toISOString()
       };
-      request.onerror = () => reject(request.error);
+      
+      const addRequest = store.add(nouvellePersonne);
+      addRequest.onsuccess = () => {
+        console.log('Nouvelle personne créée avec ID unique:', addRequest.result);
+        resolve(addRequest.result);
+      };
+      addRequest.onerror = () => reject(addRequest.error);
     });
   };
 
@@ -187,7 +192,7 @@
         mineurs: infos.mineurs || personne.mineurs,
         infoHistorique: infos.infoHistorique || personne.infoHistorique || [],
         archive: typeof infos.archive === 'boolean' ? infos.archive : (personne.archive || false), // ✅ AJOUT
-        dateArchivage: infos.dateArchivage || personne.dateArchivage, // ✅ AJOUT
+        dateArchivage: infos.dateArchivage || personne.dateArchivage, // AJOUT
         dateModification: new Date().toISOString()
       };
       const transaction = dbUnified.transaction([STORE_PERSONNES], 'readwrite');
@@ -283,7 +288,15 @@
       const transaction = dbUnified.transaction([STORE_INTERVENTIONS], 'readwrite');
       const store = transaction.objectStore(STORE_INTERVENTIONS);
       const request = store.delete(id);
-      request.onsuccess = () => resolve();
+      
+      // CRITIQUE : Attendre transaction.oncomplete pour garantir que l'écriture
+      // est vraiment terminée avant de recharger la page
+      transaction.oncomplete = () => {
+        console.log('🗄️ Transaction IndexedDB terminée');
+        resolve();
+      };
+      
+      transaction.onerror = () => reject(transaction.error);
       request.onerror = () => reject(request.error);
     });
   };
@@ -299,17 +312,108 @@
     });
   };
 
+  // Retourne TOUTES les interventions pour une personne/date/type (peut y en avoir plusieurs : Jour, Nuit, Coordo)
   const getInterventionsByPersonneIdAndDateAndType = async (personneId, date, type) => {
+    // S'assurer que personneId est un nombre
+    const numericPersonneId = typeof personneId === 'string' ? parseInt(personneId, 10) : personneId;
+    
+    console.log('🗄️ getInterventionsByPersonneIdAndDateAndType:', { personneId: numericPersonneId, date, type });
     await initDatabaseUnified();
+    
     return new Promise((resolve, reject) => {
       const transaction = dbUnified.transaction([STORE_INTERVENTIONS], 'readonly');
       const store = transaction.objectStore(STORE_INTERVENTIONS);
-      const index = store.index('personneId_date_type');
-      const key = [personneId, date, type];
-      const request = index.get(key);
-      request.onsuccess = () => resolve(request.result);
+      
+      // Récupérer toutes les interventions car l'index personneId peut avoir des problèmes de type
+      const request = store.getAll();
+      
+      request.onsuccess = () => {
+        // Filtrer manuellement avec conversion de type pour éviter les problèmes de comparaison
+        const allForPerson = request.result.filter(i => {
+          const iPid = typeof i.personneId === 'string' ? parseInt(i.personneId, 10) : i.personneId;
+          return iPid === numericPersonneId;
+        });
+        
+        console.log('🗄️ Toutes interventions pour personneId', numericPersonneId, ':', allForPerson.length);
+        if (allForPerson.length > 0) {
+          console.log('🗄️ Dates disponibles:', allForPerson.map(i => `${i.date} (${i.type})`).join(', '));
+        }
+        
+        const interventions = allForPerson.filter(i => i.date === date && i.type === type);
+        console.log('🗄️ Après filtre (date=' + date + ', type=' + type + '):', interventions.length);
+        
+        if (interventions.length === 0 && allForPerson.length > 0) {
+          console.log('🗄️ Debug: dates dans BDD vs recherchée:', {
+            recherchee: date,
+            disponibles: allForPerson.map(i => i.date)
+          });
+        }
+        
+        resolve(interventions);
+      };
       request.onerror = () => reject(request.error);
     });
+  };
+  
+  // Retourne UNE intervention spécifique par personne/date/type/typeTransmission
+  const getInterventionByFullKey = async (personneId, date, type, typeTransmission) => {
+    await initDatabaseUnified();
+    
+    // Vérifier que tous les paramètres sont valides
+    if (!personneId || !date || !type) {
+      console.warn('getInterventionByFullKey: paramètres invalides', { personneId, date, type, typeTransmission });
+      return null;
+    }
+    
+    return new Promise((resolve, reject) => {
+      const transaction = dbUnified.transaction([STORE_INTERVENTIONS], 'readonly');
+      const store = transaction.objectStore(STORE_INTERVENTIONS);
+      
+      // Si typeTransmission est vide/undefined, utiliser le fallback
+      const hasValidTypeTransmission = typeTransmission && typeTransmission.trim() !== '';
+      
+      // Essayer d'utiliser l'index si disponible ET si typeTransmission est valide
+      if (hasValidTypeTransmission && store.indexNames.contains('personneId_date_type_typeTransmission')) {
+        try {
+          const index = store.index('personneId_date_type_typeTransmission');
+          const key = [personneId, date, type, typeTransmission];
+          const request = index.get(key);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => {
+            console.warn('Erreur index, utilisation fallback');
+            // Fallback en cas d'erreur
+            fallbackSearch(store, personneId, date, type, typeTransmission, resolve, reject);
+          };
+        } catch (e) {
+          console.warn('Exception index, utilisation fallback:', e.message);
+          fallbackSearch(store, personneId, date, type, typeTransmission, resolve, reject);
+        }
+      } else {
+        // Fallback : parcourir toutes les interventions
+        fallbackSearch(store, personneId, date, type, typeTransmission, resolve, reject);
+      }
+    });
+  };
+  
+  // Fonction de fallback pour la recherche
+  const fallbackSearch = (store, personneId, date, type, typeTransmission, resolve, reject) => {
+    const index = store.index('personneId');
+    const range = IDBKeyRange.only(personneId);
+    const request = index.getAll(range);
+    
+    request.onsuccess = () => {
+      let intervention;
+      if (typeTransmission && typeTransmission.trim() !== '') {
+        intervention = request.result.find(i => 
+          i.date === date && i.type === type && i.typeTransmission === typeTransmission
+        );
+      } else {
+        // Si pas de typeTransmission spécifié, retourner la première intervention pour cette date/type
+        intervention = request.result.find(i => i.date === date && i.type === type);
+      }
+      resolve(intervention);
+    };
+    request.onerror = () => reject(request.error);
   };
 
   const getInterventionsByPersonneAndDate = async (personneId, date) => {
@@ -360,8 +464,9 @@
   window.getAllPersonnes = getAllPersonnes;
   window.getAllInterventions = getAllInterventions;
   window.getInterventionsByPersonneIdAndDateAndType = getInterventionsByPersonneIdAndDateAndType;
+  window.getInterventionByFullKey = getInterventionByFullKey;
   window.getInterventionsByPersonneAndDate = getInterventionsByPersonneAndDate;
   window.getPersonnesAvecInterventions = getPersonnesAvecInterventions;
 
-  console.log('📦 Module Persistance Unifiée chargé');
+  console.log('Module Persistance Unifiée chargé');
 })();

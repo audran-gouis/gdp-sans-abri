@@ -25,6 +25,76 @@ async function initApp() {
   
   console.log('🚀 Démarrage de l\'initialisation (BASE UNIFIÉE)...');
   
+  // CORRECTION ELECTRON : Si on vient d'une suppression, forcer un nettoyage complet
+  if (sessionStorage.getItem('just-deleted') === 'true') {
+    console.log('🧹 Nettoyage après suppression détecté...');
+    sessionStorage.removeItem('just-deleted');
+    
+    // ATTENDRE que le DOM soit VRAIMENT prêt
+    setTimeout(() => {
+      console.log('🔧 Démarrage du nettoyage post-suppression...');
+      
+      // 1. Nettoyer tous les overlays possibles
+      document.querySelectorAll('.modal, .historique-modal-overlay').forEach(el => {
+        el.style.display = 'none';
+        el.style.pointerEvents = 'none';
+        el.style.zIndex = '-9999';
+      });
+      
+      // 2. Forcer tous les inputs critiques à être interactifs
+      const criticalInputs = [
+        'transmissions-date',
+        'filter-nom',
+        'filter-prenom',
+        'filter-ddn',
+        'filter-inconnu',
+        'filter-description'
+      ];
+      
+      criticalInputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+          // Retirer TOUS les attributs bloquants
+          input.style.pointerEvents = 'auto';
+          input.style.zIndex = '1';
+          input.removeAttribute('disabled');
+          input.removeAttribute('readonly');
+          input.removeAttribute('aria-disabled');
+          
+          // CRITIQUE : Cycle focus/blur pour réveiller l'input au niveau du moteur
+          input.focus();
+          input.blur();
+          
+          // Simuler des événements pour réveiller l'input
+          input.dispatchEvent(new Event('mouseenter', { bubbles: true }));
+          input.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+          input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+          input.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+          input.dispatchEvent(new Event('mouseleave', { bubbles: true }));
+          
+          console.log(`   ✓ Input ${id} réveillé`);
+        }
+      });
+      
+      // 3. Force un reflow COMPLET du document
+      document.body.style.display = 'none';
+      document.body.offsetHeight; // Force reflow
+      document.body.style.display = '';
+      
+      console.log('✅ Nettoyage post-suppression terminé');
+      
+      // 4. DERNIER RECOURS : Focus sur le premier input après un délai
+      setTimeout(() => {
+        const firstInput = document.getElementById('transmissions-date');
+        if (firstInput) {
+          firstInput.focus();
+          console.log('🎯 Focus final sur transmissions-date');
+        }
+      }, 100);
+      
+    }, 200); // Délai augmenté pour être sûr que le DOM est prêt
+  }
+  
   try {
     // Initialiser la BASE DE DONNÉES UNIFIÉE
     if (typeof window.initDatabaseUnified === 'function') {

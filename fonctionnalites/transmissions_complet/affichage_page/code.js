@@ -272,7 +272,10 @@ function initDateSelectors() {
       today.setDate(today.getDate() - 1);
     }
     
-    dateInput.value = today.toISOString().split('T')[0];
+    // Ne changer la date que si elle n'est pas déjà définie
+    if (!dateInput.value) {
+      dateInput.value = today.toISOString().split('T')[0];
+    }
     
     // Utiliser la nouvelle fonction d'affichage centralisée
     const rechargerFiches = () => {
@@ -281,13 +284,20 @@ function initDateSelectors() {
       }
     };
     
-    dateInput.addEventListener('change', rechargerFiches);
+    // Vérifier si les listeners sont déjà attachés (flag sur l'élément)
+    if (!dateInput._listenersAttached) {
+      dateInput.addEventListener('change', rechargerFiches);
+      dateInput._listenersAttached = true;
+    }
     
-    document.getElementById('filter-nom')?.addEventListener('input', rechargerFiches);
-    document.getElementById('filter-prenom')?.addEventListener('input', rechargerFiches);
-    document.getElementById('filter-ddn')?.addEventListener('change', rechargerFiches);
-    document.getElementById('filter-inconnu')?.addEventListener('change', rechargerFiches);
-    document.getElementById('filter-description')?.addEventListener('input', rechargerFiches);
+    ['filter-nom', 'filter-prenom', 'filter-ddn', 'filter-inconnu', 'filter-description'].forEach(id => {
+      const element = document.getElementById(id);
+      if (element && !element._listenersAttached) {
+        const eventType = id === 'filter-ddn' || id === 'filter-inconnu' ? 'change' : 'input';
+        element.addEventListener(eventType, rechargerFiches);
+        element._listenersAttached = true;
+      }
+    });
   }
   
   console.log('Sélecteurs de date initialisés');

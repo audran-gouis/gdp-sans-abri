@@ -28,9 +28,24 @@
     transform: rotate(-90deg);
 }
 
+/* Masquer le contenu quand la section est repliée */
+.form-grid.collapsed,
+.collapsible-content.collapsed {
+    display: none;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
 
-
-
+/* Afficher le contenu quand la section est dépliée */
+.form-grid:not(.collapsed),
+.collapsible-content:not(.collapsed) {
+    display: grid;
+    opacity: 1;
+    max-height: none;
+    transition: all 0.3s ease;
+}
 
 
 

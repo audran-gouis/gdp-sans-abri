@@ -255,6 +255,12 @@ function applyDetailedFilters(interventions, dateFin) {
   }
   // Si filterInconnu est vide ou "tous", on ne filtre pas
   
+  // Filtre Attention (checkbox)
+  const filterAttention = document.getElementById('stats-filter-attention')?.checked;
+  if (filterAttention) {
+    filtered = filtered.filter(item => item.intervention?.attention === true);
+  }
+  
   // === FILTRES SITUATION ===
   
   // Filtre par département (Select Multiple)
@@ -406,19 +412,12 @@ function displayStatistics(interventions, source, dateFin) {
         interventions: [intervention],
         _passages: 1,
         _dates: [intervention.date],
-        _types: new Set([intervention.type]),
-        _typesParDate: new Map([[intervention.date, new Set([intervention.type])]])
+        _types: new Set([intervention.type])
       });
     } else {
       const existing = uniquePersonsMap.get(personneId);
       existing.interventions.push(intervention);
-      
-      // Compter les passages : max 1 par type par date
-      if (!existing._typesParDate.has(intervention.date)) {
-        existing._typesParDate.set(intervention.date, new Set([intervention.type]));
-      } else {
-        existing._typesParDate.get(intervention.date).add(intervention.type);
-      }
+      existing._passages++;
       
       if (!existing._dates.includes(intervention.date)) {
         existing._dates.push(intervention.date);
@@ -427,13 +426,9 @@ function displayStatistics(interventions, source, dateFin) {
     }
   });
   
-  // Calculer le nombre total de passages (max 1 par type par date par personne)
-  let totalPassages = 0;
-  uniquePersonsMap.forEach(entry => {
-    entry._typesParDate.forEach(typesSet => {
-      totalPassages += typesSet.size; // Nombre de types différents pour cette date
-    });
-  });
+  // Le nombre total de passages = nombre total d'interventions
+  // Chaque transmission (Jour, Nuit, Coordo) compte comme un passage distinct
+  const totalPassages = interventions.length;
   
   // Stocker les personnes distinctes pour l'affichage des cartes
   window.filteredStatsPersons = Array.from(uniquePersonsMap.values());
@@ -479,22 +474,29 @@ function displayStatistics(interventions, source, dateFin) {
   });
   
   // Compter les accompagnements
-  let accompStats = { ecoute: 0, orientation: 0, admin: 0, medical: 0, hebergement: 0, autre: 0 };
+  let accompStats = { hygiene: 0, accueilJour: 0, admin: 0, hebergement: 0, medical: 0, autre: 0 };
   interventions.forEach(item => {
     if (item.accompagnement) {
       Object.keys(accompStats).forEach(key => {
         if (item.accompagnement[key]) accompStats[key]++;
       });
+      // Compatibilité avec anciennes données
+      if (item.accompagnement.ecoute) accompStats.hygiene++;
+      if (item.accompagnement.orientation) accompStats.accueilJour++;
     }
   });
   
   // Compter les distributions
-  let distribStats = { alimentaire: 0, vestimentaire: 0, hygiene: 0, couvertures: 0, duvet: 0, autre: 0 };
+  let distribStats = { boisson: 0, alimentaire: 0, duvet: 0, couvertureSurvie: 0, bonnetsGants: 0, sousVetements: 0, kitsHygiene: 0, autre: 0 };
   interventions.forEach(item => {
     if (item.distribution) {
       Object.keys(distribStats).forEach(key => {
         if (item.distribution[key]) distribStats[key]++;
       });
+      // Compatibilité avec anciennes données
+      if (item.distribution.vestimentaire) distribStats.bonnetsGants++;
+      if (item.distribution.hygiene) distribStats.kitsHygiene++;
+      if (item.distribution.couvertures) distribStats.couvertureSurvie++;
     }
   });
   
@@ -701,11 +703,11 @@ function displayStatistics(interventions, source, dateFin) {
         <div class="stats-card" style="background: white; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #059669; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
           <h4 style="margin: 0 0 0.5rem 0; color: #059669;">Accompagnement</h4>
           <ul style="list-style: none; padding: 0; margin: 0;">
-            <li>Écoute: <strong>${accompStats.ecoute}</strong></li>
-            <li>Orientation: <strong>${accompStats.orientation}</strong></li>
-            <li>Démarche admin: <strong>${accompStats.admin}</strong></li>
+            <li>Hygiène: <strong>${accompStats.hygiene}</strong></li>
+            <li>Accueil de jour: <strong>${accompStats.accueilJour}</strong></li>
+            <li>Administratif: <strong>${accompStats.admin}</strong></li>
+            <li>Hébergement (CHU + LHSS): <strong>${accompStats.hebergement}</strong></li>
             <li>Médical: <strong>${accompStats.medical}</strong></li>
-            <li>Hébergement: <strong>${accompStats.hebergement}</strong></li>
             <li>Autre: <strong>${accompStats.autre}</strong></li>
           </ul>
         </div>
@@ -713,11 +715,13 @@ function displayStatistics(interventions, source, dateFin) {
         <div class="stats-card" style="background: white; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #d97706; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
           <h4 style="margin: 0 0 0.5rem 0; color: #b45309;">Distribution</h4>
           <ul style="list-style: none; padding: 0; margin: 0;">
+            <li>Boisson (Eau, Café, Thé): <strong>${distribStats.boisson}</strong></li>
             <li>Alimentaire: <strong>${distribStats.alimentaire}</strong></li>
-            <li>Vestimentaire: <strong>${distribStats.vestimentaire}</strong></li>
-            <li>Hygiène: <strong>${distribStats.hygiene}</strong></li>
-            <li>Couvertures: <strong>${distribStats.couvertures}</strong></li>
-            <li>Duvet: <strong>${distribStats.duvet}</strong></li>
+            <li>Duvets: <strong>${distribStats.duvet}</strong></li>
+            <li>Couverture de survie: <strong>${distribStats.couvertureSurvie}</strong></li>
+            <li>Bonnets/Gants/Tour de Cou: <strong>${distribStats.bonnetsGants}</strong></li>
+            <li>Sous-vêtements: <strong>${distribStats.sousVetements}</strong></li>
+            <li>Kits d'hygiène: <strong>${distribStats.kitsHygiene}</strong></li>
             <li>Autre: <strong>${distribStats.autre}</strong></li>
           </ul>
         </div>
@@ -767,6 +771,10 @@ function resetFilters() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  
+  // Réinitialiser la checkbox Attention
+  const checkboxAttention = document.getElementById('stats-filter-attention');
+  if (checkboxAttention) checkboxAttention.checked = false;
   
   // Réinitialiser les selects multiples
   const multiSelectFields = [
@@ -880,6 +888,14 @@ function showFilteredCards() {
       departement: personne.departement || ''
     };
     
+    // Déterminer le type principal (pour savoir quel onglet/formulaire ouvrir)
+    const mainType = personEntry._types[0] || 'transmissions';
+    
+    // Trouver la dernière date disponible dans la plage
+    const lastDate = personEntry._dates && personEntry._dates.length > 0 
+      ? personEntry._dates[personEntry._dates.length - 1] 
+      : currentDateFin;
+    
     card.innerHTML = `
       <div class="card-header">
         <h3>${displayName}</h3>
@@ -934,11 +950,149 @@ function showFilteredCards() {
         ` : ''}
       </div>
     `;
+    
+    // Ajouter un style de curseur pour indiquer que c'est cliquable
+    card.style.cursor = 'pointer';
+    
+    // Ajouter un gestionnaire de clic pour ouvrir le formulaire
+    card.addEventListener('click', () => {
+      openPersonForm(personne.id, mainType, lastDate, personEntry._types);
+    });
+    
     container.appendChild(card);
   });
   
   section.style.display = 'block';
   console.log('✅ ' + persons.length + ' personne(s) distincte(s) affichée(s)');
+}
+
+/**
+ * Ouvre le formulaire de la personne en mode CONSULTATION (depuis Statistiques)
+ * @param {number} personneId - ID de la personne
+ * @param {string} mainType - Type principal (transmissions, adp, pointAccueil)
+ * @param {string} date - Date à utiliser
+ * @param {Array} allTypes - Tous les types disponibles pour cette personne
+ */
+function openPersonForm(personneId, mainType, date, allTypes) {
+  console.log('🔗 Ouverture du formulaire en CONSULTATION:', { personneId, mainType, date, allTypes });
+  
+  // Mapping des types vers les onglets, fonctions d'édition et IDs des modals
+  const typeConfig = {
+    'transmissions': {
+      tabId: 'transmissions-tab',
+      dateInputId: 'transmissions-date',
+      editFunction: 'editTransmission',
+      modalId: 'modal-ajout',
+      btnSupprimer: 'btn-supprimer-transmission',
+      btnAnnuler: 'btn-annuler',
+      btnEnregistrer: null // C'est le submit button
+    },
+    'adp': {
+      tabId: 'adp-tab',
+      dateInputId: 'adp-date',
+      editFunction: 'editTransmissionAdp',
+      modalId: 'modal-adp',
+      btnSupprimer: 'btn-supprimer-adp',
+      btnAnnuler: 'adp-btn-annuler',
+      btnEnregistrer: null
+    },
+    'pointAccueil': {
+      tabId: 'pointaccueil-tab',
+      dateInputId: 'pa-date',
+      editFunction: 'modifierFichePA',
+      modalId: 'modal-point-accueil',
+      btnSupprimer: 'btn-supprimer-pa',
+      btnAnnuler: 'pa-btn-annuler',
+      btnEnregistrer: null
+    }
+  };
+  
+  const config = typeConfig[mainType];
+  if (!config) {
+    console.error('Type inconnu:', mainType);
+    return;
+  }
+  
+  // 1. Naviguer vers l'onglet approprié
+  const tab = document.getElementById(config.tabId);
+  if (tab) {
+    tab.click();
+    console.log('📑 Navigation vers l\'onglet:', config.tabId);
+  }
+  
+  // 2. Mettre à jour la date dans le sélecteur de l'onglet
+  setTimeout(() => {
+    const dateInput = document.getElementById(config.dateInputId);
+    if (dateInput && date) {
+      dateInput.value = date;
+      console.log('📅 Date mise à jour:', date);
+      
+      // Déclencher l'événement change pour rafraîchir la liste
+      dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    
+    // 3. Ouvrir le formulaire d'édition en MODE CONSULTATION
+    setTimeout(() => {
+      const editFn = window[config.editFunction];
+      if (typeof editFn === 'function') {
+        // Passer consultationMode = true pour ne pas afficher la date du jour dans le sélecteur
+        editFn(personneId, date, true);
+        console.log('📝 Formulaire ouvert en mode consultation pour la personne:', personneId);
+        
+        // 4. Mettre le formulaire en mode CONSULTATION (cacher les boutons d'action)
+        setTimeout(() => {
+          const modal = document.getElementById(config.modalId);
+          if (modal) {
+            // Cacher le bouton Supprimer
+            const btnSupprimer = document.getElementById(config.btnSupprimer);
+            if (btnSupprimer) btnSupprimer.style.display = 'none';
+            
+            // Cacher le bouton Annuler
+            const btnAnnuler = document.getElementById(config.btnAnnuler);
+            if (btnAnnuler) btnAnnuler.style.display = 'none';
+            
+            // Cacher le bouton Enregistrer (submit)
+            const btnEnregistrer = modal.querySelector('button[type="submit"]');
+            if (btnEnregistrer) btnEnregistrer.style.display = 'none';
+            
+            // Ajouter un bouton "Fermer" à la place
+            const footer = modal.querySelector('.modal-footer');
+            if (footer && !footer.querySelector('.btn-fermer-consultation')) {
+              const btnFermer = document.createElement('button');
+              btnFermer.type = 'button';
+              btnFermer.className = 'btn-primary btn-fermer-consultation';
+              btnFermer.textContent = 'Fermer';
+              btnFermer.style.marginLeft = 'auto';
+              btnFermer.addEventListener('click', () => {
+                // Fermer le modal
+                modal.classList.remove('show');
+                modal.style.display = 'none';
+                
+                // Restaurer les boutons pour la prochaine utilisation normale
+                if (btnSupprimer) btnSupprimer.style.display = '';
+                if (btnAnnuler) btnAnnuler.style.display = '';
+                if (btnEnregistrer) btnEnregistrer.style.display = '';
+                btnFermer.remove();
+                
+                // Retourner à l'onglet Statistiques
+                const statsTab = document.getElementById('statistiques-tab');
+                if (statsTab) statsTab.click();
+              });
+              footer.appendChild(btnFermer);
+            }
+            
+            console.log('👁️ Mode consultation activé - boutons d\'action cachés');
+          }
+        }, 300);
+        
+      } else {
+        console.warn('Fonction d\'édition non trouvée:', config.editFunction);
+        if (mainType === 'transmissions' && typeof window.editTransmission === 'function') {
+          window.editTransmission(personneId);
+        }
+      }
+    }, 200);
+  }, 100);
 }
 
 /**

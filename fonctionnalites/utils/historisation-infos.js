@@ -594,11 +594,14 @@
         // Format objet (nouveau)
         if (intervention.accompagnement && typeof intervention.accompagnement === 'object' && !Array.isArray(intervention.accompagnement)) {
           const labels = {
+            hygiene: 'Hygiène',
+            accueilJour: 'Accueil de jour',
+            admin: 'Administratif',
+            hebergement: 'Hébergement (CHU + LHSS)',
+            medical: 'Médical',
+            // Anciennes valeurs pour compatibilité
             ecoute: 'Écoute',
             orientation: 'Orientation',
-            admin: 'Démarches administratives',
-            medical: 'Médical',
-            hebergement: 'Hébergement',
             autre: 'Autre'
           };
           accompagnements = Object.entries(intervention.accompagnement)
@@ -625,11 +628,17 @@
         // Format objet (nouveau)
         if (intervention.distribution && typeof intervention.distribution === 'object' && !Array.isArray(intervention.distribution)) {
           const labels = {
+            boisson: 'Boisson (Eau, Café, Thé)',
             alimentaire: 'Alimentaire',
+            duvet: 'Duvets',
+            couvertureSurvie: 'Couverture de survie',
+            bonnetsGants: 'Bonnets/Gants/Tour de Cou',
+            sousVetements: 'Sous-vêtements',
+            kitsHygiene: 'Kits d\'hygiène',
+            // Anciennes valeurs pour compatibilité
             vestimentaire: 'Vestimentaire',
             hygiene: 'Hygiène',
             couvertures: 'Couvertures',
-            duvet: 'Duvet',
             autre: 'Autre'
           };
           distributions = Object.entries(intervention.distribution)

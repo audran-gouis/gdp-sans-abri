@@ -100,18 +100,15 @@ async function trouverPersonne(infos) {
 async function creerOuRecupererPersonne(infos) {
   await initDatabasePersonnes();
   
-  console.log('🔍 Recherche personne:', infos);
+  console.log('🔍 Création nouvelle personne:', infos);
   
-  // Chercher si la personne existe déjà
-  const personneExistante = await trouverPersonne(infos);
+  // NE PLUS CHERCHER LES DOUBLONS - Toujours créer une nouvelle personne
+  // L'utilisateur gérera manuellement les doublons via l'outil dédié
   
-  if (personneExistante) {
-    console.log('✅ Personne existante trouvée, ID:', personneExistante.id);
-    return personneExistante.id;
-  }
-  
-  // Créer une nouvelle personne
-  const personId = genererPersonId(infos);
+  // Créer une nouvelle personne avec un personId unique basé sur timestamp
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8);
+  const personId = `person_${timestamp}_${random}`;
   
   const nouvellePersonne = {
     personId,

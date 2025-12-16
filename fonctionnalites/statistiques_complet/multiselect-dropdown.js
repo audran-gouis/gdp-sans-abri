@@ -5,52 +5,41 @@
 (function() {
   'use strict';
 
-  // Gestionnaire global pour fermer les dropdowns
+  // Gestionnaire global pour fermer les dropdowns - UNIQUEMENT dans l'onglet Stats
   let globalClickHandlerAttached = false;
-  let clickHandler = null;
-  let keyHandler = null;
   
   function attachGlobalClickHandler() {
     if (globalClickHandlerAttached) return;
-    
     globalClickHandlerAttached = true;
     
-    // Créer les handlers pour pouvoir les détacher si nécessaire
-    clickHandler = (e) => {
-      // Ne s'exécuter QUE dans l'onglet Statistiques
-      const statsTab = document.getElementById('statistiques-tab');
-      if (!statsTab || !statsTab.classList.contains('active')) {
-        return; // Ne rien faire si on n'est pas dans les stats
-      }
-      
-      // Vérifier d'abord s'il y a des dropdowns ouverts
-      const openDropdowns = document.querySelectorAll('.stats-filters-complete .multiselect-wrapper.open');
-      if (openDropdowns.length === 0) return; // Ne rien faire si aucun dropdown ouvert
-      
-      // Vérifier si le clic est dans un dropdown
-      const clickedInsideDropdown = e.target.closest('.stats-filters-complete .multiselect-wrapper');
-      
-      // Fermer seulement si le clic est en dehors d'un dropdown
-      if (!clickedInsideDropdown) {
-        openDropdowns.forEach(w => {
-          w.classList.remove('open');
-        });
-      }
-    };
+    // Attacher les événements UNIQUEMENT sur l'onglet Statistiques
+    const statsTab = document.getElementById('statistiques-tab');
+    if (!statsTab) {
+      console.warn('Onglet Statistiques non trouvé');
+      return;
+    }
     
-    keyHandler = (e) => {
+    // Click dans l'onglet statistiques seulement
+    statsTab.addEventListener('click', (e) => {
+      const openDropdowns = document.querySelectorAll('.stats-filters-complete .multiselect-wrapper.open');
+      if (openDropdowns.length === 0) return;
+      
+      const clickedInsideDropdown = e.target.closest('.multiselect-wrapper');
+      if (!clickedInsideDropdown) {
+        openDropdowns.forEach(w => w.classList.remove('open'));
+      }
+    });
+    
+    // Escape pour fermer partout
+    document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         document.querySelectorAll('.stats-filters-complete .multiselect-wrapper.open').forEach(w => {
           w.classList.remove('open');
         });
       }
-    };
+    });
     
-    // Attacher les handlers
-    document.addEventListener('click', clickHandler);
-    document.addEventListener('keydown', keyHandler);
-    
-    console.log('✅ Gestionnaire click pour dropdowns attaché (actif seulement dans onglet Statistiques)');
+    console.log('✅ Gestionnaire dropdowns attaché (scope: onglet Statistiques uniquement)');
   }
 
   function createMultiSelectDropdown(selectElement) {
@@ -155,13 +144,16 @@
       }
     }
     
-    // Toggle dropdown
+    // Toggle dropdown - NE CONCERNE QUE LES DROPDOWNS STATS
     button.addEventListener('click', (e) => {
+      // Vérifier qu'on est bien dans un dropdown de statistiques
+      if (!e.target.closest('.stats-filters-complete')) return;
+      
       e.stopPropagation();
       const isOpen = wrapper.classList.contains('open');
       
       // Fermer tous les autres dropdowns
-      document.querySelectorAll('.multiselect-wrapper.open').forEach(w => {
+      document.querySelectorAll('.stats-filters-complete .multiselect-wrapper.open').forEach(w => {
         if (w !== wrapper) w.classList.remove('open');
       });
       

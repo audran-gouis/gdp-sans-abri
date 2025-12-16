@@ -2,7 +2,32 @@
 <div id="modal-point-accueil" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>Ajouter / Modifier une personne Point d'Accueil</h2>
+            <div class="modal-title-with-date">
+                <h2 id="pa-modal-titre-personne">Ajouter / Modifier une personne Point d'Accueil</h2>
+                <!-- Sélecteur de date (menu déroulant) -->
+                <div class="date-navigator" id="date-navigator-pa" style="display: none;">
+                    <button type="button" class="btn-nav-date" id="pa-btn-date-prev" title="Date précédente">◀</button>
+                    <select id="select-date-pa" class="select-date-nav">
+                        <!-- Options remplies dynamiquement -->
+                    </select>
+                    <button type="button" class="btn-nav-date" id="pa-btn-date-next" title="Date suivante">▶</button>
+                </div>
+                <!-- Onglets Type de Transmission -->
+                <div class="transmission-tabs" id="pa-transmission-tabs" style="display: none;">
+                    <button type="button" class="transmission-tab" data-type="Jour">
+                        <span class="tab-label">Jour</span>
+                        <span class="tab-indicator" id="pa-tab-indicator-jour"></span>
+                    </button>
+                    <button type="button" class="transmission-tab" data-type="Nuit">
+                        <span class="tab-label">Nuit</span>
+                        <span class="tab-indicator" id="pa-tab-indicator-nuit"></span>
+                    </button>
+                    <button type="button" class="transmission-tab" data-type="Coordo">
+                        <span class="tab-label">Coordo</span>
+                        <span class="tab-indicator" id="pa-tab-indicator-coordo"></span>
+                    </button>
+                </div>
+            </div>
             <div class="modal-actions">
                 <button type="button" class="modal-expand" id="pa-btn-expand" title="Agrandir">⛶</button>
                 <button type="button" class="modal-close pa-modal-close">&times;</button>
@@ -209,9 +234,7 @@
                             <option value="">Sélectionner...</option>
                             <option value="jour">Jour</option>
                             <option value="nuit">Nuit</option>
-                            <option value="information">Information</option>
-                            <option value="signalement">Signalement</option>
-                            <option value="suivi">Suivi</option>
+                            <option value="coordo">Coordo</option>
                         </select>
                     </div>
                     
@@ -323,10 +346,6 @@
                                 <input type="checkbox" id="form-pa-refus-contact" class="form-checkbox">
                                 <span>Refus de contact</span>
                             </label>
-                            <label class="checkbox-label checkbox-attention">
-                                <input type="checkbox" id="form-pa-attention" class="form-checkbox">
-                                <span>⚠️ Attention</span>
-                            </label>
                         </div>
                     </div>
                 </div>
@@ -342,24 +361,24 @@
                     <div class="form-group full-width">
                         <div class="checkbox-group">
                             <label class="checkbox-label">
-                                <input type="checkbox" id="form-pa-accomp-ecoute" class="form-checkbox">
-                                <span>Écoute</span>
+                                <input type="checkbox" id="form-pa-accomp-hygiene" class="form-checkbox">
+                                <span>Hygiène</span>
                             </label>
                             <label class="checkbox-label">
-                                <input type="checkbox" id="form-pa-accomp-orientation" class="form-checkbox">
-                                <span>Orientation</span>
+                                <input type="checkbox" id="form-pa-accomp-accueil-jour" class="form-checkbox">
+                                <span>Accueil de jour</span>
                             </label>
                             <label class="checkbox-label">
                                 <input type="checkbox" id="form-pa-accomp-admin" class="form-checkbox">
-                                <span>Démarche administrative</span>
+                                <span>Administratif</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-accomp-hebergement" class="form-checkbox">
+                                <span>Hébergement (CHU + LHSS)</span>
                             </label>
                             <label class="checkbox-label">
                                 <input type="checkbox" id="form-pa-accomp-medical" class="form-checkbox">
                                 <span>Médical</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="form-pa-accomp-hebergement" class="form-checkbox">
-                                <span>Hébergement</span>
                             </label>
                         </div>
                     </div>
@@ -376,24 +395,32 @@
                     <div class="form-group full-width">
                         <div class="checkbox-group">
                             <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-distrib-boisson" class="form-checkbox">
+                                <span>Boisson (Eau, Café, Thé)</span>
+                            </label>
+                            <label class="checkbox-label">
                                 <input type="checkbox" id="form-pa-distrib-alimentaire" class="form-checkbox">
                                 <span>Alimentaire</span>
                             </label>
                             <label class="checkbox-label">
-                                <input type="checkbox" id="form-pa-distrib-vestimentaire" class="form-checkbox">
-                                <span>Vestimentaire</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="form-pa-distrib-hygiene" class="form-checkbox">
-                                <span>Hygiène</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="form-pa-distrib-couvertures" class="form-checkbox">
-                                <span>Couvertures</span>
-                            </label>
-                            <label class="checkbox-label">
                                 <input type="checkbox" id="form-pa-distrib-duvet" class="form-checkbox">
-                                <span>Duvet</span>
+                                <span>Duvets</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-distrib-couverture-survie" class="form-checkbox">
+                                <span>Couverture de survie</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-distrib-bonnets-gants" class="form-checkbox">
+                                <span>Bonnets/Gants/Tour de Cou</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-distrib-sous-vetements" class="form-checkbox">
+                                <span>Sous-vêtements</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="form-pa-distrib-kits-hygiene" class="form-checkbox">
+                                <span>Kits d'hygiène</span>
                             </label>
                         </div>
                     </div>
@@ -413,11 +440,36 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Case Attention -->
+            <div class="form-section" style="border-top: 2px solid #f0f0f0; padding-top: 1rem;">
+                <div class="form-group full-width">
+                    <label class="checkbox-attention">
+                        <input type="checkbox" id="form-pa-attention" class="form-checkbox">
+                        <span>Attention</span>
+                    </label>
+                </div>
+            </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn-danger" id="btn-supprimer-pa" style="display: none; margin-right: auto;">Supprimer la fiche</button>
-                <button type="button" class="btn-secondary" id="pa-btn-annuler">Annuler</button>
-                <button type="submit" class="btn-primary">Enregistrer</button>
+                <button type="button" class="btn-danger" id="btn-supprimer-pa" style="display: none;">Supprimer la fiche</button>
+                
+                <!-- Bouton ajouter nouvelle transmission Point Accueil -->
+                <div class="add-transmission-container" id="pa-add-transmission-container" style="display: none;">
+                    <button type="button" class="btn-add-transmission" id="btn-add-transmission-pa">
+                        + Nouvelle transmission PA pour ce jour
+                    </button>
+                    <div class="add-transmission-dropdown" id="add-transmission-dropdown-pa" style="display: none;">
+                        <button type="button" class="dropdown-item" data-type="Jour">Jour</button>
+                        <button type="button" class="dropdown-item" data-type="Nuit">Nuit</button>
+                        <button type="button" class="dropdown-item" data-type="Coordo">Coordo</button>
+                    </div>
+                </div>
+                
+                <div class="footer-right-buttons">
+                    <button type="button" class="btn-secondary" id="pa-btn-annuler">Annuler</button>
+                    <button type="submit" class="btn-primary">Enregistrer</button>
+                </div>
             </div>
         </form>
     </div>

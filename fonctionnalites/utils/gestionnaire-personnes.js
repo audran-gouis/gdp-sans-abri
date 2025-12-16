@@ -257,60 +257,54 @@ function genererBadgesSources(sources) {
 function compterInterventionsParDate(personne, selectedDate, source) {
   if (!selectedDate) return { count: 0, hasToday: false };
 
-  // Utiliser un Set pour compter les types d'interventions uniques
-  const typesPresents = new Set();
+  // Compter le nombre total de passages (chaque transmission Jour/Nuit/Coordo compte)
+  let totalPassages = 0;
   const dates = [];
 
-  // Vérifier les transmissions
-  if (personne.transmissions) {
+  // Compter les transmissions (chaque type compte comme un passage)
+  if (source === 'transmissions' && personne.transmissions) {
     const trans = personne.transmissions.filter(i => i.date === selectedDate);
-    if (trans.length > 0) {
-      typesPresents.add('transmissions');
-      dates.push(...trans.map(i => i.date));
-    }
+    totalPassages += trans.length; // Chaque transmission (Jour, Nuit, Coordo) compte
+    dates.push(...trans.map(i => i.date));
   }
 
-  // Vérifier les ADP
-  if (personne.adp) {
+  // Compter les ADP (chaque type compte comme un passage)
+  if (source === 'adp' && personne.adp) {
     const adp = personne.adp.filter(i => i.date === selectedDate);
-    if (adp.length > 0) {
-      typesPresents.add('adp');
-      dates.push(...adp.map(i => i.date));
-    }
+    totalPassages += adp.length; // Chaque ADP (Jour, Nuit, Coordo) compte
+    dates.push(...adp.map(i => i.date));
   }
 
-  // Vérifier les Point Accueil
-  if (personne.pointAccueil) {
+  // Compter les Point Accueil (chaque type compte comme un passage)
+  if (source === 'pointAccueil' && personne.pointAccueil) {
     const pa = personne.pointAccueil.filter(i => i.date === selectedDate);
-    if (pa.length > 0) {
-      typesPresents.add('pointAccueil');
-      dates.push(...pa.map(i => i.date));
-    }
+    totalPassages += pa.length; // Chaque PA (Jour, Nuit, Coordo) compte
+    dates.push(...pa.map(i => i.date));
   }
 
-  const count = typesPresents.size; // Nombre de types différents (max 3)
-  const hasToday = count > 0;
+  const hasToday = totalPassages > 0;
 
   return {
-    count,
+    count: totalPassages, // Nombre total de passages pour ce jour
     hasToday,
     dates: dates.filter(Boolean)
   };
 }
 
 /**
- * Génère le badge du compteur d'interventions
+ * Génère le badge du compteur d'interventions/passages
  */
 function genererBadgeInterventions(stats, selectedDate) {
   if (!selectedDate || stats.count === 0) {
-    return '<span class="badge badge-no-transmission" title="Aucune intervention">0</span>';
+    return '<span class="badge badge-no-transmission" title="Aucun passage ce jour">0</span>';
   }
 
   if (stats.hasToday) {
-    return `<span class="badge badge-has-today" title="${stats.count} intervention(s) sur la période">${stats.count}</span>`;
+    const pluriel = stats.count > 1 ? 's' : '';
+    return `<span class="badge badge-has-today" title="${stats.count} passage${pluriel} ce jour">${stats.count}</span>`;
   }
 
-  return '<span class="badge badge-no-transmission" title="Aucune intervention">0</span>';
+  return '<span class="badge badge-no-transmission" title="Aucun passage ce jour">0</span>';
 }
 
 /**
@@ -442,7 +436,17 @@ async function afficherToutesLesPersonnesTransmissions() {
     return;
   }
 
-  container.innerHTML = personnesFiltrees.map(personne => {
+  // Trier : personnes AVEC transmission pour la date sélectionnée en premier
+  const personnesTriees = personnesFiltrees.sort((a, b) => {
+    const aHasTransmission = a.transmissions && a.transmissions.some(i => i.date === selectedDate);
+    const bHasTransmission = b.transmissions && b.transmissions.some(i => i.date === selectedDate);
+    
+    if (aHasTransmission && !bHasTransmission) return -1;
+    if (!aHasTransmission && bHasTransmission) return 1;
+    return 0; // Garder l'ordre original si les deux ont ou n'ont pas de transmission
+  });
+
+  container.innerHTML = personnesTriees.map(personne => {
     const badges = genererBadgesSourcesParDate(personne, selectedDate);
     const stats = compterInterventionsParDate(personne, selectedDate, 'transmissions');
     const badgeCount = genererBadgeInterventions(stats, selectedDate);
@@ -462,9 +466,16 @@ async function afficherToutesLesPersonnesTransmissions() {
     // Vérifier si une transmission existe pour cette date
     const transmissionToday = personne.transmissions && personne.transmissions.find(i => i.date === selectedDate);
     const hasTransmissionToday = !!transmissionToday;
-    const btnText = hasTransmissionToday ? 'Modifier' : 'Compléter';
+    const btnText = hasTransmissionToday ? 'Voir/Modifier' : 'Compléter';
     const btnClass = hasTransmissionToday ? 'btn-edit btn-modifier' : 'btn-edit btn-completer';
     const personneNom = personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim() || 'Non renseigné';
+    
+    // Compter les types de transmissions existantes pour ce jour
+    const transmissionsToday = personne.transmissions ? personne.transmissions.filter(i => i.date === selectedDate) : [];
+    const existingTypes = new Set(transmissionsToday.map(t => (t.typeTransmission || '').toLowerCase()));
+    const allTypes = ['jour', 'nuit', 'coordo'];
+    const availableTypes = allTypes.filter(t => !existingTypes.has(t));
+    const canAddMore = hasTransmissionToday && availableTypes.length > 0;
 
     return `
       <div class="transmission-card ${hasAttention ? 'has-attention' : ''}" data-personne-id="${personne.id}">
@@ -485,7 +496,8 @@ async function afficherToutesLesPersonnesTransmissions() {
         </div>
         <div class="card-actions">
           <button class="btn-card ${btnClass}" data-personne-id="${personne.id}" data-type="transmissions">${btnText}</button>
-          ${hasTransmissionToday && transmissionToday ? `<button class="btn-card btn-deplacer" data-intervention-id="${transmissionToday.id}" data-type="transmissions" data-personne-nom="${personneNom}" title="Déplacer vers un autre type">Déplacer</button>` : ''}
+          ${hasTransmissionToday && transmissionsToday.length > 0 ? `<button class="btn-card btn-deplacer" data-personne-id="${personne.id}" data-interventions='${JSON.stringify(transmissionsToday.map(t => ({id: t.id, typeTransmission: t.typeTransmission})))}' data-type="transmissions" data-personne-nom="${personneNom}" data-date="${selectedDate}" title="Déplacer vers un autre type">Déplacer</button>` : ''}
+          ${canAddMore ? `<button class="btn-card btn-nouvelle-transmission" data-personne-id="${personne.id}" data-type="transmissions" data-available-types="${availableTypes.join(',')}" title="Ajouter une autre transmission pour ce jour">+ Nouvelle transmission</button>` : ''}
         </div>
       </div>
     `;
@@ -504,11 +516,30 @@ async function afficherToutesLesPersonnesTransmissions() {
   // Ajouter les événements aux boutons de déplacement
   container.querySelectorAll('.btn-deplacer[data-type="transmissions"]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const interventionId = parseInt(btn.dataset.interventionId);
       const typeActuel = btn.dataset.type;
       const personneNom = btn.dataset.personneNom;
-      if (interventionId && typeof window.afficherModaleDeplacement === 'function') {
-        window.afficherModaleDeplacement(interventionId, typeActuel, personneNom);
+      const personneId = parseInt(btn.dataset.personneId);
+      const date = btn.dataset.date;
+      let interventions = [];
+      try {
+        interventions = JSON.parse(btn.dataset.interventions || '[]');
+      } catch (e) {
+        console.error('Erreur parsing interventions:', e);
+      }
+      if (interventions.length > 0 && typeof window.afficherModaleDeplacementMultiple === 'function') {
+        window.afficherModaleDeplacementMultiple(interventions, typeActuel, personneNom, personneId, date);
+      }
+    });
+  });
+  
+  // Ajouter les événements aux boutons "Nouvelle transmission"
+  container.querySelectorAll('.btn-nouvelle-transmission[data-type="transmissions"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const personneId = parseInt(btn.dataset.personneId);
+      const availableTypes = btn.dataset.availableTypes.split(',');
+      if (personneId && typeof window.showNewTransmissionDropdown === 'function') {
+        window.showNewTransmissionDropdown(btn, personneId, availableTypes, 'transmissions');
       }
     });
   });
@@ -539,8 +570,19 @@ async function afficherToutesLesPersonnesADP() {
     return;
   }
 
-  container.innerHTML = personnesFiltrees.map(personne => {
-    const selectedDate = document.getElementById('adp-date')?.value;
+  const selectedDate = document.getElementById('adp-date')?.value;
+
+  // Trier : personnes AVEC ADP pour la date sélectionnée en premier
+  const personnesTriees = personnesFiltrees.sort((a, b) => {
+    const aHasAdp = a.adp && a.adp.some(i => i.date === selectedDate);
+    const bHasAdp = b.adp && b.adp.some(i => i.date === selectedDate);
+    
+    if (aHasAdp && !bHasAdp) return -1;
+    if (!aHasAdp && bHasAdp) return 1;
+    return 0; // Garder l'ordre original si les deux ont ou n'ont pas d'ADP
+  });
+
+  container.innerHTML = personnesTriees.map(personne => {
     const badges = genererBadgesSourcesParDate(personne, selectedDate);
     const stats = compterInterventionsParDate(personne, selectedDate, 'adp');
     const badgeCount = genererBadgeInterventions(stats, selectedDate);
@@ -560,9 +602,16 @@ async function afficherToutesLesPersonnesADP() {
     // Vérifier si une ADP existe pour cette date
     const adpToday = personne.adp && personne.adp.find(i => i.date === selectedDate);
     const hasAdpToday = !!adpToday;
-    const btnText = hasAdpToday ? 'Modifier' : 'Compléter';
+    const btnText = hasAdpToday ? 'Voir/Modifier' : 'Compléter';
     const btnClass = hasAdpToday ? 'btn-edit btn-modifier' : 'btn-edit btn-completer';
     const personneNom = personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim() || 'Non renseigné';
+    
+    // Compter les types d'ADP existantes pour ce jour
+    const adpsToday = personne.adp ? personne.adp.filter(i => i.date === selectedDate) : [];
+    const existingAdpTypes = new Set(adpsToday.map(t => (t.typeTransmission || '').toLowerCase()));
+    const allTypes = ['jour', 'nuit', 'coordo'];
+    const availableAdpTypes = allTypes.filter(t => !existingAdpTypes.has(t));
+    const canAddMoreAdp = hasAdpToday && availableAdpTypes.length > 0;
 
     return `
       <div class="transmission-card ${hasAttention ? 'has-attention' : ''}" data-personne-id="${personne.id}">
@@ -583,7 +632,8 @@ async function afficherToutesLesPersonnesADP() {
         </div>
         <div class="card-actions">
           <button class="btn-card ${btnClass}" data-personne-id="${personne.id}" data-type="adp">${btnText}</button>
-          ${hasAdpToday && adpToday ? `<button class="btn-card btn-deplacer" data-intervention-id="${adpToday.id}" data-type="adp" data-personne-nom="${personneNom}" title="Déplacer vers un autre type">Déplacer</button>` : ''}
+          ${hasAdpToday && adpsToday.length > 0 ? `<button class="btn-card btn-deplacer" data-personne-id="${personne.id}" data-interventions='${JSON.stringify(adpsToday.map(t => ({id: t.id, typeTransmission: t.typeTransmission})))}' data-type="adp" data-personne-nom="${personneNom}" data-date="${selectedDate}" title="Déplacer vers un autre type">Déplacer</button>` : ''}
+          ${canAddMoreAdp ? `<button class="btn-card btn-nouvelle-transmission" data-personne-id="${personne.id}" data-type="adp" data-available-types="${availableAdpTypes.join(',')}" title="Ajouter une autre transmission ADP pour ce jour">+ Nouvelle ADP</button>` : ''}
         </div>
       </div>
     `;
@@ -602,11 +652,30 @@ async function afficherToutesLesPersonnesADP() {
   // Ajouter les événements aux boutons de déplacement
   container.querySelectorAll('.btn-deplacer[data-type="adp"]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const interventionId = parseInt(btn.dataset.interventionId);
       const typeActuel = btn.dataset.type;
       const personneNom = btn.dataset.personneNom;
-      if (interventionId && typeof window.afficherModaleDeplacement === 'function') {
-        window.afficherModaleDeplacement(interventionId, typeActuel, personneNom);
+      const personneId = parseInt(btn.dataset.personneId);
+      const date = btn.dataset.date;
+      let interventions = [];
+      try {
+        interventions = JSON.parse(btn.dataset.interventions || '[]');
+      } catch (e) {
+        console.error('Erreur parsing interventions:', e);
+      }
+      if (interventions.length > 0 && typeof window.afficherModaleDeplacementMultiple === 'function') {
+        window.afficherModaleDeplacementMultiple(interventions, typeActuel, personneNom, personneId, date);
+      }
+    });
+  });
+  
+  // Ajouter les événements aux boutons "Nouvelle transmission ADP"
+  container.querySelectorAll('.btn-nouvelle-transmission[data-type="adp"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const personneId = parseInt(btn.dataset.personneId);
+      const availableTypes = btn.dataset.availableTypes.split(',');
+      if (personneId && typeof window.showNewTransmissionDropdown === 'function') {
+        window.showNewTransmissionDropdown(btn, personneId, availableTypes, 'adp');
       }
     });
   });
@@ -637,8 +706,19 @@ async function afficherToutesLesPersonnesPA() {
     return;
   }
 
-  container.innerHTML = personnesFiltrees.map(personne => {
-    const selectedDate = document.getElementById('pa-date')?.value;
+  const selectedDate = document.getElementById('pa-date')?.value;
+
+  // Trier : personnes AVEC fiche Point Accueil pour la date sélectionnée en premier
+  const personnesTriees = personnesFiltrees.sort((a, b) => {
+    const aHasPA = a.pointAccueil && a.pointAccueil.some(i => i.date === selectedDate);
+    const bHasPA = b.pointAccueil && b.pointAccueil.some(i => i.date === selectedDate);
+    
+    if (aHasPA && !bHasPA) return -1;
+    if (!aHasPA && bHasPA) return 1;
+    return 0; // Garder l'ordre original si les deux ont ou n'ont pas de fiche PA
+  });
+
+  container.innerHTML = personnesTriees.map(personne => {
     const badges = genererBadgesSourcesParDate(personne, selectedDate);
     const stats = compterInterventionsParDate(personne, selectedDate, 'pointAccueil');
     const badgeCount = genererBadgeInterventions(stats, selectedDate);
@@ -658,9 +738,16 @@ async function afficherToutesLesPersonnesPA() {
     // Vérifier si une fiche Point Accueil existe pour cette date
     const paToday = personne.pointAccueil && personne.pointAccueil.find(i => i.date === selectedDate);
     const hasPAToday = !!paToday;
-    const btnText = hasPAToday ? 'Modifier' : 'Compléter';
+    const btnText = hasPAToday ? 'Voir/Modifier' : 'Compléter';
     const btnClass = hasPAToday ? 'btn-edit btn-modifier' : 'btn-edit btn-completer';
     const personneNom = personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim() || 'Non renseigné';
+    
+    // Compter les types de Point Accueil existants pour ce jour
+    const pasToday = personne.pointAccueil ? personne.pointAccueil.filter(i => i.date === selectedDate) : [];
+    const existingPATypes = new Set(pasToday.map(t => (t.typeTransmission || '').toLowerCase()));
+    const allTypes = ['jour', 'nuit', 'coordo'];
+    const availablePATypes = allTypes.filter(t => !existingPATypes.has(t));
+    const canAddMorePA = hasPAToday && availablePATypes.length > 0;
 
     return `
       <div class="transmission-card ${hasAttention ? 'has-attention' : ''}" data-personne-id="${personne.id}">
@@ -681,7 +768,8 @@ async function afficherToutesLesPersonnesPA() {
         </div>
         <div class="card-actions">
           <button class="btn-card ${btnClass}" data-personne-id="${personne.id}" data-type="pointAccueil">${btnText}</button>
-          ${hasPAToday && paToday ? `<button class="btn-card btn-deplacer" data-intervention-id="${paToday.id}" data-type="pointAccueil" data-personne-nom="${personneNom}" title="Déplacer vers un autre type">Déplacer</button>` : ''}
+          ${hasPAToday && pasToday.length > 0 ? `<button class="btn-card btn-deplacer" data-personne-id="${personne.id}" data-interventions='${JSON.stringify(pasToday.map(t => ({id: t.id, typeTransmission: t.typeTransmission})))}' data-type="pointAccueil" data-personne-nom="${personneNom}" data-date="${selectedDate}" title="Déplacer vers un autre type">Déplacer</button>` : ''}
+          ${canAddMorePA ? `<button class="btn-card btn-nouvelle-transmission" data-personne-id="${personne.id}" data-type="pointAccueil" data-available-types="${availablePATypes.join(',')}" title="Ajouter une autre transmission Point Accueil pour ce jour">+ Nouvelle PA</button>` : ''}
         </div>
       </div>
     `;
@@ -700,11 +788,30 @@ async function afficherToutesLesPersonnesPA() {
   // Ajouter les événements aux boutons de déplacement
   container.querySelectorAll('.btn-deplacer[data-type="pointAccueil"]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const interventionId = parseInt(btn.dataset.interventionId);
       const typeActuel = btn.dataset.type;
       const personneNom = btn.dataset.personneNom;
-      if (interventionId && typeof window.afficherModaleDeplacement === 'function') {
-        window.afficherModaleDeplacement(interventionId, typeActuel, personneNom);
+      const personneId = parseInt(btn.dataset.personneId);
+      const date = btn.dataset.date;
+      let interventions = [];
+      try {
+        interventions = JSON.parse(btn.dataset.interventions || '[]');
+      } catch (e) {
+        console.error('Erreur parsing interventions:', e);
+      }
+      if (interventions.length > 0 && typeof window.afficherModaleDeplacementMultiple === 'function') {
+        window.afficherModaleDeplacementMultiple(interventions, typeActuel, personneNom, personneId, date);
+      }
+    });
+  });
+  
+  // Ajouter les événements aux boutons "Nouvelle transmission Point Accueil"
+  container.querySelectorAll('.btn-nouvelle-transmission[data-type="pointAccueil"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const personneId = parseInt(btn.dataset.personneId);
+      const availableTypes = btn.dataset.availableTypes.split(',');
+      if (personneId && typeof window.showNewTransmissionDropdown === 'function') {
+        window.showNewTransmissionDropdown(btn, personneId, availableTypes, 'pointAccueil');
       }
     });
   });
@@ -713,6 +820,65 @@ async function afficherToutesLesPersonnesPA() {
   if (typeof window.attachContextMenuToAllCards === 'function') {
     window.attachContextMenuToAllCards();
   }
+}
+
+/**
+ * Affiche un dropdown pour choisir le type de nouvelle transmission
+ */
+function showNewTransmissionDropdown(btn, personneId, availableTypes, interventionType) {
+  // Fermer tout dropdown existant
+  const existingDropdown = document.querySelector('.new-transmission-dropdown');
+  if (existingDropdown) {
+    existingDropdown.remove();
+  }
+  
+  // Créer le dropdown
+  const dropdown = document.createElement('div');
+  dropdown.className = 'new-transmission-dropdown';
+  dropdown.innerHTML = availableTypes.map(type => 
+    `<button class="dropdown-option" data-type="${type}">${type.charAt(0).toUpperCase() + type.slice(1)}</button>`
+  ).join('');
+  
+  // Positionner le dropdown sous le bouton
+  const rect = btn.getBoundingClientRect();
+  dropdown.style.position = 'fixed';
+  dropdown.style.top = `${rect.bottom + 5}px`;
+  dropdown.style.left = `${rect.left}px`;
+  dropdown.style.zIndex = '10000';
+  
+  document.body.appendChild(dropdown);
+  
+  // Gestionnaire de clic sur les options
+  dropdown.querySelectorAll('.dropdown-option').forEach(option => {
+    option.addEventListener('click', async () => {
+      const selectedType = option.dataset.type;
+      dropdown.remove();
+      
+      // Ouvrir le formulaire correspondant avec le type pré-sélectionné
+      if (interventionType === 'transmissions') {
+        if (typeof window.editTransmission === 'function') {
+          await window.editTransmission(personneId, null, false, selectedType);
+        }
+      } else if (interventionType === 'adp') {
+        if (typeof window.editTransmissionAdp === 'function') {
+          await window.editTransmissionAdp(personneId, null, false, selectedType);
+        }
+      } else if (interventionType === 'pointAccueil') {
+        if (typeof window.modifierFichePA === 'function') {
+          await window.modifierFichePA(personneId, null, false, selectedType);
+        }
+      }
+    });
+  });
+  
+  // Fermer le dropdown en cliquant ailleurs
+  const closeHandler = (e) => {
+    if (!dropdown.contains(e.target) && e.target !== btn) {
+      dropdown.remove();
+      document.removeEventListener('click', closeHandler);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', closeHandler), 0);
 }
 
 // Exports
@@ -729,6 +895,7 @@ if (typeof window !== 'undefined') {
   window.afficherToutesLesPersonnesTransmissions = afficherToutesLesPersonnesTransmissions;
   window.afficherToutesLesPersonnesADP = afficherToutesLesPersonnesADP;
   window.afficherToutesLesPersonnesPA = afficherToutesLesPersonnesPA;
+  window.showNewTransmissionDropdown = showNewTransmissionDropdown;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
