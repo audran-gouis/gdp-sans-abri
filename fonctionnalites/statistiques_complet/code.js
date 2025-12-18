@@ -592,17 +592,17 @@ function displayStatistics(interventions, source, dateFin) {
                       source === 'transmissions' ? 'Transmissions' : 
                       source === 'adp' ? 'ADP' : 'Point Accueil';
   
-  // Compter par source (personnes distinctes)
-  const transmissionsPersons = Array.from(uniquePersonsMap.values()).filter(entry => entry._types.has('transmissions'));
-  const adpPersons = Array.from(uniquePersonsMap.values()).filter(entry => entry._types.has('adp'));
-  const paPersons = Array.from(uniquePersonsMap.values()).filter(entry => entry._types.has('pointAccueil'));
+  // Compter par source (passages = interventions)
+  const transmissionsPassages = interventions.filter(i => i.type === 'transmissions').length;
+  const adpPassages = interventions.filter(i => i.type === 'adp').length;
+  const paPassages = interventions.filter(i => i.type === 'pointAccueil').length;
   
   const detailBySource = source === 'all' ? `
     <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.3);">
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; font-size: 0.9rem;">
-        <div>Transmissions: <strong>${transmissionsPersons.length}</strong> personne(s)</div>
-        <div>ADP: <strong>${adpPersons.length}</strong> personne(s)</div>
-        <div>Point Accueil: <strong>${paPersons.length}</strong> personne(s)</div>
+        <div>Transmissions: <strong>${transmissionsPassages}</strong> passage(s)</div>
+        <div>ADP: <strong>${adpPassages}</strong> passage(s)</div>
+        <div>Point Accueil: <strong>${paPassages}</strong> passage(s)</div>
       </div>
     </div>
   ` : '';
