@@ -392,6 +392,13 @@ async function loadTransmissionDataForDate(personneId, date, typeTransmission) {
     
     console.log('✅ Données chargées pour date:', date);
     
+    // Nettoyer et réinitialiser les event listeners de collapse après chargement des données
+    if (window.cleanupCollapseHandlers && window.setupCollapseHandlers) {
+      window.cleanupCollapseHandlers();
+      window.setupCollapseHandlers();
+      console.log('🔄 Event listeners de collapse réinitialisés');
+    }
+    
     // Si on est en mode consultation (depuis les statistiques), redésactiver les champs
     if (window.currentConsultationModal === 'modal-ajout') {
       console.log('🔒 Mode consultation détecté - désactivation des champs dans 50ms');
@@ -429,8 +436,8 @@ async function editTransmission(personneId, date = null, consultationMode = fals
     }
     
     console.log('Personne trouvée:', personne);
-    const selectedDate = document.getElementById('transmissions-date')?.value;
-    console.log('Date sélectionnée:', selectedDate);
+    const selectedDate = date || document.getElementById('transmissions-date')?.value;
+    console.log('Date sélectionnée (param ou input):', selectedDate, '(param:', date, ')');
     
     // Chercher si une transmission existe pour cette personne à cette date
     // Si newTypeTransmission est fourni, on cherche pour ce type spécifique
@@ -636,9 +643,9 @@ async function editTransmission(personneId, date = null, consultationMode = fals
               window.cleanupCollapseHandlers();
             }
             
-            // Réinitialiser les gestionnaires de collapse
-            if (window.initSectionCollapse) {
-              window.initSectionCollapse();
+            // Réinitialiser les gestionnaires de collapse directement
+            if (window.setupCollapseHandlers) {
+              window.setupCollapseHandlers();
             }
             
             // Replier la section après un court délai

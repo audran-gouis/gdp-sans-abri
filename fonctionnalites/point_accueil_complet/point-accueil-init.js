@@ -182,7 +182,7 @@ async function loadPADataForDate(personneId, date, typeTransmission) {
     }
     
     // S'assurer que le personneId est défini dans le dataset du formulaire pour les boutons historique
-    const formPA = document.getElementById('form-point-accueil');
+    let formPA = document.getElementById('form-point-accueil');
     if (formPA) {
       formPA.dataset.personneId = pid;
       console.log('📝 PersonneId défini dans le dataset PA:', pid);
@@ -217,7 +217,7 @@ async function loadPADataForDate(personneId, date, typeTransmission) {
     if (typeSelect && typeTransmission) {
       typeSelect.value = typeTransmission;
     }
-    const formPA = document.getElementById('form-point-accueil');
+    formPA = document.getElementById('form-point-accueil');
     
     if (existingPA) {
       // Remplir les champs de l'intervention existante
@@ -322,6 +322,13 @@ async function loadPADataForDate(personneId, date, typeTransmission) {
     }
     
     console.log('✅ Données PA chargées pour date:', date);
+    
+    // Nettoyer et réinitialiser les event listeners de collapse après chargement des données
+    if (window.cleanupCollapseHandlers && window.setupCollapseHandlers) {
+      window.cleanupCollapseHandlers();
+      window.setupCollapseHandlers();
+      console.log('🔄 Event listeners de collapse réinitialisés (PA)');
+    }
     
     // Si on est en mode consultation (depuis les statistiques), redésactiver les champs
     if (window.currentConsultationModal === 'modal-point-accueil') {
@@ -557,9 +564,9 @@ async function modifierFichePA(personneId, date = null, consultationMode = false
               window.cleanupCollapseHandlers();
             }
             
-            // Réinitialiser les gestionnaires de collapse
-            if (window.initSectionCollapse) {
-              window.initSectionCollapse();
+            // Réinitialiser les gestionnaires de collapse directement
+            if (window.setupCollapseHandlers) {
+              window.setupCollapseHandlers();
             }
             
             // Replier la section après un court délai
@@ -972,17 +979,19 @@ function initPointAccueilForm() {
     btn.addEventListener('click', async (e) => {
       e.preventDefault();
       const section = btn.dataset.section;
-      const personneId = modal.dataset.personneId;
+      const personneId = formPA.dataset.personneId;
       
       console.log('🔍 PA - Clic sur bouton historique section:', section);
-      console.log('🔍 PA - PersonneId trouvé dans modal.dataset:', personneId);
-      console.log('🔍 PA - PersonneId trouvé dans formPA.dataset:', formPA.dataset.personneId);
-      console.log('🔍 PA - Tous les datasets du modal:', modal.dataset);
-      console.log('🔍 PA - Tous les datasets du formPA:', formPA.dataset);
+      console.log('🔍 PA - PersonneId trouvé dans formPA.dataset:', personneId);
+      console.log('🔍 PA - Type de personneId:', typeof personneId);
+      console.log('🔍 PA - Fonction afficherHistoriqueInterventions existe?', typeof window.afficherHistoriqueInterventions);
       
       if (personneId && typeof window.afficherHistoriqueInterventions === 'function') {
+        console.log('✅ PA - Appel de afficherHistoriqueInterventions avec:', parseInt(personneId), section);
         await window.afficherHistoriqueInterventions(parseInt(personneId), section);
+        console.log('✅ PA - afficherHistoriqueInterventions terminé');
       } else {
+        console.error('❌ PA - Conditions non remplies:', { personneId, fnExists: typeof window.afficherHistoriqueInterventions });
         await window.customAlert('Veuillez d\'abord sélectionner ou créer une personne.', 'warning');
       }
     });

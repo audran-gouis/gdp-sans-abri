@@ -308,6 +308,13 @@ async function loadAdpDataForDate(personneId, date, typeTransmission) {
     
     console.log('✅ Données ADP chargées pour date:', date);
     
+    // Nettoyer et réinitialiser les event listeners de collapse après chargement des données
+    if (window.cleanupCollapseHandlers && window.setupCollapseHandlers) {
+      window.cleanupCollapseHandlers();
+      window.setupCollapseHandlers();
+      console.log('🔄 Event listeners de collapse réinitialisés (ADP)');
+    }
+    
     // Si on est en mode consultation (depuis les statistiques), redésactiver les champs
     if (window.currentConsultationModal === 'modal-adp') {
       setTimeout(() => {
@@ -545,9 +552,9 @@ async function editTransmissionAdp(personneId, date = null, consultationMode = f
               window.cleanupCollapseHandlers();
             }
             
-            // Réinitialiser les gestionnaires de collapse
-            if (window.initSectionCollapse) {
-              window.initSectionCollapse();
+            // Réinitialiser les gestionnaires de collapse directement
+            if (window.setupCollapseHandlers) {
+              window.setupCollapseHandlers();
             }
             
             // Replier la section après un court délai
@@ -972,17 +979,19 @@ function initAdpForm() {
     btn.addEventListener('click', async (e) => {
       e.preventDefault();
       const section = btn.dataset.section;
-      const personneId = modal.dataset.personneId;
+      const personneId = formAdp.dataset.personneId;
       
       console.log('🔍 ADP - Clic sur bouton historique section:', section);
-      console.log('🔍 ADP - PersonneId trouvé dans modal.dataset:', personneId);
-      console.log('🔍 ADP - PersonneId trouvé dans formAdp.dataset:', formAdp.dataset.personneId);
-      console.log('🔍 ADP - Tous les datasets du modal:', modal.dataset);
-      console.log('🔍 ADP - Tous les datasets du formAdp:', formAdp.dataset);
+      console.log('🔍 ADP - PersonneId trouvé dans formAdp.dataset:', personneId);
+      console.log('🔍 ADP - Type de personneId:', typeof personneId);
+      console.log('🔍 ADP - Fonction afficherHistoriqueInterventions existe?', typeof window.afficherHistoriqueInterventions);
       
       if (personneId && typeof window.afficherHistoriqueInterventions === 'function') {
+        console.log('✅ ADP - Appel de afficherHistoriqueInterventions avec:', parseInt(personneId), section);
         await window.afficherHistoriqueInterventions(parseInt(personneId), section);
+        console.log('✅ ADP - afficherHistoriqueInterventions terminé');
       } else {
+        console.error('❌ ADP - Conditions non remplies:', { personneId, fnExists: typeof window.afficherHistoriqueInterventions });
         await window.customAlert('Veuillez d\'abord sélectionner ou créer une personne.', 'warning');
       }
     });

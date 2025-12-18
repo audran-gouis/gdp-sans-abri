@@ -163,6 +163,7 @@
 
   window.initSectionCollapse = initSectionCollapse;
   window.cleanupCollapseHandlers = cleanupCollapseHandlers;
+  window.setupCollapseHandlers = setupCollapseHandlers;
   console.log('📦 Module Section Collapse chargé');
 })();
 
