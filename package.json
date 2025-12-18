@@ -1,13 +1,18 @@
 {
   "name": "app-finale-maraudes",
-  "version": "1.0.0",
+  "version": "1.0.9",
   "description": "Application Electron pour les maraudes",
   "main": "main.js",
+  "author": "Maraudes Team",
+  "license": "ISC",
   "scripts": {
     "dev:vite": "vite",
     "build": "vite build",
     "start": "electron .",
     "start:build": "npm run build && electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
     "test": "npm run test:all",
     "test:all": "npm run test:adp && npm run test:transmissions && npm run test:statistiques && npm run test:navigation && npm run test:formulaires && npm run test:persistance && npm run test:interface",
     "test:adp": "npm run test:adp:ajout-complete && npm run test:adp:ajout-inconnue && npm run test:adp:point-accueil",
@@ -54,8 +59,34 @@
     "@cucumber/pretty-formatter": "^2.4.1",
     "@playwright/test": "^1.56.1",
     "electron": "^27.0.0",
+    "electron-builder": "^24.9.1",
     "vite": "^7.2.4",
     "vite-plugin-electron": "^0.29.0",
     "vite-plugin-electron-renderer": "^0.14.6"
+  },
+  "build": {
+    "appId": "com.maraudes.app",
+    "productName": "Application Maraudes",
+    "directories": {
+      "output": "C:/Users/gouisa/Desktop/Application Maraudes v1.0.9"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "index.html",
+      "fonctionnalites/**/*",
+      "modules/**/*",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": ["x64"]
+        }
+      ],
+      "signAndEditExecutable": false
+    }
   }
 }

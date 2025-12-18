@@ -314,41 +314,20 @@
 
   // Retourne TOUTES les interventions pour une personne/date/type (peut y en avoir plusieurs : Jour, Nuit, Coordo)
   const getInterventionsByPersonneIdAndDateAndType = async (personneId, date, type) => {
-    // S'assurer que personneId est un nombre
-    const numericPersonneId = typeof personneId === 'string' ? parseInt(personneId, 10) : personneId;
-    
-    console.log('🗄️ getInterventionsByPersonneIdAndDateAndType:', { personneId: numericPersonneId, date, type });
+    console.log('🗄️ getInterventionsByPersonneIdAndDateAndType:', { personneId, date, type });
     await initDatabaseUnified();
-    
     return new Promise((resolve, reject) => {
       const transaction = dbUnified.transaction([STORE_INTERVENTIONS], 'readonly');
       const store = transaction.objectStore(STORE_INTERVENTIONS);
-      
-      // Récupérer toutes les interventions car l'index personneId peut avoir des problèmes de type
-      const request = store.getAll();
+      const index = store.index('personneId');
+      const range = IDBKeyRange.only(personneId);
+      const request = index.getAll(range);
       
       request.onsuccess = () => {
-        // Filtrer manuellement avec conversion de type pour éviter les problèmes de comparaison
-        const allForPerson = request.result.filter(i => {
-          const iPid = typeof i.personneId === 'string' ? parseInt(i.personneId, 10) : i.personneId;
-          return iPid === numericPersonneId;
-        });
-        
-        console.log('🗄️ Toutes interventions pour personneId', numericPersonneId, ':', allForPerson.length);
-        if (allForPerson.length > 0) {
-          console.log('🗄️ Dates disponibles:', allForPerson.map(i => `${i.date} (${i.type})`).join(', '));
-        }
-        
-        const interventions = allForPerson.filter(i => i.date === date && i.type === type);
+        console.log('🗄️ Toutes interventions pour personneId', personneId, ':', request.result.length);
+        console.log('🗄️ Dates disponibles:', request.result.map(i => `${i.date} (${i.type})`));
+        const interventions = request.result.filter(i => i.date === date && i.type === type);
         console.log('🗄️ Après filtre (date=' + date + ', type=' + type + '):', interventions.length);
-        
-        if (interventions.length === 0 && allForPerson.length > 0) {
-          console.log('🗄️ Debug: dates dans BDD vs recherchée:', {
-            recherchee: date,
-            disponibles: allForPerson.map(i => i.date)
-          });
-        }
-        
         resolve(interventions);
       };
       request.onerror = () => reject(request.error);

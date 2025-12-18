@@ -88,11 +88,14 @@ When('je remplis les informations de base', async function() {
 
 When('je coche {string}', async function(option) {
   const optionMap = {
-    'Point Accueil': '#adp-form-point-accueil'
+    '1er contact': '#adp-form-premier-contact',
+    'Inconnu': '#adp-form-inconnu'
   };
   
   const selector = optionMap[option];
-  await this.page.check(selector);
+  if (selector) {
+    await this.page.check(selector);
+  }
 });
 
 When('je clique sur {string}', async function(texte) {
@@ -111,7 +114,6 @@ When('je clique sur {string}', async function(texte) {
         nbPersonnes: document.getElementById('adp-form-nb-personnes').value,
         mineurs: document.getElementById('adp-form-mineurs').value,
         typeTransmission: document.getElementById('adp-form-type-transmission').value,
-        pointAccueil: document.getElementById('adp-form-point-accueil').checked,
         adresse: document.getElementById('adp-form-adresse').value,
         ville: document.getElementById('adp-form-ville').value,
         signalement: document.getElementById('adp-form-signalement').value,

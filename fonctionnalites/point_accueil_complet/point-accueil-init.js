@@ -58,12 +58,23 @@ async function findPAByPersonDateAndType(personneId, date, typeTransmission) {
     if (typeof window.getInterventionByFullKey === 'function') {
       const intervention = await window.getInterventionByFullKey(pid, date, 'pointAccueil', typeTransmission);
       console.log('🔍 Résultat via getInterventionByFullKey:', intervention ? `ID ${intervention.id}` : 'Aucune');
+      
+      // Si pas trouvé, essayer avec recherche insensible à la casse
+      if (!intervention) {
+        const allInterventions = await window.getInterventionsByPersonneAndDate(pid, date);
+        const found = allInterventions.find(i => i.type === 'pointAccueil' && i.typeTransmission && i.typeTransmission.toLowerCase() === typeTransmission.toLowerCase());
+        if (found) {
+          console.log('🔍 ✅ PA trouvée via recherche insensible à la casse! ID:', found.id);
+          return found;
+        }
+      }
+      
       return intervention;
     }
     
     // Fallback : chercher parmi toutes les interventions de cette date
     const interventions = await window.getInterventionsByPersonneAndDate(pid, date);
-    const found = interventions.find(i => i.type === 'pointAccueil' && i.typeTransmission === typeTransmission);
+    const found = interventions.find(i => i.type === 'pointAccueil' && i.typeTransmission && i.typeTransmission.toLowerCase() === typeTransmission.toLowerCase());
     console.log('🔍 Résultat via filtrage:', found ? `ID ${found.id}` : 'Aucune');
     return found;
   } catch (error) {
@@ -162,6 +173,40 @@ async function loadPADataForDate(personneId, date, typeTransmission) {
   console.log('📅 loadPADataForDate appelé avec:', { personneId: pid, date, typeTransmission });
   
   try {
+    // Recharger les informations de la personne pour s'assurer d'avoir les données à jour
+    const personne = await window.getPersonneById(pid);
+    if (!personne) {
+      console.error('❌ Personne non trouvée pour ID:', pid);
+      await window.customAlert('Erreur : personne non trouvée', 'error');
+      return;
+    }
+    
+    // S'assurer que le personneId est défini dans le dataset du formulaire
+    const formPA = document.getElementById('form-point-accueil');
+    if (formPA) {
+      formPA.dataset.personneId = pid;
+      console.log('📝 PersonneId défini dans le dataset PA:', pid);
+    }
+    
+    // Récupérer les DERNIÈRES infos connues
+    const dernieresInfos = window.getDernieresInfos ? window.getDernieresInfos(personne) : {
+      departement: personne.departement || '',
+      typologie: personne.typologie || '',
+      nbPersonnes: personne.nbPersonnes || '',
+      mineurs: personne.mineurs || ''
+    };
+    
+    // Recharger les informations personnelles
+    document.getElementById('form-pa-nom').value = personne.nom || '';
+    document.getElementById('form-pa-prenom').value = personne.prenom || '';
+    document.getElementById('form-pa-ddn').value = personne.dateNaissance || '';
+    document.getElementById('form-pa-description').value = personne.descriptionPhysique || '';
+    document.getElementById('form-pa-inconnu').checked = personne.inconnu || false;
+    document.getElementById('form-pa-departement').value = dernieresInfos.departement;
+    document.getElementById('form-pa-typologie').value = dernieresInfos.typologie;
+    document.getElementById('form-pa-nb-personnes').value = dernieresInfos.nbPersonnes;
+    document.getElementById('form-pa-mineurs').value = dernieresInfos.mineurs;
+    
     // Chercher si une fiche PA existe pour cette personne à cette date avec ce type
     const existingPA = await findPAByPersonDateAndType(pid, date, typeTransmission);
     
@@ -172,7 +217,6 @@ async function loadPADataForDate(personneId, date, typeTransmission) {
     if (typeSelect && typeTransmission) {
       typeSelect.value = typeTransmission;
     }
-    const formPA = document.getElementById('form-point-accueil');
     
     if (existingPA) {
       // Remplir les champs de l'intervention existante
@@ -277,6 +321,15 @@ async function loadPADataForDate(personneId, date, typeTransmission) {
     }
     
     console.log('✅ Données PA chargées pour date:', date);
+    
+    // Si on est en mode consultation (depuis les statistiques), redésactiver les champs
+    if (window.currentConsultationModal === 'modal-point-accueil') {
+      setTimeout(() => {
+        if (typeof window.disableFormFieldsForConsultation === 'function') {
+          window.disableFormFieldsForConsultation('modal-point-accueil');
+        }
+      }, 50);
+    }
   } catch (error) {
     console.error('Erreur lors du chargement des données PA pour la date:', error);
   }
@@ -299,13 +352,14 @@ async function modifierFichePA(personneId, date = null, consultationMode = false
     
     if (!personne) {
       console.error('❌ Personne non trouvée pour ID:', personneId);
-      alert('Erreur lors du chargement des données');
+      await window.customAlert('Erreur lors du chargement des données', 'error');
       return;
     }
     
-    console.log('✅ Personne trouvée:', personne);
-    const selectedDate = document.getElementById('pa-date')?.value;
-    console.log('📅 Date sélectionnée:', selectedDate);
+    console.log('Personne trouvée:', personne);
+    // Utiliser la date passée en paramètre si fournie, sinon celle de l'input
+    const selectedDate = date || document.getElementById('pa-date')?.value;
+    console.log('Date sélectionnée:', selectedDate, '(paramètre date:', date, ')');
     
     // Chercher si une fiche PA existe pour cette personne à cette date
     // Si newTypeTransmission est fourni, on cherche pour ce type spécifique
@@ -466,6 +520,9 @@ async function modifierFichePA(personneId, date = null, consultationMode = false
     // Ouvrir la modal
     const modal = document.getElementById('modal-point-accueil');
     if (modal) {
+      // S'ASSURER que le modal est COMPLÈTEMENT réactivé
+      modal.style.pointerEvents = 'auto';
+      modal.style.zIndex = '1000';
       modal.classList.add('show');
       
       // RESTAURER les boutons Annuler et Enregistrer (pourraient être cachés par mode consultation)
@@ -484,13 +541,30 @@ async function modifierFichePA(personneId, date = null, consultationMode = false
         if (modalBody) {
           modalBody.scrollTop = 0;
         }
-        // Réinitialiser les gestionnaires de collapse puis replier la section
-        if (window.initSectionCollapse) {
-          window.initSectionCollapse();
-        }
-        setTimeout(() => {
-          if (window.replierSection) {
-            window.replierSection('pa-section-info-perso');
+        
+        // S'assurer que les sections sont bien chargées avant d'initialiser
+        let checkAttempts = 0;
+        const maxAttempts = 20; // 1 seconde max
+        const checkSectionLoaded = setInterval(() => {
+          checkAttempts++;
+          const section = document.getElementById('pa-section-info-perso');
+          if (section && section.querySelector('.form-grid')) {
+            clearInterval(checkSectionLoaded);
+            
+            // Réinitialiser les gestionnaires de collapse
+            if (window.initSectionCollapse) {
+              window.initSectionCollapse();
+            }
+            
+            // Replier la section après un court délai
+            setTimeout(() => {
+              if (window.replierSection) {
+                window.replierSection('pa-section-info-perso');
+              }
+            }, 100);
+          } else if (checkAttempts >= maxAttempts) {
+            clearInterval(checkSectionLoaded);
+            console.warn('⚠️ Timeout : section info perso PA non trouvée');
           }
         }, 50);
         
@@ -516,7 +590,7 @@ async function modifierFichePA(personneId, date = null, consultationMode = false
     }
   } catch (error) {
     console.error('❌ Erreur lors du chargement:', error);
-    alert('Erreur lors du chargement des données');
+    await window.customAlert('Erreur lors du chargement des données', 'error');
   }
 }
 window.modifierFichePA = modifierFichePA;
@@ -556,44 +630,35 @@ function initPAFilters() {
   const filterInconnu = document.getElementById('pa-filter-inconnu');
   const filterDescription = document.getElementById('pa-filter-description');
 
-  if (filterNom) {
-    filterNom.addEventListener('input', () => {
-      if (typeof window.afficherToutesLesPersonnesPA === 'function') {
-        window.afficherToutesLesPersonnesPA();
-      }
-    });
+  const rechargerFiches = () => {
+    if (typeof window.afficherToutesLesPersonnesPA === 'function') {
+      window.afficherToutesLesPersonnesPA();
+    }
+  };
+
+  if (filterNom && !filterNom._listenersAttached) {
+    filterNom.addEventListener('input', rechargerFiches);
+    filterNom._listenersAttached = true;
   }
 
-  if (filterPrenom) {
-    filterPrenom.addEventListener('input', () => {
-      if (typeof window.afficherToutesLesPersonnesPA === 'function') {
-        window.afficherToutesLesPersonnesPA();
-      }
-    });
+  if (filterPrenom && !filterPrenom._listenersAttached) {
+    filterPrenom.addEventListener('input', rechargerFiches);
+    filterPrenom._listenersAttached = true;
   }
 
-  if (filterDdn) {
-    filterDdn.addEventListener('change', () => {
-      if (typeof window.afficherToutesLesPersonnesPA === 'function') {
-        window.afficherToutesLesPersonnesPA();
-      }
-    });
+  if (filterDdn && !filterDdn._listenersAttached) {
+    filterDdn.addEventListener('change', rechargerFiches);
+    filterDdn._listenersAttached = true;
   }
 
-  if (filterInconnu) {
-    filterInconnu.addEventListener('change', () => {
-      if (typeof window.afficherToutesLesPersonnesPA === 'function') {
-        window.afficherToutesLesPersonnesPA();
-      }
-    });
+  if (filterInconnu && !filterInconnu._listenersAttached) {
+    filterInconnu.addEventListener('change', rechargerFiches);
+    filterInconnu._listenersAttached = true;
   }
 
-  if (filterDescription) {
-    filterDescription.addEventListener('input', () => {
-      if (typeof window.afficherToutesLesPersonnesPA === 'function') {
-        window.afficherToutesLesPersonnesPA();
-      }
-    });
+  if (filterDescription && !filterDescription._listenersAttached) {
+    filterDescription.addEventListener('input', rechargerFiches);
+    filterDescription._listenersAttached = true;
   }
 
   console.log('✅ Filtres Point Accueil initialisés');
@@ -666,10 +731,10 @@ function initPointAccueilForm() {
   
   // Fermer la modal
   const closeModal = () => {
-    modal.classList.remove('show');
-    formPA.reset();
-    delete formPA.dataset.editId;
-    delete formPA.dataset.personneId;
+    // Utiliser la fonction unifiée de fermeture
+    window.closeModalSafely(modal, formPA, {
+      focusTarget: document.getElementById('pa-date')
+    });
   };
   
   btnAnnuler?.addEventListener('click', closeModal);
@@ -700,7 +765,7 @@ function initPointAccueilForm() {
     });
   }
   
-  // Event listener pour le bouton "Supprimer la fiche"
+  // Event listener pour le bouton "Supprimer la transmission"
   const btnSupprimer = document.getElementById('btn-supprimer-pa');
   if (btnSupprimer) {
     btnSupprimer.addEventListener('click', async (e) => {
@@ -712,13 +777,13 @@ function initPointAccueilForm() {
         return;
       }
       
-      const confirmation = confirm('Êtes-vous sûr de vouloir supprimer cette fiche Point Accueil ? Cette action est irréversible.');
+      const confirmation = await window.customConfirm('Êtes-vous sûr de vouloir supprimer cette transmission Point Accueil ? Cette action est irréversible.', 'Supprimer');
       if (!confirmation) return;
       
       try {
-        console.log('🗑️ Suppression de la fiche PA ID:', editId);
+        console.log('🗑️ Suppression de la transmission PA ID:', editId);
         await window.deleteIntervention(parseInt(editId));
-        alert('✅ Fiche Point Accueil supprimée avec succès');
+        window.showToast('Transmission Point Accueil supprimée avec succès', 'success');
         
         // Fermer le modal
         closeModal();
@@ -729,7 +794,7 @@ function initPointAccueilForm() {
         }
       } catch (error) {
         console.error('❌ Erreur lors de la suppression:', error);
-        alert('Erreur lors de la suppression de la fiche Point Accueil');
+        await window.customAlert('Erreur lors de la suppression de la transmission', 'error');
       }
     });
   }
@@ -886,7 +951,7 @@ function initPointAccueilForm() {
       
     } catch (error) {
       console.error('❌ Erreur lors de l\'enregistrement:', error);
-      alert('Erreur lors de l\'enregistrement : ' + error.message);
+      await window.customAlert('Erreur lors de l\'enregistrement : ' + error.message, 'error');
     }
   });
   
@@ -906,7 +971,7 @@ function initPointAccueilForm() {
       if (personneId && typeof window.afficherHistoriqueInterventions === 'function') {
         await window.afficherHistoriqueInterventions(parseInt(personneId), section);
       } else {
-        alert('Veuillez d\'abord sélectionner ou créer une personne.');
+        await window.customAlert('Veuillez d\'abord sélectionner ou créer une personne.', 'warning');
       }
     });
   });

@@ -60,34 +60,6 @@
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
-/* Boutons de navigation prev/next */
-.btn-nav-date {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  background: white;
-  color: #334155;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-nav-date:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: #94a3b8;
-}
-
-.btn-nav-date:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  background: #f8fafc;
-}
-
 /* === Onglets Type de Transmission === */
 .transmission-tabs {
   display: flex;

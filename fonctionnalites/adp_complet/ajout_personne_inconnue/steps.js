@@ -118,7 +118,6 @@ When('je clique sur {string}', async function(texte) {
         nbPersonnes: document.getElementById('adp-form-nb-personnes').value,
         mineurs: document.getElementById('adp-form-mineurs').value,
         typeTransmission: document.getElementById('adp-form-type-transmission').value,
-        pointAccueil: document.getElementById('adp-form-point-accueil').checked,
         adresse: document.getElementById('adp-form-adresse').value,
         ville: document.getElementById('adp-form-ville').value,
         signalement: document.getElementById('adp-form-signalement').value,

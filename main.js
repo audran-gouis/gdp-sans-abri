@@ -12,8 +12,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true
-    },
-    icon: path.join(__dirname, 'assets', 'icon.png')
+    }
   });
 
   // Charger directement depuis la racine (pas besoin de build pour Electron)

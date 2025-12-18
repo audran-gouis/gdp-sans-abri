@@ -37,13 +37,18 @@
         return;
       }
       
+      // Vérifier si déjà initialisé
+      if (header.dataset.collapseInitialized === 'true') {
+        console.log('⏭️ Section déjà initialisée, passage');
+        return;
+      }
+      
       collapsibleCount++;
       
-      // Retirer les anciens listeners en remplaçant par un clone
-      const newHeader = header.cloneNode(true);
-      header.parentNode.replaceChild(newHeader, header);
+      // Marquer comme initialisé
+      header.dataset.collapseInitialized = 'true';
 
-      newHeader.addEventListener('click', function(e) {
+      header.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
 

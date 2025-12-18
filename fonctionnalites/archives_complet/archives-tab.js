@@ -187,13 +187,14 @@
       const personne = await window.getPersonneById(personneId);
       
       if (!personne) {
-        alert('Erreur : Personne non trouvée');
+        await window.customAlert('Erreur : Personne non trouvée', 'error');
         return;
       }
       
       const nom = personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim();
       
-      if (!confirm(`Voulez-vous restaurer la fiche de ${nom} ?\n\nLa fiche redeviendra visible dans les listes et comptera dans les statistiques.`)) {
+      const confirmation = await window.customConfirm(`Voulez-vous restaurer la fiche de ${nom} ?\n\nLa fiche redeviendra visible dans les listes et comptera dans les statistiques.`, 'Restaurer');
+      if (!confirmation) {
         return;
       }
       
@@ -208,11 +209,11 @@
       // Rafraîchir l'affichage des archives
       await afficherToutesLesPersonnesArchives();
       
-      alert(`Fiche restaurée !\n\n${nom} est de nouveau visible dans les listes.`);
+      window.showToast(`Fiche restaurée ! ${nom} est de nouveau visible dans les listes.`, 'success');
       
     } catch (error) {
       console.error('Erreur lors de la restauration:', error);
-      alert('Erreur lors de la restauration : ' + error.message);
+      await window.customAlert('Erreur lors de la restauration : ' + error.message, 'error');
     }
   }
 

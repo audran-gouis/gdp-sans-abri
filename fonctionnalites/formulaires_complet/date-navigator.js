@@ -7,23 +7,80 @@
 let activeNavigatorConfigs = {};
 
 /**
+ * Nettoie complètement le navigateur de dates (event listeners, etc.)
+ */
+function cleanupDateNavigator(type) {
+  console.log('🧹 Nettoyage complet du navigateur pour', type);
+  
+  const typeConfig = {
+    'transmissions': {
+      dateInputId: 'select-date-transmissions',
+      prevBtnId: 'btn-date-prev',
+      nextBtnId: 'btn-date-next',
+      addBtnId: 'btn-add-transmission-transmissions',
+      addDropdownId: 'add-transmission-dropdown-transmissions'
+    },
+    'adp': {
+      dateInputId: 'select-date-adp',
+      prevBtnId: 'adp-btn-date-prev',
+      nextBtnId: 'adp-btn-date-next',
+      addBtnId: 'btn-add-transmission-adp',
+      addDropdownId: 'add-transmission-dropdown-adp'
+    },
+    'pointAccueil': {
+      dateInputId: 'select-date-pa',
+      prevBtnId: 'pa-btn-date-prev',
+      nextBtnId: 'pa-btn-date-next',
+      addBtnId: 'btn-add-transmission-pa',
+      addDropdownId: 'add-transmission-dropdown-pa'
+    }
+  };
+  
+  const cfg = typeConfig[type];
+  if (cfg) {
+    // Nettoyer les flags des event listeners
+    const dateInput = document.getElementById(cfg.dateInputId);
+    const prevBtn = document.getElementById(cfg.prevBtnId);
+    const nextBtn = document.getElementById(cfg.nextBtnId);
+    const addBtn = document.getElementById(cfg.addBtnId);
+    const addDropdown = document.getElementById(cfg.addDropdownId);
+    
+    if (dateInput) delete dateInput._hasNavigatorListener;
+    if (prevBtn) delete prevBtn._hasNavigatorListener;
+    if (nextBtn) delete nextBtn._hasNavigatorListener;
+    if (addBtn) delete addBtn._hasAddListener;
+    
+    // Nettoyer TOUS les flags des items du dropdown
+    if (addDropdown) {
+      const dropdownItems = addDropdown.querySelectorAll('.dropdown-item');
+      dropdownItems.forEach(item => {
+        delete item._hasDropdownListener;
+      });
+    }
+  }
+  
+  // Supprimer la configuration active
+  delete activeNavigatorConfigs[type];
+  
+  console.log('✅ Navigateur nettoyé pour', type);
+}
+
+/**
  * Initialise le navigateur de dates et les onglets pour un formulaire
- * @param {Object} config - Configuration
- * @param {string} config.type - Type de formulaire (transmissions, adp, pointAccueil)
- * @param {number} config.personneId - ID de la personne
- * @param {string} config.currentDate - Date courante
- * @param {string} config.currentTypeTransmission - Type de transmission actuel
- * @param {Function} config.onDateChange - Callback appelé quand la date change
- * @param {boolean} config.hideToday - Si true, ne pas afficher la date du jour (mode consultation)
  */
 async function initDateNavigator(config) {
   const { type, personneId, currentDate, currentTypeTransmission, onDateChange, hideToday } = config;
+  
+  // TOUJOURS nettoyer avant de réinitialiser
+  cleanupDateNavigator(type);
+  
+  console.log('🔄 Initialisation complète du navigateur pour', type);
   
   const typeConfig = {
     'transmissions': {
       navigatorId: 'date-navigator-transmissions',
       tabsId: 'transmission-tabs',
-      dateInputId: 'select-date-transmission',
+      dateInputId: 'select-date-transmissions',
       prevBtnId: 'btn-date-prev',
       nextBtnId: 'btn-date-next',
       titleId: 'modal-titre-personne',
@@ -85,24 +142,11 @@ async function initDateNavigator(config) {
   }
   
   // Charger toutes les interventions de cette personne
-  // S'assurer que personneId est un nombre pour la comparaison
-  const numericPersonneId = typeof personneId === 'string' ? parseInt(personneId, 10) : personneId;
-  
   const allInterventions = await window.getAllInterventions();
-  console.log('📅 Total interventions en BDD:', allInterventions.length);
-  console.log('📅 Recherche pour personneId:', numericPersonneId, '(type:', typeof numericPersonneId, ')');
-  
   const personInterventions = allInterventions
-    .filter(i => {
-      // Convertir aussi l'ID de l'intervention en nombre pour comparaison
-      const iPersonneId = typeof i.personneId === 'string' ? parseInt(i.personneId, 10) : i.personneId;
-      return iPersonneId === numericPersonneId && i.type === cfg.interventionType;
-    });
+    .filter(i => i.personneId === personneId && i.type === cfg.interventionType);
   
   console.log('📅 Interventions trouvées pour', type, ':', personInterventions.length);
-  if (personInterventions.length > 0) {
-    console.log('📅 Dates des interventions:', personInterventions.map(i => i.date).join(', '));
-  }
   
   // Stocker les données pour les recherches rapides
   const interventionsMap = new Map();
@@ -124,7 +168,7 @@ async function initDateNavigator(config) {
   const today = new Date().toISOString().split('T')[0];
   const todayExists = sortedDates.includes(today);
   
-  // Remplir le select avec les dates (sans la date du jour si hideToday est true)
+  // Remplir le select avec les dates
   populateDateSelect(dateInput, sortedDates, today, currentDate, hideToday);
   
   // Initialiser la date
@@ -145,11 +189,12 @@ async function initDateNavigator(config) {
     currentTypeTransmission: currentTypeTransmission || null,
     onDateChange,
     cfg,
-    hideToday: hideToday || false
+    isInitialized: true
   };
   
   // Afficher le navigateur
   navigator.style.display = 'flex';
+  console.log('✅ Navigateur de dates affiché');
   
   // Mettre à jour l'interface (onglets et bouton)
   updateTabsDisplay(type, initialDate, transmissionsForDate, currentTypeTransmission);
@@ -158,13 +203,16 @@ async function initDateNavigator(config) {
   // Mettre à jour l'état des boutons de navigation
   updateNavButtonsState(type, sortedDates, initialDate, prevBtn, nextBtn);
   
-  // Gestionnaire de changement de date
-  dateInput.onchange = async () => {
+  // Gestionnaire de changement de date (éviter les duplications)
+  if (!dateInput._hasNavigatorListener) {
+    dateInput._hasNavigatorListener = true;
+    dateInput.onchange = async () => {
     const newDate = dateInput.value;
     console.log('📅 ===== CHANGEMENT DE DATE =====');
     console.log('📅 Nouvelle date sélectionnée:', newDate);
     console.log('📅 Type de formulaire:', type);
     console.log('📅 onDateChange défini:', !!onDateChange);
+    console.log('📅 Mode consultation:', !!window.currentConsultationModal);
     
     activeNavigatorConfigs[type].currentDate = newDate;
     
@@ -184,16 +232,18 @@ async function initDateNavigator(config) {
     if (onDateChange) {
       const activeType = newTransmissions.length > 0 ? newTransmissions[0].typeTransmission : null;
       activeNavigatorConfigs[type].currentTypeTransmission = activeType;
-      console.log('📅 Appel de onDateChange avec:', { newDate, activeType });
-      await onDateChange(newDate, activeType);
+      console.log('📅 Appel de onDateChange avec:', { newDate, activeType, isNewTransmission: false });
+      await onDateChange(newDate, activeType, false); // false = ce n'est pas une nouvelle transmission
       console.log('📅 onDateChange terminé');
     } else {
       console.warn('📅 ⚠️ onDateChange non défini !');
     }
-  };
+    };
+  }
   
   // Gestionnaires pour les boutons de navigation (naviguer entre dates existantes)
-  if (prevBtn) {
+  if (prevBtn && !prevBtn._hasNavigatorListener) {
+    prevBtn._hasNavigatorListener = true;
     prevBtn.onclick = () => {
       const config = activeNavigatorConfigs[type];
       const dates = config.sortedDates;
@@ -206,7 +256,8 @@ async function initDateNavigator(config) {
     };
   }
   
-  if (nextBtn) {
+  if (nextBtn && !nextBtn._hasNavigatorListener) {
+    nextBtn._hasNavigatorListener = true;
     nextBtn.onclick = () => {
       const config = activeNavigatorConfigs[type];
       const dates = config.sortedDates;
@@ -280,33 +331,20 @@ function formatDateForDisplay(dateStr) {
 
 /**
  * Remplit le select avec les dates des transmissions existantes
- * @param {HTMLSelectElement} selectElement - L'élément select
- * @param {Array} sortedDates - Les dates triées
- * @param {string} today - La date du jour
- * @param {string} currentDate - La date à sélectionner
- * @param {boolean} hideToday - Si true, ne pas ajouter la date du jour (mode consultation)
  */
 function populateDateSelect(selectElement, sortedDates, today, currentDate, hideToday = false) {
   // Vider le select
   selectElement.innerHTML = '';
   
-  // Si aucune date et hideToday est activé, afficher un message
-  if (sortedDates.length === 0 && hideToday) {
-    const option = document.createElement('option');
-    option.value = '';
-    option.textContent = 'Aucune transmission';
-    option.disabled = true;
-    selectElement.appendChild(option);
-    return;
-  }
-  
-  // Si aucune date et hideToday n'est pas activé, ajouter aujourd'hui
+  // Si aucune date, ajouter seulement aujourd'hui (sauf en mode consultation)
   if (sortedDates.length === 0) {
-    const option = document.createElement('option');
-    option.value = today;
-    option.textContent = formatDateForDisplay(today) + ' (Nouvelle)';
-    option.className = 'option-today option-new';
-    selectElement.appendChild(option);
+    if (!hideToday) {
+      const option = document.createElement('option');
+      option.value = today;
+      option.textContent = formatDateForDisplay(today) + ' (Nouvelle)';
+      option.className = 'option-today option-new';
+      selectElement.appendChild(option);
+    }
     return;
   }
   
@@ -323,8 +361,8 @@ function populateDateSelect(selectElement, sortedDates, today, currentDate, hide
     selectElement.appendChild(option);
   });
   
-  // Ajouter "Aujourd'hui" si pas présent ET si hideToday n'est pas activé
-  if (!hideToday && !sortedDates.includes(today)) {
+  // Ajouter "Aujourd'hui" si pas présent ET si pas en mode consultation
+  if (!sortedDates.includes(today) && !hideToday) {
     const separator = document.createElement('option');
     separator.disabled = true;
     separator.textContent = '────────────';
@@ -342,7 +380,7 @@ function populateDateSelect(selectElement, sortedDates, today, currentDate, hide
     selectElement.value = currentDate;
   } else if (sortedDates.length > 0) {
     selectElement.value = sortedDates[0];
-  } else if (!hideToday) {
+  } else {
     selectElement.value = today;
   }
 }
@@ -352,50 +390,40 @@ function populateDateSelect(selectElement, sortedDates, today, currentDate, hide
  */
 function getTransmissionsForDate(interventionsMap, date) {
   console.log('🔍 Recherche transmissions pour date:', date);
+  console.log('🔍 Clés dans le cache:', Array.from(interventionsMap.keys()));
   
   const transmissions = [];
-  const keysInCache = Array.from(interventionsMap.keys());
-  console.log('🔍 Clés dans le cache:', keysInCache);
   
-  // Parcourir toutes les clés du cache et trouver celles qui correspondent à la date
-  keysInCache.forEach(key => {
-    // La clé est au format "date|typeTransmission"
-    const [keyDate, keyType] = key.split('|');
-    
-    if (keyDate === date) {
-      const intervention = interventionsMap.get(key);
-      const typeTransmission = keyType || intervention.typeTransmission || 'Jour';
-      const capitalizedType = typeTransmission.charAt(0).toUpperCase() + typeTransmission.slice(1).toLowerCase();
-      
+  // Types à vérifier (incluant les variantes)
+  const typesToCheck = ['Jour', 'Nuit', 'Coordo', 'jour', 'nuit', 'coordo'];
+  
+  typesToCheck.forEach(typeT => {
+    const key = `${date}|${typeT}`;
+    if (interventionsMap.has(key)) {
+      const capitalizedType = typeT.charAt(0).toUpperCase() + typeT.slice(1);
       // Éviter les doublons
       if (!transmissions.find(t => t.typeTransmission.toLowerCase() === capitalizedType.toLowerCase())) {
         transmissions.push({
           typeTransmission: capitalizedType,
-          data: intervention
+          data: interventionsMap.get(key)
         });
-        console.log('🔍 Trouvé:', capitalizedType, 'pour date', date);
       }
     }
   });
   
-  // Si aucune transmission trouvée avec la méthode par clé, essayer une recherche directe
-  if (transmissions.length === 0) {
-    console.log('🔍 Recherche alternative dans le cache...');
-    interventionsMap.forEach((intervention, key) => {
-      if (intervention.date === date) {
-        const typeTransmission = intervention.typeTransmission || 'Jour';
-        const capitalizedType = typeTransmission.charAt(0).toUpperCase() + typeTransmission.slice(1).toLowerCase();
-        
-        if (!transmissions.find(t => t.typeTransmission.toLowerCase() === capitalizedType.toLowerCase())) {
-          transmissions.push({
-            typeTransmission: capitalizedType,
-            data: intervention
-          });
-          console.log('🔍 Trouvé (alt):', capitalizedType, 'pour date', date);
-        }
+  // Aussi vérifier les transmissions avec typeTransmission undefined/null/vide
+  ['undefined', 'null', ''].forEach(emptyType => {
+    const key = `${date}|${emptyType}`;
+    if (interventionsMap.has(key)) {
+      // Traiter comme 'Jour' par défaut si pas de doublon
+      if (!transmissions.find(t => t.typeTransmission === 'Jour')) {
+        transmissions.push({
+          typeTransmission: 'Jour',
+          data: interventionsMap.get(key)
+        });
       }
-    });
-  }
+    }
+  });
   
   console.log('🔍 Transmissions trouvées:', transmissions.length, transmissions.map(t => t.typeTransmission));
   return transmissions;
@@ -509,17 +537,22 @@ function setupAddButton(type, cfg, dateInput, onDateChange) {
   // Masquer par défaut
   addContainer.style.display = 'none';
   
-  // Toggle du dropdown
-  addBtn.onclick = (e) => {
-    e.stopPropagation();
-    const isVisible = addDropdown.style.display === 'block';
-    addDropdown.style.display = isVisible ? 'none' : 'block';
-  };
+  // Toggle du dropdown (éviter les duplications)
+  if (!addBtn._hasAddListener) {
+    addBtn._hasAddListener = true;
+    addBtn.onclick = (e) => {
+      e.stopPropagation();
+      const isVisible = addDropdown.style.display === 'block';
+      addDropdown.style.display = isVisible ? 'none' : 'block';
+    };
+  }
   
   // Gestionnaires pour chaque option du dropdown
   const dropdownItems = addDropdown.querySelectorAll('.dropdown-item');
   dropdownItems.forEach(item => {
-    item.onclick = async (e) => {
+    if (!item._hasDropdownListener) {
+      item._hasDropdownListener = true;
+      item.onclick = async (e) => {
       e.stopPropagation();
       
       if (item.disabled) return;
@@ -538,7 +571,8 @@ function setupAddButton(type, cfg, dateInput, onDateChange) {
       if (onDateChange) {
         await onDateChange(currentDate, newTypeTransmission, true);
       }
-    };
+      };
+    }
   });
   
   // Fermer le dropdown en cliquant ailleurs
@@ -613,7 +647,7 @@ function setupTabClickHandlers(type, onDateChange) {
       
       const currentDate = config.currentDate;
       if (onDateChange) {
-        await onDateChange(currentDate, typeTransmission);
+        await onDateChange(currentDate, typeTransmission, false); // false = ce n'est pas une nouvelle transmission
       }
     };
   });
@@ -677,7 +711,7 @@ async function refreshNavigator(type) {
   const config = activeNavigatorConfigs[type];
   if (!config) return;
   
-  const { personneId, currentDate, currentTypeTransmission, onDateChange, cfg, hideToday } = config;
+  const { personneId, currentDate, currentTypeTransmission, onDateChange, cfg } = config;
   
   // Recharger les interventions
   const allInterventions = await window.getAllInterventions();
@@ -705,7 +739,7 @@ async function refreshNavigator(type) {
   const dateInput = document.getElementById(cfg.dateInputId);
   const today = new Date().toISOString().split('T')[0];
   if (dateInput) {
-    populateDateSelect(dateInput, sortedDates, today, currentDate, hideToday);
+    populateDateSelect(dateInput, sortedDates, today, currentDate);
     dateInput.value = currentDate;
   }
   
@@ -728,3 +762,4 @@ window.hideDateNavigator = hideDateNavigator;
 window.resetModalTitle = resetModalTitle;
 window.refreshNavigator = refreshNavigator;
 window.activateTab = activateTab;
+window.cleanupDateNavigator = cleanupDateNavigator;

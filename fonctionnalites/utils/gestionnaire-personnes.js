@@ -251,41 +251,41 @@ function genererBadgesSources(sources) {
 
 /**
  * Compte le nombre d'interventions pour une personne sur une date donnée
- * Option B améliorée : Total tous modules confondus pour la date sélectionnée
- * Maximum 1 intervention par type par jour (évite les doublons)
+ * TOUS DISPOSITIFS CONFONDUS : Si la personne a une transmission dans plusieurs onglets,
+ * chaque dispositif compte comme un passage distinct
  */
 function compterInterventionsParDate(personne, selectedDate, source) {
   if (!selectedDate) return { count: 0, hasToday: false };
 
-  // Compter le nombre total de passages (chaque transmission Jour/Nuit/Coordo compte)
+  // Compter le nombre total de passages TOUS DISPOSITIFS CONFONDUS
   let totalPassages = 0;
   const dates = [];
 
-  // Compter les transmissions (chaque type compte comme un passage)
-  if (source === 'transmissions' && personne.transmissions) {
+  // Compter les transmissions Maraudes Départementales (chaque type compte comme un passage)
+  if (personne.transmissions) {
     const trans = personne.transmissions.filter(i => i.date === selectedDate);
-    totalPassages += trans.length; // Chaque transmission (Jour, Nuit, Coordo) compte
+    totalPassages += trans.length;
     dates.push(...trans.map(i => i.date));
   }
 
   // Compter les ADP (chaque type compte comme un passage)
-  if (source === 'adp' && personne.adp) {
+  if (personne.adp) {
     const adp = personne.adp.filter(i => i.date === selectedDate);
-    totalPassages += adp.length; // Chaque ADP (Jour, Nuit, Coordo) compte
+    totalPassages += adp.length;
     dates.push(...adp.map(i => i.date));
   }
 
   // Compter les Point Accueil (chaque type compte comme un passage)
-  if (source === 'pointAccueil' && personne.pointAccueil) {
+  if (personne.pointAccueil) {
     const pa = personne.pointAccueil.filter(i => i.date === selectedDate);
-    totalPassages += pa.length; // Chaque PA (Jour, Nuit, Coordo) compte
+    totalPassages += pa.length;
     dates.push(...pa.map(i => i.date));
   }
 
   const hasToday = totalPassages > 0;
 
   return {
-    count: totalPassages, // Nombre total de passages pour ce jour
+    count: totalPassages, // Nombre total de passages TOUS DISPOSITIFS CONFONDUS
     hasToday,
     dates: dates.filter(Boolean)
   };

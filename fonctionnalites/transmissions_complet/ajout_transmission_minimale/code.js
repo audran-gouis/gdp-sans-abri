@@ -12,7 +12,7 @@ async function findTransmissionByPersonAndDate(personneId, date) {
   // S'assurer que personneId est un nombre
   const pid = typeof personneId === 'string' ? parseInt(personneId, 10) : personneId;
   
-  console.log('🔍 Recherche transmission pour personneId:', pid, '(type:', typeof pid, ') date:', date);
+  console.log('🔍 Recherche transmission pour personneId:', pid, 'date:', date);
   
   try {
     if (typeof window.getInterventionsByPersonneIdAndDateAndType === 'function') {
@@ -23,33 +23,16 @@ async function findTransmissionByPersonAndDate(personneId, date) {
       );
       // Retourne le premier résultat (peut y en avoir plusieurs maintenant)
       const intervention = Array.isArray(interventions) ? interventions[0] : interventions;
-      console.log('🔍 Résultat via getInterventionsByPersonneIdAndDateAndType:', intervention ? `ID ${intervention.id}` : 'Aucune');
-      if (intervention) {
-        console.log('🔍 Détails intervention:', { date: intervention.date, type: intervention.type, typeTransmission: intervention.typeTransmission });
-      }
+      console.log('🔍 Résultat:', intervention ? `ID ${intervention.id}` : 'Aucune');
       return intervention;
     }
-    
-    // Fallback vers getAllInterventions
-    console.log('🔍 Utilisation du fallback getAllInterventions...');
-    const allInterventions = await window.getAllInterventions();
-    
-    // Chercher parmi toutes les interventions de type 'transmissions'
-    const found = allInterventions.find(i => {
-      const iPid = typeof i.personneId === 'string' ? parseInt(i.personneId, 10) : i.personneId;
-      return iPid === pid && i.date === date && i.type === 'transmissions';
-    });
-    
+    // Fallback vers l'ancienne méthode
+    const allTransmissions = await window.getAllTransmissions();
+    const found = allTransmissions.find(t => 
+      (t.personId === pid || t.personneId === pid) && 
+      (t.dateTransmission === date || t.date === date)
+    );
     console.log('🔍 Résultat via fallback:', found ? `ID ${found.id}` : 'Aucune');
-    if (!found) {
-      // Debug supplémentaire
-      const personInterventions = allInterventions.filter(i => {
-        const iPid = typeof i.personneId === 'string' ? parseInt(i.personneId, 10) : i.personneId;
-        return iPid === pid;
-      });
-      console.log('🔍 Interventions pour cette personne:', personInterventions.length);
-      personInterventions.forEach(i => console.log(`   - ${i.date} | ${i.type} | ${i.typeTransmission || 'N/A'}`));
-    }
     return found;
   } catch (error) {
     console.error('Erreur lors de la recherche de transmission:', error);
@@ -76,35 +59,37 @@ async function findTransmissionByPersonDateAndType(personneId, date, typeTransmi
     return await findTransmissionByPersonAndDate(pid, date);
   }
   
-  // Normaliser le type de transmission pour la comparaison (insensible à la casse)
-  const normalizedType = typeTransmission.toLowerCase();
-  
-  console.log('🔍 Recherche transmission pour personneId:', pid, 'date:', date, 'typeTransmission:', typeTransmission, '(normalisé:', normalizedType, ')');
+  console.log('🔍 Recherche transmission pour personneId:', pid, 'date:', date, 'typeTransmission:', typeTransmission);
   
   try {
+    // DEBUG : Afficher toutes les interventions de cette personne à cette date
+    const allInterventionsDebug = await window.getInterventionsByPersonneAndDate(pid, date);
+    const transmissionsDebug = allInterventionsDebug ? allInterventionsDebug.filter(i => i.type === 'transmissions') : [];
+    console.log('🔍 DEBUG - Toutes les transmissions pour cette date:', transmissionsDebug.length);
+    transmissionsDebug.forEach(t => {
+      console.log('   - ID:', t.id, 'typeTransmission:', `"${t.typeTransmission}"`, 'type:', t.type);
+    });
+    
     // Utiliser la nouvelle fonction si disponible
     if (typeof window.getInterventionByFullKey === 'function') {
-      // Essayer d'abord avec la casse originale
-      let intervention = await window.getInterventionByFullKey(
+      const intervention = await window.getInterventionByFullKey(
         pid,
         date,
         'transmissions',
         typeTransmission
       );
+      console.log('🔍 Résultat via getInterventionByFullKey:', intervention ? `ID ${intervention.id}` : 'Aucune');
       
-      // Si pas trouvé, essayer avec différentes variantes de casse
+      // Si pas trouvé, essayer le fallback avec recherche insensible à la casse
       if (!intervention) {
-        const variants = [
-          typeTransmission.toLowerCase(),
-          typeTransmission.charAt(0).toUpperCase() + typeTransmission.slice(1).toLowerCase()
-        ];
-        for (const variant of variants) {
-          intervention = await window.getInterventionByFullKey(pid, date, 'transmissions', variant);
-          if (intervention) break;
+        console.log('🔍 Tentative de recherche insensible à la casse...');
+        const found = transmissionsDebug.find(t => t.typeTransmission && t.typeTransmission.toLowerCase() === typeTransmission.toLowerCase());
+        if (found) {
+          console.log('🔍 ✅ Transmission trouvée via recherche insensible à la casse! ID:', found.id);
+          return found;
         }
       }
       
-      console.log('🔍 Résultat via getInterventionByFullKey:', intervention ? `ID ${intervention.id}` : 'Aucune');
       return intervention;
     }
     
@@ -112,13 +97,8 @@ async function findTransmissionByPersonDateAndType(personneId, date, typeTransmi
     if (typeof window.getInterventionsByPersonneIdAndDateAndType === 'function') {
       const interventions = await window.getInterventionsByPersonneIdAndDateAndType(pid, date, 'transmissions');
       const list = Array.isArray(interventions) ? interventions : (interventions ? [interventions] : []);
-      
       // Recherche insensible à la casse
-      const found = list.find(i => {
-        if (!i.typeTransmission) return false;
-        return i.typeTransmission.toLowerCase() === normalizedType;
-      });
-      
+      const found = list.find(i => i.typeTransmission && i.typeTransmission.toLowerCase() === typeTransmission.toLowerCase());
       console.log('🔍 Résultat via filtrage:', found ? `ID ${found.id}` : 'Aucune');
       return found;
     }
@@ -221,20 +201,42 @@ async function loadTransmissionDataForDate(personneId, date, typeTransmission) {
   
   console.log('📅 ===== CHARGEMENT TRANSMISSION =====');
   console.log('📅 loadTransmissionDataForDate appelé avec:', { personneId: pid, date, typeTransmission });
-  console.log('📅 Type de personneId:', typeof pid);
-  
-  // Vérifier que les paramètres sont valides
-  if (!pid || isNaN(pid)) {
-    console.error('❌ personneId invalide:', personneId);
-    return;
-  }
-  
-  if (!date) {
-    console.error('❌ date invalide:', date);
-    return;
-  }
   
   try {
+    // Recharger les informations de la personne pour s'assurer d'avoir les données à jour
+    const personne = await window.getPersonneById(pid);
+    if (!personne) {
+      console.error('❌ Personne non trouvée pour ID:', pid);
+      await window.customAlert('Erreur : personne non trouvée', 'error');
+      return;
+    }
+    
+    // S'assurer que le personneId est défini dans le dataset du formulaire
+    const form = document.getElementById('form-modal-transmission');
+    if (form) {
+      form.dataset.personneId = pid;
+      console.log('📝 PersonneId défini dans le dataset:', pid);
+    }
+    
+    // Récupérer les DERNIÈRES infos connues
+    const dernieresInfos = window.getDernieresInfos ? window.getDernieresInfos(personne) : {
+      departement: personne.departement || '',
+      typologie: personne.typologie || '',
+      nbPersonnes: personne.nbPersonnes || '',
+      mineurs: personne.mineurs || ''
+    };
+    
+    // Recharger les informations personnelles (au cas où elles auraient changé)
+    document.getElementById('form-nom').value = personne.nom || '';
+    document.getElementById('form-prenom').value = personne.prenom || '';
+    document.getElementById('form-ddn').value = personne.dateNaissance || '';
+    document.getElementById('form-description').value = personne.descriptionPhysique || '';
+    document.getElementById('form-inconnu').checked = personne.inconnu || false;
+    document.getElementById('form-departement').value = dernieresInfos.departement;
+    document.getElementById('form-typologie').value = dernieresInfos.typologie;
+    document.getElementById('form-nb-personnes').value = dernieresInfos.nbPersonnes;
+    document.getElementById('form-mineurs').value = dernieresInfos.mineurs;
+    
     // Chercher si une transmission existe pour cette personne à cette date
     let existingTransmission = null;
     
@@ -251,38 +253,24 @@ async function loadTransmissionDataForDate(personneId, date, typeTransmission) {
     console.log('📋 Transmission trouvée:', existingTransmission ? `ID ${existingTransmission.id}` : 'Aucune');
     if (existingTransmission) {
       console.log('📋 Contenu transmission:', JSON.stringify(existingTransmission, null, 2));
-    } else {
-      console.log('📋 Aucune transmission trouvée pour cette date - vérification des données...');
-      // Debug : lister toutes les interventions de cette personne
-      if (typeof window.getAllInterventions === 'function') {
-        const allInterventions = await window.getAllInterventions();
-        const personInterventions = allInterventions.filter(i => {
-          const iPid = typeof i.personneId === 'string' ? parseInt(i.personneId, 10) : i.personneId;
-          return iPid === pid;
-        });
-        console.log('📋 Toutes les interventions de cette personne:', personInterventions.length);
-        personInterventions.forEach(i => {
-          console.log(`   - Date: ${i.date}, Type: ${i.type}, TypeTransmission: ${i.typeTransmission}`);
-        });
-      }
     }
     
     // Mettre à jour le sélecteur de type de transmission
     const typeSelect = document.getElementById('form-type-transmission');
     if (typeSelect && typeTransmission) {
-      // Normaliser la casse pour le select
-      const normalizedType = typeTransmission.charAt(0).toUpperCase() + typeTransmission.slice(1).toLowerCase();
-      typeSelect.value = normalizedType;
-      console.log('📅 Type transmission défini à:', normalizedType);
+      typeSelect.value = typeTransmission;
     }
     
     if (existingTransmission) {
       // Remplir les champs de l'intervention existante
+      console.log('📝 Remplissage des champs avec la transmission ID:', existingTransmission.id);
+      console.log('📝 Type:', existingTransmission.typeTransmission, 'Adresse:', existingTransmission.adresse);
       document.getElementById('form-type-transmission').value = existingTransmission.typeTransmission || '';
       document.getElementById('form-adresse').value = existingTransmission.adresse || existingTransmission.lieu || '';
       document.getElementById('form-ville').value = existingTransmission.ville || '';
       document.getElementById('form-signalement').value = existingTransmission.signalement || '';
       document.getElementById('form-transmission').value = existingTransmission.transmission || existingTransmission.observations || '';
+      console.log('📝 Valeur dans le champ adresse après remplissage:', document.getElementById('form-adresse').value);
       
       // Checkbox Attention
       if (document.getElementById('form-attention')) {
@@ -377,23 +365,10 @@ async function loadTransmissionDataForDate(personneId, date, typeTransmission) {
       const btnSupprimer = document.getElementById('btn-supprimer-transmission');
       if (btnSupprimer) btnSupprimer.style.display = 'inline-block';
     } else {
-      // Pas de transmission pour cette date - réinitialiser les champs de transmission
-      console.log('📝 Pas de transmission pour cette date - Réinitialisation des champs');
-      
-      // Réinitialiser le type de transmission (utiliser celui sélectionné s'il existe)
-      const typeTransmissionField = document.getElementById('form-type-transmission');
-      if (typeTransmissionField && typeTransmission) {
-        typeTransmissionField.value = typeTransmission;
-      } else if (typeTransmissionField) {
-        typeTransmissionField.value = '';
-      }
-      
+      // Pas de transmission pour cette date - réinitialiser les champs
+      document.getElementById('form-type-transmission').value = '';
       document.getElementById('form-signalement').value = '';
       document.getElementById('form-transmission').value = '';
-      
-      // Checkbox Attention - réinitialiser aussi
-      const attentionCheckbox = document.getElementById('form-attention');
-      if (attentionCheckbox) attentionCheckbox.checked = false;
       
       // Cacher le bouton de suppression
       const btnSupprimer = document.getElementById('btn-supprimer-transmission');
@@ -409,31 +384,24 @@ async function loadTransmissionDataForDate(personneId, date, typeTransmission) {
         document.getElementById('form-ville').value = '';
       }
       
-      // Décocher toutes les checkboxes Orly
-      ['form-premier-contact', 'form-personne-presente', 'form-pnt', 'form-maraude', 'form-veille', 'form-refus-contact'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.checked = false;
-      });
-      
-      // Décocher toutes les checkboxes Accompagnement
-      ['form-accomp-hygiene', 'form-accomp-accueil-jour', 'form-accomp-admin', 'form-accomp-hebergement', 'form-accomp-medical'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.checked = false;
-      });
-      
-      // Décocher toutes les checkboxes Distribution
-      ['form-distrib-boisson', 'form-distrib-alimentaire', 'form-distrib-duvet', 'form-distrib-couverture-survie', 
-       'form-distrib-bonnets-gants', 'form-distrib-sous-vetements', 'form-distrib-kits-hygiene'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.checked = false;
-      });
+      // Décocher toutes les checkboxes de transmission
+      document.querySelectorAll('#modal-ajout .checkbox-group input[type="checkbox"]').forEach(cb => cb.checked = false);
       
       delete document.getElementById('form-modal-transmission').dataset.editId;
-      
-      console.log('✅ Champs de transmission réinitialisés pour nouvelle saisie');
     }
     
     console.log('✅ Données chargées pour date:', date);
+    
+    // Si on est en mode consultation (depuis les statistiques), redésactiver les champs
+    if (window.currentConsultationModal === 'modal-ajout') {
+      console.log('🔒 Mode consultation détecté - désactivation des champs dans 50ms');
+      setTimeout(() => {
+        if (typeof window.disableFormFieldsForConsultation === 'function') {
+          window.disableFormFieldsForConsultation('modal-ajout');
+          console.log('🔒 Champs désactivés');
+        }
+      }, 50);
+    }
   } catch (error) {
     console.error('Erreur lors du chargement des données pour la date:', error);
   }
@@ -456,7 +424,7 @@ async function editTransmission(personneId, date = null, consultationMode = fals
     
     if (!personne) {
       console.error('❌ Personne non trouvée pour ID:', personneId);
-      alert('Erreur lors du chargement des données');
+      await window.customAlert('Erreur lors du chargement des données', 'error');
       return;
     }
     
@@ -624,10 +592,10 @@ async function editTransmission(personneId, date = null, consultationMode = fals
     // Ouvrir la modal
     const modal = document.getElementById('modal-ajout');
     if (modal) {
-      // Réinitialiser le style inline pour que le CSS puisse gérer l'affichage
+      // S'ASSURER que le modal est COMPLÈTEMENT réactivé
       modal.style.display = '';
-      modal.style.zIndex = ''; // Réinitialiser le z-index
-      modal.style.pointerEvents = ''; // Réinitialiser pointer-events
+      modal.style.zIndex = '1000';
+      modal.style.pointerEvents = 'auto';
       modal.classList.add('show');
       
       // RESTAURER les boutons Annuler et Enregistrer (pourraient être cachés par mode consultation)
@@ -640,21 +608,51 @@ async function editTransmission(personneId, date = null, consultationMode = fals
       const btnFermerConsultation = modal.querySelector('.btn-fermer-consultation');
       if (btnFermerConsultation) btnFermerConsultation.remove();
       
+      // Nettoyer les anciens intervalles/timers avant d'en créer de nouveaux
+      if (window._transmissionCollapseInterval) {
+        clearInterval(window._transmissionCollapseInterval);
+        window._transmissionCollapseInterval = null;
+      }
+      
       // Scroll vers le haut du formulaire et replier la section Informations Personnelles
       setTimeout(() => {
         const modalBody = modal.querySelector('.modal-body');
         if (modalBody) {
           modalBody.scrollTop = 0;
         }
-        // Réinitialiser les gestionnaires de collapse puis replier la section
-        if (window.initSectionCollapse) {
-          window.initSectionCollapse();
-        }
-        setTimeout(() => {
-          if (window.replierSection) {
-            window.replierSection('section-info-perso');
+        
+        // S'assurer que les sections sont bien chargées avant d'initialiser
+        let checkAttempts = 0;
+        const maxAttempts = 20; // 1 seconde max
+        window._transmissionCollapseInterval = setInterval(() => {
+          checkAttempts++;
+          const section = document.getElementById('section-info-perso');
+          if (section && section.querySelector('.form-grid')) {
+            clearInterval(window._transmissionCollapseInterval);
+            window._transmissionCollapseInterval = null;
+            
+            // Réinitialiser les gestionnaires de collapse (seulement si pas déjà fait)
+            if (window.initSectionCollapse) {
+              window.initSectionCollapse();
+            }
+            
+            // Replier la section après un court délai
+            setTimeout(() => {
+              if (window.replierSection) {
+                window.replierSection('section-info-perso');
+              }
+            }, 100);
+          } else if (checkAttempts >= maxAttempts) {
+            clearInterval(window._transmissionCollapseInterval);
+            window._transmissionCollapseInterval = null;
+            console.warn('⚠️ Timeout : section info perso non trouvée');
           }
         }, 50);
+        
+        // Nettoyer l'ancien navigateur de dates s'il existe
+        if (window._dateNavigatorCleanup) {
+          window._dateNavigatorCleanup();
+        }
         
         // Initialiser le navigateur de dates
         if (window.initDateNavigator) {
@@ -682,7 +680,7 @@ async function editTransmission(personneId, date = null, consultationMode = fals
     }
   } catch (error) {
     console.error('Erreur lors du chargement:', error);
-    alert('Erreur lors du chargement des données');
+    await window.customAlert('Erreur lors du chargement des données', 'error');
   }
 }
 
@@ -690,7 +688,8 @@ async function editTransmission(personneId, date = null, consultationMode = fals
  * Supprime une personne (toutes ses interventions)
  */
 async function deletePersonCard(personneId) {
-  if (!confirm('Êtes-vous sûr de vouloir supprimer cette personne et toutes ses interventions ?')) {
+  const confirmation = await window.customConfirm('Êtes-vous sûr de vouloir supprimer cette personne et toutes ses interventions ?', 'Supprimer');
+  if (!confirmation) {
     return;
   }
   
@@ -721,7 +720,7 @@ async function deletePersonCard(personneId) {
     console.log('✅ Personne supprimée');
   } catch (error) {
     console.error('❌ Erreur lors de la suppression:', error);
-    alert('Erreur lors de la suppression : ' + error.message);
+    await window.customAlert('Erreur lors de la suppression : ' + error.message, 'error');
   }
 }
 
@@ -789,8 +788,7 @@ function initTransmissionsForm() {
     if (btnFermerConsultation) btnFermerConsultation.remove();
     
     // Cacher le navigateur de dates en mode création et réinitialiser le titre
-    if (window.hideDateNavigator) window.hideDateNavigator('transmissions');
-    if (window.resetModalTitle) window.resetModalTitle('transmissions', 'Nouvelle Personne');
+    if (window.resetModalTitle) window.resetModalTitle('transmissions');
     
     // Initialiser la date du sélecteur de transmission avec la date par défaut
     const dateTransmission = document.getElementById('transmissions-date');
@@ -826,167 +824,14 @@ function initTransmissionsForm() {
   
   // Fermer la modal
   const closeModal = () => {
-    // STRATÉGIE : Transférer le focus AVANT de fermer
-    // 1. Trouver un élément focusable en dehors du modal
-    const dateInput = document.getElementById('transmissions-date');
-    const filterNom = document.getElementById('filter-nom');
-    
-    // 2. Forcer le focus sur cet élément AVANT de toucher au modal
-    if (dateInput) {
-      dateInput.focus();
-      // Forcer aussi un tabindex pour garantir la focusabilité
-      dateInput.setAttribute('tabindex', '0');
-    } else if (filterNom) {
-      filterNom.focus();
-      filterNom.setAttribute('tabindex', '0');
-    }
-    
-    // 3. Maintenant fermer le modal COMPLÈTEMENT
-    modal.classList.remove('show');
-    modal.style.display = 'none'; // Ceci retire le backdrop
-    modal.style.zIndex = ''; // IMPORTANT : Ne pas forcer à -1, laisser le CSS gérer
-    modal.style.pointerEvents = 'none'; // S'assurer qu'il ne capture aucun événement
-    
-    // 4. Nettoyer le formulaire
-    form.reset();
-    delete form.dataset.editId;
-    delete form.dataset.personneId;
-    delete form.dataset.initialDepartement;
-    delete form.dataset.initialTypologie;
-    delete form.dataset.initialNbPersonnes;
-    delete form.dataset.initialMineurs;
+    // Utiliser la fonction unifiée de fermeture
+    window.closeModalSafely(modal, form, {
+      focusTarget: document.getElementById('transmissions-date')
+    });
     
     // Cacher l'alerte
     const alerteModif = document.getElementById('alerte-modification-infos');
     if (alerteModif) alerteModif.style.display = 'none';
-    
-    // 5. NETTOYAGE RADICAL de tous les overlays possibles
-    setTimeout(() => {
-      // Forcer pointer-events sur TOUS les inputs critiques
-      const criticalInputs = [
-        'transmissions-date',
-        'filter-nom',
-        'filter-prenom',
-        'filter-ddn',
-        'filter-inconnu',
-        'filter-description'
-      ];
-      
-      criticalInputs.forEach(id => {
-        const input = document.getElementById(id);
-        if (input) {
-          input.style.pointerEvents = 'auto';
-          input.style.zIndex = '1';
-          input.removeAttribute('disabled');
-        }
-      });
-      
-      // Nettoyer TOUS les overlays d'historique qui pourraient traîner
-      document.querySelectorAll('.historique-modal-overlay').forEach(overlay => {
-        overlay.remove();
-        console.log('🧹 Overlay historique nettoyé');
-      });
-      
-      // Chercher TOUS les éléments avec z-index élevé et les neutraliser
-      const allElements = document.querySelectorAll('*');
-      allElements.forEach(el => {
-        const zIndex = window.getComputedStyle(el).zIndex;
-        const pointerEvents = window.getComputedStyle(el).pointerEvents;
-        
-        // Si l'élément a un z-index élevé ET est visible, et n'est pas un modal connu
-        if (zIndex && parseInt(zIndex) > 100 && el.id !== 'modal-ajout') {
-          const isVisible = window.getComputedStyle(el).display !== 'none';
-          if (isVisible && !el.classList.contains('modal') && !el.closest('.modal')) {
-            console.warn('⚠️ Élément suspect:', el.tagName, el.className, 'z-index:', zIndex, 'pointerEvents:', pointerEvents);
-            el.style.display = 'none'; // Le cacher complètement plutôt que jouer avec z-index
-            console.log('🔧 Élément caché:', el.tagName);
-          }
-        }
-      });
-      
-      // APPROCHE ULTIME : Simuler une interaction utilisateur complète
-      // 1. Clic sur le body pour "réveiller" la page
-      document.body.click();
-      
-      // 2. Forcer le focus avec blur puis focus
-      if (dateInput) {
-        dateInput.blur();
-        setTimeout(() => {
-          dateInput.focus();
-          dateInput.click();
-          
-          // 3. Déclencher artificiellement les événements
-          dateInput.dispatchEvent(new Event('focus', { bubbles: true }));
-          dateInput.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-          dateInput.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-          dateInput.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-          
-          console.log('✅ Modal fermé - Interaction complète simulée sur:', dateInput.id);
-          console.log('   - activeElement:', document.activeElement?.id);
-          console.log('   - dateInput est focusable?', dateInput.tabIndex >= -1);
-          
-          // Test final : essayer de taper dans l'input
-          setTimeout(() => {
-            if (document.activeElement === dateInput) {
-              console.log('✅ SUCCÈS : Le focus est bien sur dateInput');
-              
-              // DERNIÈRE TENTATIVE DRASTIQUE : Forcer un reflow complet
-              // 1. Forcer le navigateur à recalculer tout
-              document.body.offsetHeight; // Force reflow
-              
-              // 2. S'assurer que les inputs sont modifiables
-              const allCriticalInputs = [
-                dateInput,
-                document.getElementById('filter-nom'),
-                document.getElementById('filter-prenom'),
-                document.getElementById('filter-ddn'),
-                document.getElementById('filter-inconnu'),
-                document.getElementById('filter-description')
-              ];
-              
-              allCriticalInputs.forEach(input => {
-                if (input) {
-                  input.removeAttribute('readonly');
-                  input.removeAttribute('disabled');
-                  input.style.pointerEvents = 'auto';
-                  input.style.userSelect = 'auto';
-                  input.style.cursor = 'text';
-                  input.tabIndex = 0;
-                  
-                  console.log(`🔓 ${input.id}: readonly=${input.readOnly}, disabled=${input.disabled}, pointerEvents=${input.style.pointerEvents}`);
-                }
-              });
-              
-              // 3. Re-attacher les listeners date/filtres (au cas où ils auraient été perdus)
-              if (window.initDateSelectors) {
-                console.log('🔄 Ré-initialisation des listeners date/filtres...');
-                // Retirer le flag pour forcer la réinitialisation
-                if (dateInput) dateInput._listenersAttached = false;
-                allCriticalInputs.forEach(input => {
-                  if (input) input._listenersAttached = false;
-                });
-                window.initDateSelectors();
-              }
-              
-              // 4. SOLUTION ELECTRON : Recharger la vue après un court délai
-              // Cela garantit que tous les états sont correctement réinitialisés
-              console.log('🔄 Ré-initialisation complète des filtres...');
-              if (window.initDateSelectors) {
-                window.initDateSelectors();
-              }
-              
-              console.log('✅ Filtres réinitialisés - Vous pouvez maintenant saisir normalement');
-            
-            } else {
-              console.error('❌ ÉCHEC : Le focus n\'est PAS sur dateInput');
-              console.error('   Focus actuel:', document.activeElement?.id || document.activeElement?.tagName);
-            }
-          }, 100);
-        }, 50);
-      }
-      
-      console.log('✅ Modal fermé - Focus actif sur:', document.activeElement?.id || document.activeElement?.tagName);
-    }, 100);
   };
   
   btnAnnuler?.addEventListener('click', closeModal);
@@ -1104,7 +949,7 @@ function initTransmissionsForm() {
           
         } catch (error) {
           console.error('❌ Erreur lors de la suppression:', error);
-          alert('Erreur lors de la suppression de la transmission');
+          await window.customAlert('Erreur lors de la suppression de la transmission', 'error');
         }
       });
     });
@@ -1306,7 +1151,7 @@ function initTransmissionsForm() {
       
     } catch (error) {
       console.error('❌ Erreur lors de l\'enregistrement:', error);
-      alert('Erreur lors de l\'enregistrement : ' + error.message);
+      await window.customAlert('Erreur lors de l\'enregistrement : ' + error.message, 'error');
     }
   });
   
@@ -1326,7 +1171,7 @@ function initTransmissionsForm() {
       if (personneId && typeof window.afficherHistoriqueInterventions === 'function') {
         await window.afficherHistoriqueInterventions(parseInt(personneId), section);
       } else {
-        alert('Veuillez d\'abord sélectionner ou créer une personne.');
+        await window.customAlert('Veuillez d\'abord sélectionner ou créer une personne.', 'warning');
       }
     });
   });

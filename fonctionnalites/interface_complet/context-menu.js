@@ -116,7 +116,7 @@
 
     if (!personneId) {
       console.error('❌ Aucun personneId trouvé dans la carte');
-      alert('Erreur : impossible de récupérer les informations de la fiche');
+      await window.customAlert('Erreur : impossible de récupérer les informations de la fiche', 'error');
       hideContextMenu();
       return;
     }
@@ -144,11 +144,11 @@
         window.ouvrirModaleDoublons(personneIdNum);
       } else {
         console.error('❌ Fonction ouvrirModaleDoublons non disponible');
-        alert('Erreur : impossible d\'ouvrir la modale de gestion des doublons');
+        await window.customAlert('Erreur : impossible d\'ouvrir la modale de gestion des doublons', 'error');
       }
     } catch (error) {
       console.error('Erreur lors de l\'ouverture de la modale:', error);
-      alert('Erreur lors de l\'ouverture de la modale');
+      await window.customAlert('Erreur lors de l\'ouverture de la modale', 'error');
     }
   }
 
@@ -161,13 +161,14 @@
       const personne = await window.getPersonneById(personneIdNum);
       
       if (!personne) {
-        alert('Erreur : Personne non trouvée');
+        await window.customAlert('Erreur : Personne non trouvée', 'error');
         return;
       }
       
       const nom = personne.inconnu ? 'Inconnu' : `${personne.prenom || ''} ${personne.nom || ''}`.trim();
       
-      if (!confirm(`Voulez-vous archiver la fiche de ${nom} ?\n\nLa fiche ne sera plus visible dans les listes et ne comptera plus dans les statistiques.\n\nVous pourrez la restaurer depuis l'onglet Archives.`)) {
+      const confirmation = await window.customConfirm(`Voulez-vous archiver la fiche de ${nom} ?\n\nLa fiche ne sera plus visible dans les listes et ne comptera plus dans les statistiques.\n\nVous pourrez la restaurer depuis l'onglet Archives.`, 'Archiver');
+      if (!confirmation) {
         return;
       }
       
@@ -190,11 +191,11 @@
         await window.afficherToutesLesPersonnesPA();
       }
       
-      alert(`Fiche archivée !\n\n${nom} a été déplacé(e) vers les archives.`);
+      window.showToast(`Fiche archivée ! ${nom} a été déplacé(e) vers les archives.`, 'success');
       
     } catch (error) {
       console.error('❌ Erreur lors de l\'archivage:', error);
-      alert('Erreur lors de l\'archivage : ' + error.message);
+      await window.customAlert('Erreur lors de l\'archivage : ' + error.message, 'error');
     }
   }
 
@@ -214,7 +215,7 @@
         const personne = await window.getPersonneById(personneIdNum);
         
         if (!personne) {
-          alert('Personne non trouvée');
+          await window.customAlert('Personne non trouvée', 'error');
           return;
         }
         
@@ -226,11 +227,11 @@
         
         console.log('✅ Modale ouverte en mode duplication');
       } else {
-        alert('Fonction de duplication non disponible');
+        await window.customAlert('Fonction de duplication non disponible', 'error');
       }
     } catch (error) {
       console.error('❌ Erreur duplication transmission:', error);
-      alert('Erreur lors de la duplication de la fiche');
+      await window.customAlert('Erreur lors de la duplication de la fiche', 'error');
     }
   }
 
@@ -247,7 +248,7 @@
         const personne = await window.getPersonneById(personneIdNum);
         
         if (!personne) {
-          alert('Personne non trouvée');
+          await window.customAlert('Personne non trouvée', 'error');
           return;
         }
         
@@ -256,11 +257,11 @@
         
         console.log('✅ Modale ADP ouverte en mode duplication');
       } else {
-        alert('Fonction de duplication ADP non disponible');
+        await window.customAlert('Fonction de duplication ADP non disponible', 'error');
       }
     } catch (error) {
       console.error('❌ Erreur duplication ADP:', error);
-      alert('Erreur lors de la duplication de la fiche ADP');
+      await window.customAlert('Erreur lors de la duplication de la fiche ADP', 'error');
     }
   }
 
@@ -277,7 +278,7 @@
         const personne = await window.getPersonneById(personneIdNum);
         
         if (!personne) {
-          alert('Personne non trouvée');
+          await window.customAlert('Personne non trouvée', 'error');
           return;
         }
         
@@ -286,11 +287,11 @@
         
         console.log('✅ Modale PA ouverte en mode duplication');
       } else {
-        alert('Fonction de duplication Point Accueil non disponible');
+        await window.customAlert('Fonction de duplication Point Accueil non disponible', 'error');
       }
     } catch (error) {
       console.error('❌ Erreur duplication Point Accueil:', error);
-      alert('Erreur lors de la duplication de la fiche Point Accueil');
+      await window.customAlert('Erreur lors de la duplication de la fiche Point Accueil', 'error');
     }
   }
 
@@ -318,10 +319,11 @@
   /**
    * Gère la suppression d'une fiche
    */
-  function handleDelete(personneId, type) {
+  async function handleDelete(personneId, type) {
     const confirmMsg = 'Êtes-vous sûr de vouloir supprimer cette personne et toutes ses interventions ?';
     
-    if (!confirm(confirmMsg)) {
+    const confirmation = await window.customConfirm(confirmMsg, 'Supprimer');
+    if (!confirmation) {
       return;
     }
 
@@ -340,9 +342,9 @@
         } else if (type === 'pointAccueil' && typeof window.afficherToutesLesPersonnesPA === 'function') {
           window.afficherToutesLesPersonnesPA();
         }
-      }).catch(error => {
+      }).catch(async error => {
         console.error('❌ Erreur suppression:', error);
-        alert('Erreur lors de la suppression');
+        await window.customAlert('Erreur lors de la suppression', 'error');
       });
     }
   }

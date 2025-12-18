@@ -44,12 +44,23 @@ async function findAdpByPersonDateAndType(personneId, date, typeTransmission) {
     if (typeof window.getInterventionByFullKey === 'function') {
       const intervention = await window.getInterventionByFullKey(pid, date, 'adp', typeTransmission);
       console.log('🔍 Résultat via getInterventionByFullKey:', intervention ? `ID ${intervention.id}` : 'Aucune');
+      
+      // Si pas trouvé, essayer avec recherche insensible à la casse
+      if (!intervention) {
+        const allInterventions = await window.getInterventionsByPersonneAndDate(pid, date);
+        const found = allInterventions.find(i => i.type === 'adp' && i.typeTransmission && i.typeTransmission.toLowerCase() === typeTransmission.toLowerCase());
+        if (found) {
+          console.log('🔍 ✅ ADP trouvée via recherche insensible à la casse! ID:', found.id);
+          return found;
+        }
+      }
+      
       return intervention;
     }
     
     // Fallback : chercher parmi toutes les interventions de cette date
     const interventions = await window.getInterventionsByPersonneAndDate(pid, date);
-    const found = interventions.find(i => i.type === 'adp' && i.typeTransmission === typeTransmission);
+    const found = interventions.find(i => i.type === 'adp' && i.typeTransmission && i.typeTransmission.toLowerCase() === typeTransmission.toLowerCase());
     console.log('🔍 Résultat via filtrage:', found ? `ID ${found.id}` : 'Aucune');
     return found;
   } catch (error) {
@@ -148,6 +159,40 @@ async function loadAdpDataForDate(personneId, date, typeTransmission) {
   console.log('📅 loadAdpDataForDate appelé avec:', { personneId: pid, date, typeTransmission });
   
   try {
+    // Recharger les informations de la personne pour s'assurer d'avoir les données à jour
+    const personne = await window.getPersonneById(pid);
+    if (!personne) {
+      console.error('❌ Personne non trouvée pour ID:', pid);
+      await window.customAlert('Erreur : personne non trouvée', 'error');
+      return;
+    }
+    
+    // S'assurer que le personneId est défini dans le dataset du formulaire
+    const form = document.getElementById('form-adp');
+    if (form) {
+      form.dataset.personneId = pid;
+      console.log('📝 PersonneId défini dans le dataset ADP:', pid);
+    }
+    
+    // Récupérer les DERNIÈRES infos connues
+    const dernieresInfos = window.getDernieresInfos ? window.getDernieresInfos(personne) : {
+      departement: personne.departement || '',
+      typologie: personne.typologie || '',
+      nbPersonnes: personne.nbPersonnes || '',
+      mineurs: personne.mineurs || ''
+    };
+    
+    // Recharger les informations personnelles
+    document.getElementById('adp-form-nom').value = personne.nom || '';
+    document.getElementById('adp-form-prenom').value = personne.prenom || '';
+    document.getElementById('adp-form-ddn').value = personne.dateNaissance || '';
+    document.getElementById('adp-form-description').value = personne.descriptionPhysique || '';
+    document.getElementById('adp-form-inconnu').checked = personne.inconnu || false;
+    document.getElementById('adp-form-departement').value = dernieresInfos.departement;
+    document.getElementById('adp-form-typologie').value = dernieresInfos.typologie;
+    document.getElementById('adp-form-nb-personnes').value = dernieresInfos.nbPersonnes;
+    document.getElementById('adp-form-mineurs').value = dernieresInfos.mineurs;
+    
     // Chercher si une ADP existe pour cette personne à cette date avec ce type
     const existingAdp = await findAdpByPersonDateAndType(pid, date, typeTransmission);
     
@@ -262,6 +307,15 @@ async function loadAdpDataForDate(personneId, date, typeTransmission) {
     }
     
     console.log('✅ Données ADP chargées pour date:', date);
+    
+    // Si on est en mode consultation (depuis les statistiques), redésactiver les champs
+    if (window.currentConsultationModal === 'modal-adp') {
+      setTimeout(() => {
+        if (typeof window.disableFormFieldsForConsultation === 'function') {
+          window.disableFormFieldsForConsultation('modal-adp');
+        }
+      }, 50);
+    }
   } catch (error) {
     console.error('Erreur lors du chargement des données ADP pour la date:', error);
   }
@@ -284,13 +338,14 @@ async function editTransmissionAdp(personneId, date = null, consultationMode = f
     
     if (!personne) {
       console.error('❌ Personne non trouvée pour ID:', personneId);
-      alert('Erreur lors du chargement des données');
+      await window.customAlert('Erreur lors du chargement des données', 'error');
       return;
     }
     
     console.log('✅ Personne trouvée:', personne);
-    const selectedDate = document.getElementById('adp-date')?.value;
-    console.log('📅 Date sélectionnée:', selectedDate);
+    // Utiliser la date passée en paramètre si fournie, sinon celle de l'input
+    const selectedDate = date || document.getElementById('adp-date')?.value;
+    console.log('📅 Date sélectionnée:', selectedDate, '(paramètre date:', date, ')');
     
     // Chercher si une ADP existe pour cette personne à cette date
     // Si newTypeTransmission est fourni, on cherche pour ce type spécifique
@@ -438,7 +493,8 @@ async function editTransmissionAdp(personneId, date = null, consultationMode = f
     const gridInfoPerso = document.getElementById('adp-grid-info-perso');
     const toggleIcon = document.querySelector('#adp-section-info-perso .collapse-toggle');
     if (gridInfoPerso && toggleIcon) {
-      gridInfoPerso.style.display = 'none';
+      gridInfoPerso.classList.add('collapsed');
+      gridInfoPerso.style.display = ''; // Reset display pour laisser le CSS gérer
       toggleIcon.classList.add('collapsed');
       console.log('📁 Section Informations Personnelles repliée automatiquement (ADP)');
     }
@@ -446,6 +502,9 @@ async function editTransmissionAdp(personneId, date = null, consultationMode = f
     // Ouvrir la modal
     const modal = document.getElementById('modal-adp');
     if (modal) {
+      // S'ASSURER que le modal est COMPLÈTEMENT réactivé
+      modal.style.pointerEvents = 'auto';
+      modal.style.zIndex = '1000';
       modal.classList.add('show');
       
       // RESTAURER les boutons Annuler et Enregistrer (pourraient être cachés par mode consultation)
@@ -458,21 +517,51 @@ async function editTransmissionAdp(personneId, date = null, consultationMode = f
       const btnFermerConsultation = modal.querySelector('.btn-fermer-consultation');
       if (btnFermerConsultation) btnFermerConsultation.remove();
       
+      // Nettoyer les anciens intervalles/timers avant d'en créer de nouveaux
+      if (window._adpCollapseInterval) {
+        clearInterval(window._adpCollapseInterval);
+        window._adpCollapseInterval = null;
+      }
+      
       // Scroll vers le haut du formulaire et replier la section Informations Personnelles
       setTimeout(() => {
         const modalBody = modal.querySelector('.modal-body');
         if (modalBody) {
           modalBody.scrollTop = 0;
         }
-        // Réinitialiser les gestionnaires de collapse puis replier la section
-        if (window.initSectionCollapse) {
-          window.initSectionCollapse();
-        }
-        setTimeout(() => {
-          if (window.replierSection) {
-            window.replierSection('adp-section-info-perso');
+        
+        // S'assurer que les sections sont bien chargées avant d'initialiser
+        let checkAttempts = 0;
+        const maxAttempts = 20; // 1 seconde max
+        window._adpCollapseInterval = setInterval(() => {
+          checkAttempts++;
+          const section = document.getElementById('adp-section-info-perso');
+          if (section && section.querySelector('.form-grid')) {
+            clearInterval(window._adpCollapseInterval);
+            window._adpCollapseInterval = null;
+            
+            // Réinitialiser les gestionnaires de collapse
+            if (window.initSectionCollapse) {
+              window.initSectionCollapse();
+            }
+            
+            // Replier la section après un court délai
+            setTimeout(() => {
+              if (window.replierSection) {
+                window.replierSection('adp-section-info-perso');
+              }
+            }, 100);
+          } else if (checkAttempts >= maxAttempts) {
+            clearInterval(window._adpCollapseInterval);
+            window._adpCollapseInterval = null;
+            console.warn('⚠️ Timeout : section info perso ADP non trouvée');
           }
         }, 50);
+        
+        // Nettoyer l'ancien navigateur de dates s'il existe
+        if (window._dateNavigatorCleanup) {
+          window._dateNavigatorCleanup();
+        }
         
         // Initialiser le navigateur de dates
         if (window.initDateNavigator) {
@@ -499,7 +588,7 @@ async function editTransmissionAdp(personneId, date = null, consultationMode = f
     }
   } catch (error) {
     console.error('❌ Erreur lors du chargement:', error);
-    alert('Erreur lors du chargement des données');
+    await window.customAlert('Erreur lors du chargement des données', 'error');
   }
 }
 window.editTransmissionAdp = editTransmissionAdp;
@@ -539,44 +628,35 @@ function initAdpFilters() {
   const filterInconnu = document.getElementById('adp-filter-inconnu');
   const filterDescription = document.getElementById('adp-filter-description');
 
-  if (filterNom) {
-    filterNom.addEventListener('input', () => {
-      if (typeof window.afficherToutesLesPersonnesADP === 'function') {
-        window.afficherToutesLesPersonnesADP();
-      }
-    });
+  const rechargerFiches = () => {
+    if (typeof window.afficherToutesLesPersonnesADP === 'function') {
+      window.afficherToutesLesPersonnesADP();
+    }
+  };
+
+  if (filterNom && !filterNom._listenersAttached) {
+    filterNom.addEventListener('input', rechargerFiches);
+    filterNom._listenersAttached = true;
   }
 
-  if (filterPrenom) {
-    filterPrenom.addEventListener('input', () => {
-      if (typeof window.afficherToutesLesPersonnesADP === 'function') {
-        window.afficherToutesLesPersonnesADP();
-      }
-    });
+  if (filterPrenom && !filterPrenom._listenersAttached) {
+    filterPrenom.addEventListener('input', rechargerFiches);
+    filterPrenom._listenersAttached = true;
   }
 
-  if (filterDdn) {
-    filterDdn.addEventListener('change', () => {
-      if (typeof window.afficherToutesLesPersonnesADP === 'function') {
-        window.afficherToutesLesPersonnesADP();
-      }
-    });
+  if (filterDdn && !filterDdn._listenersAttached) {
+    filterDdn.addEventListener('change', rechargerFiches);
+    filterDdn._listenersAttached = true;
   }
 
-  if (filterInconnu) {
-    filterInconnu.addEventListener('change', () => {
-      if (typeof window.afficherToutesLesPersonnesADP === 'function') {
-        window.afficherToutesLesPersonnesADP();
-      }
-    });
+  if (filterInconnu && !filterInconnu._listenersAttached) {
+    filterInconnu.addEventListener('change', rechargerFiches);
+    filterInconnu._listenersAttached = true;
   }
 
-  if (filterDescription) {
-    filterDescription.addEventListener('input', () => {
-      if (typeof window.afficherToutesLesPersonnesADP === 'function') {
-        window.afficherToutesLesPersonnesADP();
-      }
-    });
+  if (filterDescription && !filterDescription._listenersAttached) {
+    filterDescription.addEventListener('input', rechargerFiches);
+    filterDescription._listenersAttached = true;
   }
 
   console.log('✅ Filtres ADP initialisés');
@@ -654,19 +734,27 @@ function initAdpForm() {
       }
       // S'assurer que la section Informations Personnelles est dépliée pour Ajouter
       setTimeout(() => {
-        if (window.deplierSection) {
-          window.deplierSection('adp-section-info-perso');
+        // Nettoyer tout style inline qui pourrait bloquer l'affichage
+        const gridInfoPerso = document.getElementById('adp-grid-info-perso');
+        if (gridInfoPerso) {
+          gridInfoPerso.style.display = '';
+          gridInfoPerso.classList.remove('collapsed');
         }
+        const toggleIcon = document.querySelector('#adp-section-info-perso .collapse-toggle');
+        if (toggleIcon) {
+          toggleIcon.classList.remove('collapsed');
+        }
+        console.log('📂 Section Informations Personnelles dépliée pour Ajouter (ADP)');
       }, 50);
     }, 100);
   });
   
   // Fermer la modal
   const closeModal = () => {
-    modal.classList.remove('show');
-    formAdp.reset();
-    delete modal.dataset.editId;
-    delete modal.dataset.personneId;
+    // Utiliser la fonction unifiée de fermeture
+    window.closeModalSafely(modal, formAdp, {
+      focusTarget: document.getElementById('adp-date')
+    });
   };
   
   btnAnnuler?.addEventListener('click', closeModal);
@@ -678,7 +766,7 @@ function initAdpForm() {
     console.log('✅ Auto-complétion typologie initialisée pour ADP');
   }
   
-  // Event listener pour le bouton "Supprimer l'ADP"
+  // Event listener pour le bouton "Supprimer la transmission"
   const btnSupprimer = document.getElementById('btn-supprimer-adp');
   if (btnSupprimer) {
     btnSupprimer.addEventListener('click', async (e) => {
@@ -690,13 +778,13 @@ function initAdpForm() {
         return;
       }
       
-      const confirmation = confirm('Êtes-vous sûr de vouloir supprimer cette ADP ? Cette action est irréversible.');
+      const confirmation = await window.customConfirm('Êtes-vous sûr de vouloir supprimer cette ADP ? Cette action est irréversible.', 'Supprimer');
       if (!confirmation) return;
       
       try {
         console.log('🗑️ Suppression de l\'ADP ID:', editId);
         await window.deleteIntervention(parseInt(editId));
-        alert('✅ ADP supprimée avec succès');
+        window.showToast('ADP supprimée avec succès', 'success');
         
         // Fermer le modal
         closeModal();
@@ -707,7 +795,7 @@ function initAdpForm() {
         }
       } catch (error) {
         console.error('❌ Erreur lors de la suppression:', error);
-        alert('Erreur lors de la suppression de l\'ADP');
+        await window.customAlert('Erreur lors de la suppression de la transmission', 'error');
       }
     });
   }
@@ -864,7 +952,7 @@ function initAdpForm() {
       
     } catch (error) {
       console.error('❌ Erreur lors de l\'enregistrement:', error);
-      alert('Erreur lors de l\'enregistrement : ' + error.message);
+      await window.customAlert('Erreur lors de l\'enregistrement : ' + error.message, 'error');
     }
   });
   
@@ -884,7 +972,7 @@ function initAdpForm() {
       if (personneId && typeof window.afficherHistoriqueInterventions === 'function') {
         await window.afficherHistoriqueInterventions(parseInt(personneId), section);
       } else {
-        alert('Veuillez d\'abord sélectionner ou créer une personne.');
+        await window.customAlert('Veuillez d\'abord sélectionner ou créer une personne.', 'warning');
       }
     });
   });

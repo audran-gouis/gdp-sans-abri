@@ -14,7 +14,8 @@ async function ouvrirFormulaire(page) {
 }
 
 async function cocherPointAccueil(page) {
-  await page.check('#adp-form-point-accueil');
+  // Fonction conservée pour compatibilité mais ne fait plus rien
+  // Le champ Point Accueil a été supprimé du formulaire ADP
 }
 
 async function enregistrer(page) {

@@ -258,7 +258,13 @@ function applyDetailedFilters(interventions, dateFin) {
   // Filtre Attention (checkbox)
   const filterAttention = document.getElementById('stats-filter-attention')?.checked;
   if (filterAttention) {
-    filtered = filtered.filter(item => item.intervention?.attention === true);
+    console.log('🔍 Filtre Attention activé - items avant:', filtered.length);
+    filtered = filtered.filter(item => {
+      // Vérifier le champ attention de l'intervention
+      const hasAttention = item.attention === true;
+      return hasAttention;
+    });
+    console.log('🔍 Filtre Attention - items après:', filtered.length);
   }
   
   // === FILTRES SITUATION ===
@@ -864,15 +870,8 @@ function showFilteredCards() {
     const displayName = personne.inconnu ? 'Inconnu' : 
       `${personne.prenom || ''} ${personne.nom || ''}`.trim() || 'Non renseigné';
     
-    // Nombre de passages (max 1 par type par date)
-    let passages = 0;
-    if (personEntry._typesParDate) {
-      personEntry._typesParDate.forEach(typesSet => {
-        passages += typesSet.size; // Nombre de types différents pour cette date
-      });
-    } else {
-      passages = 1; // Fallback
-    }
+    // Nombre de passages (chaque intervention compte comme un passage)
+    const passages = personEntry._passages || 1;
     const passagesLabel = passages > 1 ? `${passages} passages` : '1 passage';
     
     // Liste des dates de passage
@@ -967,6 +966,48 @@ function showFilteredCards() {
 }
 
 /**
+ * Désactive tous les champs du formulaire pour le mode consultation
+ * @param {string} modalId - L'ID du modal
+ */
+function disableFormFieldsForConsultation(modalId) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  
+  // Désactiver tous les champs du formulaire pour lecture seule
+  // SAUF le sélecteur de dates et les boutons de navigation de dates
+  const formInputs = modal.querySelectorAll('input:not([id*="select-date"]):not([class*="btn-nav-date"]):not(.transmission-tab), textarea, select:not([id*="select-date"])');
+  console.log('🔒 Désactivation de', formInputs.length, 'champs dans', modalId);
+  formInputs.forEach(input => {
+    input.disabled = true;
+    input.style.opacity = '0.7';
+  });
+  
+  console.log('🔒 Champs désactivés pour consultation dans', modalId);
+}
+
+/**
+ * Enregistre le modal actuel en mode consultation
+ */
+let currentConsultationModal = null;
+
+/**
+ * Active le mode consultation pour un modal
+ * @param {string} modalId - L'ID du modal
+ */
+function setConsultationMode(modalId) {
+  currentConsultationModal = modalId;
+  console.log('👁️ Mode consultation activé pour', modalId);
+}
+
+/**
+ * Désactive le mode consultation
+ */
+function clearConsultationMode() {
+  currentConsultationModal = null;
+  console.log('✅ Mode consultation désactivé');
+}
+
+/**
  * Ouvre le formulaire de la personne en mode CONSULTATION (depuis Statistiques)
  * @param {number} personneId - ID de la personne
  * @param {string} mainType - Type principal (transmissions, adp, pointAccueil)
@@ -985,7 +1026,8 @@ function openPersonForm(personneId, mainType, date, allTypes) {
       modalId: 'modal-ajout',
       btnSupprimer: 'btn-supprimer-transmission',
       btnAnnuler: 'btn-annuler',
-      btnEnregistrer: null // C'est le submit button
+      btnEnregistrer: null, // C'est le submit button
+      addContainerId: 'add-transmission-container'
     },
     'adp': {
       tabId: 'adp-tab',
@@ -994,7 +1036,8 @@ function openPersonForm(personneId, mainType, date, allTypes) {
       modalId: 'modal-adp',
       btnSupprimer: 'btn-supprimer-adp',
       btnAnnuler: 'adp-btn-annuler',
-      btnEnregistrer: null
+      btnEnregistrer: null,
+      addContainerId: 'adp-add-transmission-container'
     },
     'pointAccueil': {
       tabId: 'pointaccueil-tab',
@@ -1003,7 +1046,8 @@ function openPersonForm(personneId, mainType, date, allTypes) {
       modalId: 'modal-point-accueil',
       btnSupprimer: 'btn-supprimer-pa',
       btnAnnuler: 'pa-btn-annuler',
-      btnEnregistrer: null
+      btnEnregistrer: null,
+      addContainerId: 'pa-add-transmission-container'
     }
   };
   
@@ -1035,6 +1079,9 @@ function openPersonForm(personneId, mainType, date, allTypes) {
     setTimeout(() => {
       const editFn = window[config.editFunction];
       if (typeof editFn === 'function') {
+        // Activer le mode consultation pour ce modal
+        setConsultationMode(config.modalId);
+        
         // Passer consultationMode = true pour ne pas afficher la date du jour dans le sélecteur
         editFn(personneId, date, true);
         console.log('📝 Formulaire ouvert en mode consultation pour la personne:', personneId);
@@ -1055,6 +1102,18 @@ function openPersonForm(personneId, mainType, date, allTypes) {
             const btnEnregistrer = modal.querySelector('button[type="submit"]');
             if (btnEnregistrer) btnEnregistrer.style.display = 'none';
             
+            // Cacher le bouton d'ajout de nouvelle transmission
+            const addContainer = document.getElementById(config.addContainerId);
+            if (addContainer) addContainer.style.display = 'none';
+            
+            // Désactiver tous les champs du formulaire pour lecture seule
+            // SAUF le sélecteur de dates et les boutons de navigation de dates
+            const formInputs = modal.querySelectorAll('input:not([id*="select-date"]):not([class*="btn-nav-date"]):not(.transmission-tab), textarea, select:not([id*="select-date"])');
+            formInputs.forEach(input => {
+              input.disabled = true;
+              input.style.opacity = '0.7';
+            });
+            
             // Ajouter un bouton "Fermer" à la place
             const footer = modal.querySelector('.modal-footer');
             if (footer && !footer.querySelector('.btn-fermer-consultation')) {
@@ -1064,6 +1123,9 @@ function openPersonForm(personneId, mainType, date, allTypes) {
               btnFermer.textContent = 'Fermer';
               btnFermer.style.marginLeft = 'auto';
               btnFermer.addEventListener('click', () => {
+                // Désactiver le mode consultation
+                clearConsultationMode();
+                
                 // Fermer le modal
                 modal.classList.remove('show');
                 modal.style.display = 'none';
@@ -1072,6 +1134,14 @@ function openPersonForm(personneId, mainType, date, allTypes) {
                 if (btnSupprimer) btnSupprimer.style.display = '';
                 if (btnAnnuler) btnAnnuler.style.display = '';
                 if (btnEnregistrer) btnEnregistrer.style.display = '';
+                if (addContainer) addContainer.style.display = '';
+                
+                // Réactiver tous les champs du formulaire
+                formInputs.forEach(input => {
+                  input.disabled = false;
+                  input.style.opacity = '';
+                });
+                
                 btnFermer.remove();
                 
                 // Retourner à l'onglet Statistiques
@@ -1130,4 +1200,7 @@ if (typeof module !== 'undefined' && module.exports) {
   window.resetFilters = resetFilters;
   window.showFilteredCards = showFilteredCards;
   window.hideCards = hideCards;
+  window.disableFormFieldsForConsultation = disableFormFieldsForConsultation;
+  window.setConsultationMode = setConsultationMode;
+  window.clearConsultationMode = clearConsultationMode;
 }

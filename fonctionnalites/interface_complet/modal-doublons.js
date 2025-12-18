@@ -104,7 +104,7 @@
       ficheSelectionnee = await window.getPersonneById(personneId);
       
       if (!ficheSelectionnee) {
-        alert('Erreur : impossible de charger la fiche');
+        await window.customAlert('Erreur : impossible de charger la fiche', 'error');
         return;
       }
       
@@ -162,7 +162,7 @@
       
     } catch (error) {
       console.error('❌ Erreur ouverture modale doublons:', error);
-      alert('Erreur lors de l\'ouverture de la modale');
+      await window.customAlert('Erreur lors de l\'ouverture de la modale', 'error');
     }
   }
 
@@ -446,7 +446,8 @@
                       'et la transmission de droite sera supprimée.\n\n' +
                       'Cette action est IRRÉVERSIBLE.';
     
-    if (!confirm(confirmMsg)) {
+    const confirmation = await window.customConfirm(confirmMsg, 'Fusionner');
+    if (!confirmation) {
       console.log('❌ Fusion annulée par l\'utilisateur');
       return;
     }
@@ -456,7 +457,7 @@
       const section = document.querySelector(`[data-doublon-index="${index}"]`);
       if (!section) {
         console.error(`❌ Section avec index ${index} introuvable`);
-        alert('Erreur : impossible de trouver la section de fusion');
+        await window.customAlert('Erreur : impossible de trouver la section de fusion', 'error');
         return;
       }
       
@@ -490,7 +491,7 @@
       await window.deleteIntervention(intervention2Id);
       console.log('✅ Intervention en doublon supprimée');
       
-      alert('✅ Transmissions fusionnées avec succès !');
+      window.showToast('Transmissions fusionnées avec succès !', 'success');
       
       // Masquer la section
       section.style.display = 'none';
@@ -501,7 +502,7 @@
       
     } catch (error) {
       console.error('❌ Erreur fusion transmissions:', error);
-      alert(`Erreur lors de la fusion des transmissions : ${error.message}`);
+      await window.customAlert(`Erreur lors de la fusion des transmissions : ${error.message}`, 'error');
     }
   }
 
@@ -682,7 +683,8 @@
                        '- Supprimer la fiche en doublon\n' +
                        '- Cette action est IRRÉVERSIBLE';
     
-    if (!confirm(confirm_msg)) {
+    const confirmation = await window.customConfirm(confirm_msg, 'Fusionner');
+    if (!confirmation) {
       return;
     }
     
@@ -693,19 +695,19 @@
       if (typeof window.fusionnerPersonnes === 'function') {
         // fusionnerPersonnes attend (idPrincipal, [idsAFusionner])
         await window.fusionnerPersonnes(ficheOrigineId, [ficheCibleId]);
-        alert('✅ Fiches fusionnées avec succès !');
+        window.showToast('Fiches fusionnées avec succès !', 'success');
         
         // Rafraîchir la recherche
         toutesLesPersonnes = await window.getAllPersonnes();
         rechercherDoublons();
         
       } else {
-        alert('❌ Fonction de fusion non disponible');
+        await window.customAlert('Fonction de fusion non disponible', 'error');
       }
       
     } catch (error) {
       console.error('❌ Erreur fusion:', error);
-      alert(`Erreur lors de la fusion des fiches : ${error.message}`);
+      await window.customAlert(`Erreur lors de la fusion des fiches : ${error.message}`, 'error');
     }
   }
 

@@ -3,101 +3,6 @@
  */
 
 /**
- * Affiche un message de succès temporaire
- */
-function afficherMessageSucces(message) {
-  const toast = document.createElement('div');
-  toast.innerHTML = `<span style="margin-right: 8px;">✅</span>${message}`;
-  toast.style.cssText = `
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: #10b981; color: white; padding: 12px 24px; border-radius: 8px;
-    font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 10001;
-    display: flex; align-items: center; animation: slideUp 0.3s ease;
-  `;
-  document.body.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.3s';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
-/**
- * Affiche un message d'erreur temporaire
- */
-function afficherMessageErreur(message) {
-  const toast = document.createElement('div');
-  toast.innerHTML = `<span style="margin-right: 8px;">❌</span>${message}`;
-  toast.style.cssText = `
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: #ef4444; color: white; padding: 12px 24px; border-radius: 8px;
-    font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 10001;
-    display: flex; align-items: center;
-  `;
-  document.body.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.3s';
-    setTimeout(() => toast.remove(), 300);
-  }, 4000);
-}
-
-/**
- * Nettoie tous les overlays et restaure l'interactivité des filtres
- */
-function nettoyerApresModal() {
-  console.log('🧹 Nettoyage après fermeture de modal de déplacement...');
-  
-  // Forcer un court délai pour s'assurer que le DOM est à jour
-  setTimeout(() => {
-    // Nettoyer UNIQUEMENT les overlays de confirmation créés dynamiquement
-    // NE PAS toucher aux modaux principaux ou autres éléments de l'interface
-    document.querySelectorAll('.confirm-modal-overlay').forEach(el => {
-      el.remove();
-      console.log('🧹 Overlay de confirmation nettoyé');
-    });
-    
-    // Restaurer l'interactivité des inputs critiques
-    const criticalInputs = [
-      'transmissions-date',
-      'filter-nom',
-      'filter-prenom',
-      'filter-ddn',
-      'filter-inconnu',
-      'filter-description',
-      'adp-date',
-      'adp-filter-nom',
-      'pa-date',
-      'pa-filter-nom'
-    ];
-    
-    criticalInputs.forEach(id => {
-      const input = document.getElementById(id);
-      if (input) {
-        input.style.pointerEvents = 'auto';
-        input.style.zIndex = '1';
-        input.removeAttribute('disabled');
-        input.removeAttribute('readonly');
-      }
-    });
-    
-    // Forcer le reflow
-    document.body.offsetHeight;
-    
-    // Transférer le focus vers un élément visible
-    const dateInput = document.getElementById('transmissions-date') || 
-                      document.getElementById('adp-date') || 
-                      document.getElementById('pa-date');
-    if (dateInput) {
-      dateInput.focus();
-      dateInput.blur();
-    }
-    
-    console.log('✅ Nettoyage terminé - filtres restaurés');
-  }, 100);
-}
-
-/**
  * Affiche une modale pour sélectionner les transmissions à déplacer et le nouveau type
  * @param {Array} interventions - Liste des interventions [{id, typeTransmission}]
  * @param {string} typeActuel - Type actuel de l'intervention (transmissions, adp, pointAccueil)
@@ -245,19 +150,13 @@ async function afficherModaleDeplacementMultiple(interventions, typeActuel, pers
   // Attacher l'événement au bouton de fermeture
   const btnClose = modal.querySelector('.modal-close');
   if (btnClose) {
-    btnClose.addEventListener('click', () => {
-      modal.remove();
-      nettoyerApresModal();
-    });
+    btnClose.addEventListener('click', () => modal.remove());
   }
   
   // Attacher l'événement au bouton Annuler
   const btnAnnuler = modal.querySelector('.btn-annuler-deplacement');
   if (btnAnnuler) {
-    btnAnnuler.addEventListener('click', () => {
-      modal.remove();
-      nettoyerApresModal();
-    });
+    btnAnnuler.addEventListener('click', () => modal.remove());
   }
   
   // Ajouter les événements aux boutons de type
@@ -272,7 +171,6 @@ async function afficherModaleDeplacementMultiple(interventions, typeActuel, pers
       
       await deplacerInterventionsMultiples(selectedIds, typeActuel, nouveauType, personneNom);
       modal.remove();
-      nettoyerApresModal();
     });
     
     // Événements hover
@@ -296,7 +194,6 @@ async function afficherModaleDeplacementMultiple(interventions, typeActuel, pers
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       modal.remove();
-      nettoyerApresModal();
     }
   });
 }
@@ -353,7 +250,6 @@ async function deplacerInterventionsMultiples(interventionIds, typeActuel, nouve
     // Gérer les boutons
     confirmModal.querySelector('#btn-confirm-cancel').addEventListener('click', () => {
       confirmModal.remove();
-      nettoyerApresModal();
       resolve(false);
     });
     
@@ -381,12 +277,10 @@ async function deplacerInterventionsMultiples(interventionIds, typeActuel, nouve
         }
         
         console.log(`✅ ${count} intervention(s) déplacée(s) de ${typeActuel} vers ${nouveauType}`);
-        nettoyerApresModal();
         resolve(true);
       } catch (error) {
         console.error('❌ Erreur lors du déplacement:', error);
         afficherMessageErreur('Erreur lors du déplacement : ' + error.message);
-        nettoyerApresModal();
         resolve(false);
       }
     });
@@ -466,19 +360,13 @@ async function afficherModaleDeplacement(interventionId, typeActuel, personneNom
   // Attacher l'événement au bouton de fermeture
   const btnClose = modal.querySelector('.modal-close');
   if (btnClose) {
-    btnClose.addEventListener('click', () => {
-      modal.remove();
-      nettoyerApresModal();
-    });
+    btnClose.addEventListener('click', () => modal.remove());
   }
   
   // Attacher l'événement au bouton Annuler
   const btnAnnuler = modal.querySelector('.btn-annuler-deplacement');
   if (btnAnnuler) {
-    btnAnnuler.addEventListener('click', () => {
-      modal.remove();
-      nettoyerApresModal();
-    });
+    btnAnnuler.addEventListener('click', () => modal.remove());
   }
   
   // Ajouter les événements aux boutons de type
@@ -486,9 +374,8 @@ async function afficherModaleDeplacement(interventionId, typeActuel, personneNom
     // Événement click
     btn.addEventListener('click', async () => {
       const nouveauType = btn.dataset.nouveauType;
-      modal.remove();
       await deplacerIntervention(interventionId, typeActuel, nouveauType, personneNom);
-      // Le nettoyage est fait dans deplacerIntervention
+      modal.remove();
     });
     
     // Événements hover
@@ -510,7 +397,6 @@ async function afficherModaleDeplacement(interventionId, typeActuel, personneNom
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       modal.remove();
-      nettoyerApresModal();
     }
   });
 }
@@ -523,86 +409,43 @@ async function afficherModaleDeplacement(interventionId, typeActuel, personneNom
  * @param {string} personneNom - Nom de la personne (pour les messages)
  */
 async function deplacerIntervention(interventionId, typeActuel, nouveauType, personneNom) {
-  const typesLabels = {
-    'transmissions': 'Maraudes Départementales',
-    'adp': 'ADP',
-    'pointAccueil': 'Point Accueil'
-  };
-  
-  const typeActuelLabel = typesLabels[typeActuel] || typeActuel;
-  const nouveauTypeLabel = typesLabels[nouveauType] || nouveauType;
-  
-  // Créer une modal de confirmation HTML (au lieu de confirm() natif)
-  return new Promise((resolve) => {
-    const confirmModal = document.createElement('div');
-    confirmModal.className = 'confirm-modal-overlay';
-    confirmModal.innerHTML = `
-      <div class="confirm-modal">
-        <h3>Confirmer le déplacement</h3>
-        <p>Êtes-vous sûr de vouloir déplacer cette intervention de "<strong>${typeActuelLabel}</strong>" vers "<strong>${nouveauTypeLabel}</strong>" ?</p>
-        <div class="confirm-modal-buttons">
-          <button class="btn-secondary" id="btn-confirm-cancel">Annuler</button>
-          <button class="btn-primary" id="btn-confirm-ok">Déplacer</button>
-        </div>
-      </div>
-    `;
-    confirmModal.style.cssText = `
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5); display: flex;
-      align-items: center; justify-content: center; z-index: 10000;
-    `;
-    confirmModal.querySelector('.confirm-modal').style.cssText = `
-      background: white; padding: 20px; border-radius: 8px;
-      max-width: 450px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    `;
-    confirmModal.querySelector('.confirm-modal-buttons').style.cssText = `
-      display: flex; gap: 10px; justify-content: center; margin-top: 20px;
-    `;
+  try {
+    const typesLabels = {
+      'transmissions': 'Maraudes Départementales',
+      'adp': 'ADP',
+      'pointAccueil': 'Point Accueil'
+    };
     
-    document.body.appendChild(confirmModal);
+    const typeActuelLabel = typesLabels[typeActuel] || typeActuel;
+    const nouveauTypeLabel = typesLabels[nouveauType] || nouveauType;
     
-    // Gérer Annuler
-    confirmModal.querySelector('#btn-confirm-cancel').addEventListener('click', () => {
-      confirmModal.remove();
-      nettoyerApresModal();
-      resolve(false);
-    });
+    const confirmation = await window.customConfirm(`Êtes-vous sûr de vouloir déplacer cette intervention de "${typeActuelLabel}" vers "${nouveauTypeLabel}" ?`, 'Déplacer');
+    if (!confirmation) {
+      return;
+    }
     
-    // Gérer Déplacer
-    confirmModal.querySelector('#btn-confirm-ok').addEventListener('click', async () => {
-      confirmModal.remove();
-      
-      try {
-        // Utiliser updateIntervention pour changer le type
-        await window.updateIntervention(interventionId, { type: nouveauType });
-        
-        // Afficher un message de succès
-        afficherMessageSucces(`Intervention déplacée avec succès vers ${nouveauTypeLabel}`);
-        
-        // Rafraîchir toutes les listes pour que l'intervention apparaisse dans le bon onglet
-        if (typeof window.afficherToutesLesPersonnesTransmissions === 'function') {
-          await window.afficherToutesLesPersonnesTransmissions();
-        }
-        if (typeof window.afficherToutesLesPersonnesADP === 'function') {
-          await window.afficherToutesLesPersonnesADP();
-        }
-        if (typeof window.afficherToutesLesPersonnesPA === 'function') {
-          await window.afficherToutesLesPersonnesPA();
-        }
-        
-        console.log(`✅ Intervention ${interventionId} déplacée de ${typeActuel} vers ${nouveauType}`);
-        
-        // Nettoyer après l'opération
-        nettoyerApresModal();
-        resolve(true);
-      } catch (error) {
-        console.error('❌ Erreur lors du déplacement:', error);
-        afficherMessageErreur('Erreur lors du déplacement : ' + error.message);
-        nettoyerApresModal();
-        resolve(false);
-      }
-    });
-  });
+    // Utiliser updateIntervention pour changer le type
+    await window.updateIntervention(interventionId, { type: nouveauType });
+    
+    // Afficher un message de succès
+    window.showToast(`Intervention déplacée avec succès vers ${nouveauTypeLabel}`, 'success');
+    
+    // Rafraîchir toutes les listes pour que l'intervention apparaisse dans le bon onglet
+    if (typeof window.afficherToutesLesPersonnesTransmissions === 'function') {
+      await window.afficherToutesLesPersonnesTransmissions();
+    }
+    if (typeof window.afficherToutesLesPersonnesADP === 'function') {
+      await window.afficherToutesLesPersonnesADP();
+    }
+    if (typeof window.afficherToutesLesPersonnesPA === 'function') {
+      await window.afficherToutesLesPersonnesPA();
+    }
+    
+    console.log(`✅ Intervention ${interventionId} déplacée de ${typeActuel} vers ${nouveauType}`);
+  } catch (error) {
+    console.error('❌ Erreur lors du déplacement:', error);
+    await window.customAlert('Erreur lors du déplacement : ' + error.message, 'error');
+  }
 }
 
 /**

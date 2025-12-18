@@ -275,7 +275,7 @@
     const historique = getHistoriqueFormate(personne);
     
     if (historique.length === 0) {
-      alert('Aucun historique disponible pour cette personne.');
+      await window.customAlert('Aucun historique disponible pour cette personne.', 'info');
       return;
     }
 
@@ -403,7 +403,7 @@
    */
   async function afficherHistoriqueInterventions(personneId, section) {
     if (!personneId) {
-      alert('Veuillez d\'abord sélectionner ou créer une personne.');
+      await window.customAlert('Veuillez d\'abord sélectionner ou créer une personne.', 'warning');
       return;
     }
 
@@ -411,7 +411,7 @@
       // Récupérer la personne et toutes ses interventions
       const personne = await window.getPersonneById(personneId);
       if (!personne) {
-        alert('Personne non trouvée.');
+        await window.customAlert('Personne non trouvée.', 'error');
         return;
       }
 
@@ -422,7 +422,7 @@
         .sort((a, b) => new Date(b.date) - new Date(a.date)); // Plus récent en premier
 
       if (interventions.length === 0) {
-        alert('Aucune intervention trouvée pour cette personne.');
+        await window.customAlert('Aucune intervention trouvée pour cette personne.', 'info');
         return;
       }
 
@@ -434,7 +434,7 @@
       afficherModalHistoriqueSection(html);
     } catch (error) {
       console.error('Erreur lors de l\'affichage de l\'historique:', error);
-      alert('Erreur lors de l\'affichage de l\'historique.');
+      await window.customAlert('Erreur lors de l\'affichage de l\'historique.', 'error');
     }
   }
 
