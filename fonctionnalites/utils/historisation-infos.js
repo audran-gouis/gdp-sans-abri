@@ -599,11 +599,48 @@
         return htmlTransmission;
       
       case 'type-intervention':
+        let html = '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
+        
+        // Type de transmission
         const typeInterv = intervention.typeIntervention || intervention.typeTransmission;
         if (typeInterv && typeInterv.trim() !== '') {
-          return `<p style="margin: 0;"><strong>Type:</strong> ${typeInterv}</p>`;
+          html += `<p style="margin: 0;"><strong>Type:</strong> ${typeInterv}</p>`;
         }
-        return '<p style="margin: 0; color: #9ca3af;">Aucune donnée</p>';
+        
+        // Checkboxes Orly (pour PA et ADP)
+        if (intervention.orly && typeof intervention.orly === 'object') {
+          const orlyLabels = {
+            premierContact: '1er contact',
+            personnePresente: 'Personne présente',
+            pnt: 'PNT',
+            maraude: 'Maraude',
+            veille: 'Veille',
+            refusContact: 'Refus de contact'
+          };
+          
+          const orlyChecked = Object.entries(intervention.orly)
+            .filter(([key, val]) => val === true)
+            .map(([key]) => orlyLabels[key] || key);
+          
+          if (orlyChecked.length > 0) {
+            html += `
+              <div style="margin-top: 0.5rem;">
+                <strong>Type d'intervention :</strong>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem;">
+                  ${orlyChecked.map(label => `<span style="display: inline-block; background: #fef3c7; color: #92400e; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.9rem;">✓ ${label}</span>`).join('')}
+                </div>
+              </div>
+            `;
+          }
+        }
+        
+        html += '</div>';
+        
+        if (html === '<div style="display: flex; flex-direction: column; gap: 0.5rem;"></div>') {
+          return '<p style="margin: 0; color: #9ca3af;">Aucune donnée</p>';
+        }
+        
+        return html;
       
       case 'accompagnement':
         let accompagnements = [];
