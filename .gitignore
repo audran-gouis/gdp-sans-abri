@@ -8,6 +8,11 @@ build/
 package-lock.json
 yarn.lock
 
+# Electron build output
+release/
+out/
+*.exe
+
 # Rapports de tests BDD
 reports/
 test-results/
