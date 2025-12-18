@@ -268,7 +268,7 @@
    * Affiche l'historique dans une modale
    * @param {Object} personne - La personne
    */
-  function afficherHistoriqueModal(personne) {
+  async function afficherHistoriqueModal(personne) {
     // Variable pour éviter les double-clics - DÉCLARER EN PREMIER
     let isClosing = false;
     
@@ -402,38 +402,53 @@
    * @param {string} section - Section concernée (transmission, accompagnement, etc.)
    */
   async function afficherHistoriqueInterventions(personneId, section) {
+    console.log('📊 afficherHistoriqueInterventions appelé avec:', { personneId, section });
+    
     if (!personneId) {
+      console.error('❌ PersonneId manquant');
       await window.customAlert('Veuillez d\'abord sélectionner ou créer une personne.', 'warning');
       return;
     }
 
     try {
       // Récupérer la personne et toutes ses interventions
+      console.log('🔍 Recherche de la personne:', personneId);
       const personne = await window.getPersonneById(personneId);
       if (!personne) {
+        console.error('❌ Personne non trouvée:', personneId);
         await window.customAlert('Personne non trouvée.', 'error');
         return;
       }
+      console.log('✅ Personne trouvée:', personne);
 
       // Récupérer toutes les interventions de cette personne
+      console.log('🔍 Recherche des interventions...');
       const toutesInterventions = await window.getAllInterventions();
+      console.log('📋 Total interventions:', toutesInterventions.length);
+      
       const interventions = toutesInterventions
         .filter(i => i.personneId === personneId)
         .sort((a, b) => new Date(b.date) - new Date(a.date)); // Plus récent en premier
 
+      console.log('📋 Interventions pour cette personne:', interventions.length);
+      
       if (interventions.length === 0) {
+        console.warn('⚠️ Aucune intervention trouvée');
         await window.customAlert('Aucune intervention trouvée pour cette personne.', 'info');
         return;
       }
 
       // Générer le contenu selon la section
+      console.log('📝 Génération du HTML pour section:', section);
       const titre = getTitreSection(section);
       const html = genererHTMLHistoriqueSection(interventions, section, titre, personne);
 
       // Afficher dans un modal (même s'il n'y a pas de données, le modal affichera un message approprié)
+      console.log('🎨 Affichage du modal historique');
       afficherModalHistoriqueSection(html);
+      console.log('✅ Modal historique affiché');
     } catch (error) {
-      console.error('Erreur lors de l\'affichage de l\'historique:', error);
+      console.error('❌ Erreur lors de l\'affichage de l\'historique:', error);
       await window.customAlert('Erreur lors de l\'affichage de l\'historique.', 'error');
     }
   }

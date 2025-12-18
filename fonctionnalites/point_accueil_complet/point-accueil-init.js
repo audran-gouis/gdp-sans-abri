@@ -181,6 +181,13 @@ async function loadPADataForDate(personneId, date, typeTransmission) {
       return;
     }
     
+    // S'assurer que le personneId est défini dans le dataset du formulaire pour les boutons historique
+    const formPA = document.getElementById('form-point-accueil');
+    if (formPA) {
+      formPA.dataset.personneId = pid;
+      console.log('📝 PersonneId défini dans le dataset PA:', pid);
+    }
+    
     // Récupérer les DERNIÈRES infos connues
     const dernieresInfos = window.getDernieresInfos ? window.getDernieresInfos(personne) : {
       departement: personne.departement || '',
@@ -544,6 +551,11 @@ async function modifierFichePA(personneId, date = null, consultationMode = false
           const section = document.getElementById('pa-section-info-perso');
           if (section && section.querySelector('.form-grid')) {
             clearInterval(checkSectionLoaded);
+            
+            // Nettoyer les anciens event listeners avant de réinitialiser
+            if (window.cleanupCollapseHandlers) {
+              window.cleanupCollapseHandlers();
+            }
             
             // Réinitialiser les gestionnaires de collapse
             if (window.initSectionCollapse) {
@@ -961,6 +973,12 @@ function initPointAccueilForm() {
       e.preventDefault();
       const section = btn.dataset.section;
       const personneId = modal.dataset.personneId;
+      
+      console.log('🔍 PA - Clic sur bouton historique section:', section);
+      console.log('🔍 PA - PersonneId trouvé dans modal.dataset:', personneId);
+      console.log('🔍 PA - PersonneId trouvé dans formPA.dataset:', formPA.dataset.personneId);
+      console.log('🔍 PA - Tous les datasets du modal:', modal.dataset);
+      console.log('🔍 PA - Tous les datasets du formPA:', formPA.dataset);
       
       if (personneId && typeof window.afficherHistoriqueInterventions === 'function') {
         await window.afficherHistoriqueInterventions(parseInt(personneId), section);

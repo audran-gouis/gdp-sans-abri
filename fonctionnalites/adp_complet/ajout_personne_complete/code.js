@@ -167,6 +167,13 @@ async function loadAdpDataForDate(personneId, date, typeTransmission) {
       return;
     }
     
+    // S'assurer que le personneId est défini dans le dataset du formulaire pour les boutons historique
+    const form = document.getElementById('form-adp');
+    if (form) {
+      form.dataset.personneId = pid;
+      console.log('📝 PersonneId défini dans le dataset ADP:', pid);
+    }
+    
     // Récupérer les DERNIÈRES infos connues
     const dernieresInfos = window.getDernieresInfos ? window.getDernieresInfos(personne) : {
       departement: personne.departement || '',
@@ -532,6 +539,11 @@ async function editTransmissionAdp(personneId, date = null, consultationMode = f
           if (section && section.querySelector('.form-grid')) {
             clearInterval(window._adpCollapseInterval);
             window._adpCollapseInterval = null;
+            
+            // Nettoyer les anciens event listeners avant de réinitialiser
+            if (window.cleanupCollapseHandlers) {
+              window.cleanupCollapseHandlers();
+            }
             
             // Réinitialiser les gestionnaires de collapse
             if (window.initSectionCollapse) {
@@ -961,6 +973,12 @@ function initAdpForm() {
       e.preventDefault();
       const section = btn.dataset.section;
       const personneId = modal.dataset.personneId;
+      
+      console.log('🔍 ADP - Clic sur bouton historique section:', section);
+      console.log('🔍 ADP - PersonneId trouvé dans modal.dataset:', personneId);
+      console.log('🔍 ADP - PersonneId trouvé dans formAdp.dataset:', formAdp.dataset.personneId);
+      console.log('🔍 ADP - Tous les datasets du modal:', modal.dataset);
+      console.log('🔍 ADP - Tous les datasets du formAdp:', formAdp.dataset);
       
       if (personneId && typeof window.afficherHistoriqueInterventions === 'function') {
         await window.afficherHistoriqueInterventions(parseInt(personneId), section);

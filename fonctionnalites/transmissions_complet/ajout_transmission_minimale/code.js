@@ -211,6 +211,13 @@ async function loadTransmissionDataForDate(personneId, date, typeTransmission) {
       return;
     }
     
+    // S'assurer que le personneId est défini dans le dataset du formulaire pour les boutons historique
+    const form = document.getElementById('form-modal-transmission');
+    if (form) {
+      form.dataset.personneId = pid;
+      console.log('📝 PersonneId défini dans le dataset:', pid);
+    }
+    
     // Récupérer les DERNIÈRES infos connues
     const dernieresInfos = window.getDernieresInfos ? window.getDernieresInfos(personne) : {
       departement: personne.departement || '',
@@ -624,7 +631,12 @@ async function editTransmission(personneId, date = null, consultationMode = fals
             clearInterval(window._transmissionCollapseInterval);
             window._transmissionCollapseInterval = null;
             
-            // Réinitialiser les gestionnaires de collapse (seulement si pas déjà fait)
+            // Nettoyer les anciens event listeners avant de réinitialiser
+            if (window.cleanupCollapseHandlers) {
+              window.cleanupCollapseHandlers();
+            }
+            
+            // Réinitialiser les gestionnaires de collapse
             if (window.initSectionCollapse) {
               window.initSectionCollapse();
             }
@@ -1161,9 +1173,17 @@ function initTransmissionsForm() {
       const section = btn.dataset.section;
       const personneId = form.dataset.personneId;
       
+      console.log('🔍 Clic sur bouton historique section:', section);
+      console.log('🔍 PersonneId trouvé dans form.dataset:', personneId);
+      console.log('🔍 Type de personneId:', typeof personneId);
+      console.log('🔍 Fonction afficherHistoriqueInterventions existe?', typeof window.afficherHistoriqueInterventions);
+      
       if (personneId && typeof window.afficherHistoriqueInterventions === 'function') {
+        console.log('✅ Appel de afficherHistoriqueInterventions avec:', parseInt(personneId), section);
         await window.afficherHistoriqueInterventions(parseInt(personneId), section);
+        console.log('✅ afficherHistoriqueInterventions terminé');
       } else {
+        console.error('❌ Conditions non remplies:', { personneId, fnExists: typeof window.afficherHistoriqueInterventions });
         await window.customAlert('Veuillez d\'abord sélectionner ou créer une personne.', 'warning');
       }
     });

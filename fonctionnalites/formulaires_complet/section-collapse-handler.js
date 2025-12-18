@@ -21,6 +21,21 @@
       setupCollapseHandlers();
     }, 500);
   }
+  
+  /**
+   * Nettoie les event listeners pour éviter les doublons
+   */
+  function cleanupCollapseHandlers() {
+    const sections = document.querySelectorAll('.form-section h3');
+    sections.forEach(header => {
+      if (header._collapseClickHandler) {
+        header.removeEventListener('click', header._collapseClickHandler);
+        delete header._collapseClickHandler;
+        delete header.dataset.collapseInitialized;
+      }
+    });
+    console.log('🧹 Event listeners de collapse nettoyés');
+  }
 
   function setupCollapseHandlers() {
     // Chercher tous les h3 qui ont un .collapse-toggle
@@ -47,8 +62,9 @@
       
       // Marquer comme initialisé
       header.dataset.collapseInitialized = 'true';
-
-      header.addEventListener('click', function(e) {
+      
+      // Créer une fonction handler qu'on peut référencer
+      const clickHandler = function(e) {
         e.preventDefault();
         e.stopPropagation();
 
@@ -87,7 +103,12 @@
           toggleIcon.classList.add('collapsed');
           console.log('📁 Section repliée:', section.id || 'sans id');
         }
-      });
+      };
+      
+      // Stocker le handler pour pouvoir le supprimer plus tard
+      header._collapseClickHandler = clickHandler;
+      
+      header.addEventListener('click', clickHandler);
     });
 
     console.log(`✅ Gestionnaires de repliement initialisés (${collapsibleCount} sections collapsibles)`);
@@ -141,6 +162,7 @@
   }
 
   window.initSectionCollapse = initSectionCollapse;
+  window.cleanupCollapseHandlers = cleanupCollapseHandlers;
   console.log('📦 Module Section Collapse chargé');
 })();
 
