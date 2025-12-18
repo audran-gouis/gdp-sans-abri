@@ -197,6 +197,7 @@ async function loadPADataForDate(personneId, date, typeTransmission) {
     };
     
     // Recharger les informations personnelles
+    console.log('📝 Chargement des infos personnelles PA:', { nom: personne.nom, prenom: personne.prenom });
     document.getElementById('form-pa-nom').value = personne.nom || '';
     document.getElementById('form-pa-prenom').value = personne.prenom || '';
     document.getElementById('form-pa-ddn').value = personne.dateNaissance || '';
@@ -206,6 +207,12 @@ async function loadPADataForDate(personneId, date, typeTransmission) {
     document.getElementById('form-pa-typologie').value = dernieresInfos.typologie;
     document.getElementById('form-pa-nb-personnes').value = dernieresInfos.nbPersonnes;
     document.getElementById('form-pa-mineurs').value = dernieresInfos.mineurs;
+    
+    console.log('✅ Valeurs définies dans les champs:',
+      'nom=', document.getElementById('form-pa-nom').value,
+      'prenom=', document.getElementById('form-pa-prenom').value,
+      'disabled=', document.getElementById('form-pa-nom').disabled
+    );
     
     // Chercher si une fiche PA existe pour cette personne à cette date avec ce type
     const existingPA = await findPAByPersonDateAndType(pid, date, typeTransmission);
@@ -331,9 +338,12 @@ async function loadPADataForDate(personneId, date, typeTransmission) {
     
     // Si on est en mode consultation (depuis les statistiques), redésactiver les champs
     if (window.currentConsultationModal === 'modal-point-accueil') {
+      console.log('🔒 Mode consultation détecté, désactivation des champs dans 50ms...');
       setTimeout(() => {
         if (typeof window.disableFormFieldsForConsultation === 'function') {
+          console.log('🔒 Appel de disableFormFieldsForConsultation pour modal-point-accueil');
           window.disableFormFieldsForConsultation('modal-point-accueil');
+          console.log('🔒 Champs désactivés. Valeur nom:', document.getElementById('form-pa-nom').value);
         }
       }, 50);
     }
@@ -396,6 +406,7 @@ async function modifierFichePA(personneId, date = null, consultationMode = false
     };
     
     // Remplir les champs avec les infos de la personne
+    console.log('📝 Remplissage initial des infos PA:', { nom: personne.nom, prenom: personne.prenom, consultationMode });
     document.getElementById('form-pa-nom').value = personne.nom || '';
     document.getElementById('form-pa-prenom').value = personne.prenom || '';
     document.getElementById('form-pa-ddn').value = personne.dateNaissance || '';
@@ -405,6 +416,11 @@ async function modifierFichePA(personneId, date = null, consultationMode = false
     document.getElementById('form-pa-typologie').value = dernieresInfos.typologie;
     document.getElementById('form-pa-nb-personnes').value = dernieresInfos.nbPersonnes;
     document.getElementById('form-pa-mineurs').value = dernieresInfos.mineurs;
+    
+    console.log('✅ Valeurs initiales définies:',
+      'nom=', document.getElementById('form-pa-nom').value,
+      'prenom=', document.getElementById('form-pa-prenom').value
+    );
     
     if (existingPA) {
       // MODE ÉDITION : charger toutes les données de la fiche PA
