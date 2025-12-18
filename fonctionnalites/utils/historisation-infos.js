@@ -548,11 +548,13 @@
       interventionsAvecDonnees.forEach((interv, index) => {
         const isRecent = index === 0;
         const dateFormatee = new Date(interv.date).toLocaleDateString('fr-FR');
+        const typeTransmission = interv.typeTransmission || '';
+        const typeLabel = typeTransmission ? ` - ${typeTransmission}` : '';
         
         html += `
           <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; ${isRecent ? 'background: #eff6ff; border-color: #2563eb;' : 'background: white;'}">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-              <strong style="color: #2563eb;">📅 ${dateFormatee}</strong>
+              <strong style="color: #2563eb;">📅 ${dateFormatee}${typeLabel}</strong>
               ${isRecent ? '<span style="color: #2563eb; font-size: 0.9rem;">✨ Plus récent</span>' : ''}
             </div>
             ${genererContenuSection(interv, section)}
