@@ -436,6 +436,14 @@ function displayStatistics(interventions, source, dateFin) {
   // Chaque transmission (Jour, Nuit, Coordo) compte comme un passage distinct
   const totalPassages = interventions.length;
   
+  console.log('📊 CALCUL DES PASSAGES:');
+  console.log('  - Total interventions filtrées:', interventions.length);
+  console.log('  - Détail par type:');
+  console.log('    * Transmissions:', interventions.filter(i => i.type === 'transmissions').length);
+  console.log('    * ADP:', interventions.filter(i => i.type === 'adp').length);
+  console.log('    * Point Accueil:', interventions.filter(i => i.type === 'pointAccueil').length);
+  console.log('  - Total passages affiché:', totalPassages);
+  
   // Stocker les personnes distinctes pour l'affichage des cartes
   window.filteredStatsPersons = Array.from(uniquePersonsMap.values());
   
