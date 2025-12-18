@@ -1106,13 +1106,8 @@ function openPersonForm(personneId, mainType, date, allTypes) {
             const addContainer = document.getElementById(config.addContainerId);
             if (addContainer) addContainer.style.display = 'none';
             
-            // Désactiver tous les champs du formulaire pour lecture seule
-            // SAUF le sélecteur de dates et les boutons de navigation de dates
-            const formInputs = modal.querySelectorAll('input:not([id*="select-date"]):not([class*="btn-nav-date"]):not(.transmission-tab), textarea, select:not([id*="select-date"])');
-            formInputs.forEach(input => {
-              input.disabled = true;
-              input.style.opacity = '0.7';
-            });
+            // NOTE: La désactivation des champs est gérée par disableFormFieldsForConsultation
+            // qui est appelé APRÈS le chargement des données dans loadTransmissionDataForDate
             
             // Ajouter un bouton "Fermer" à la place
             const footer = modal.querySelector('.modal-footer');
@@ -1137,6 +1132,7 @@ function openPersonForm(personneId, mainType, date, allTypes) {
                 if (addContainer) addContainer.style.display = '';
                 
                 // Réactiver tous les champs du formulaire
+                const formInputs = modal.querySelectorAll('input, textarea, select');
                 formInputs.forEach(input => {
                   input.disabled = false;
                   input.style.opacity = '';

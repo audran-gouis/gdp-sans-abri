@@ -638,11 +638,6 @@ async function editTransmission(personneId, date = null, consultationMode = fals
             clearInterval(window._transmissionCollapseInterval);
             window._transmissionCollapseInterval = null;
             
-            // Nettoyer les anciens event listeners avant de réinitialiser
-            if (window.cleanupCollapseHandlers) {
-              window.cleanupCollapseHandlers();
-            }
-            
             // Réinitialiser les gestionnaires de collapse directement
             if (window.setupCollapseHandlers) {
               window.setupCollapseHandlers();

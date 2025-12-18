@@ -323,9 +323,8 @@ async function loadPADataForDate(personneId, date, typeTransmission) {
     
     console.log('✅ Données PA chargées pour date:', date);
     
-    // Nettoyer et réinitialiser les event listeners de collapse après chargement des données
-    if (window.cleanupCollapseHandlers && window.setupCollapseHandlers) {
-      window.cleanupCollapseHandlers();
+    // Réinitialiser les event listeners de collapse après chargement des données
+    if (window.setupCollapseHandlers) {
       window.setupCollapseHandlers();
       console.log('🔄 Event listeners de collapse réinitialisés (PA)');
     }
@@ -558,11 +557,6 @@ async function modifierFichePA(personneId, date = null, consultationMode = false
           const section = document.getElementById('pa-section-info-perso');
           if (section && section.querySelector('.form-grid')) {
             clearInterval(checkSectionLoaded);
-            
-            // Nettoyer les anciens event listeners avant de réinitialiser
-            if (window.cleanupCollapseHandlers) {
-              window.cleanupCollapseHandlers();
-            }
             
             // Réinitialiser les gestionnaires de collapse directement
             if (window.setupCollapseHandlers) {

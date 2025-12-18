@@ -308,9 +308,8 @@ async function loadAdpDataForDate(personneId, date, typeTransmission) {
     
     console.log('✅ Données ADP chargées pour date:', date);
     
-    // Nettoyer et réinitialiser les event listeners de collapse après chargement des données
-    if (window.cleanupCollapseHandlers && window.setupCollapseHandlers) {
-      window.cleanupCollapseHandlers();
+    // Réinitialiser les event listeners de collapse après chargement des données
+    if (window.setupCollapseHandlers) {
       window.setupCollapseHandlers();
       console.log('🔄 Event listeners de collapse réinitialisés (ADP)');
     }
@@ -546,11 +545,6 @@ async function editTransmissionAdp(personneId, date = null, consultationMode = f
           if (section && section.querySelector('.form-grid')) {
             clearInterval(window._adpCollapseInterval);
             window._adpCollapseInterval = null;
-            
-            // Nettoyer les anciens event listeners avant de réinitialiser
-            if (window.cleanupCollapseHandlers) {
-              window.cleanupCollapseHandlers();
-            }
             
             // Réinitialiser les gestionnaires de collapse directement
             if (window.setupCollapseHandlers) {
