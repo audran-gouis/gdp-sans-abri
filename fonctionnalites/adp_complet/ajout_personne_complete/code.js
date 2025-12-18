@@ -349,6 +349,14 @@ async function editTransmissionAdp(personneId, date = null, consultationMode = f
     }
     
     console.log('✅ Personne trouvée:', personne);
+    
+    // Définir le personneId dans le dataset du formulaire pour les boutons historique
+    const formAdp = document.getElementById('form-adp');
+    if (formAdp) {
+      formAdp.dataset.personneId = personneId;
+      console.log('📝 PersonneId défini dans le dataset ADP (editTransmissionAdp):', personneId);
+    }
+    
     // Utiliser la date passée en paramètre si fournie, sinon celle de l'input
     const selectedDate = date || document.getElementById('adp-date')?.value;
     console.log('📅 Date sélectionnée:', selectedDate, '(paramètre date:', date, ')');

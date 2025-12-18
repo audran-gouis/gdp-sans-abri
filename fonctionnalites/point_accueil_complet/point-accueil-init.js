@@ -374,6 +374,14 @@ async function modifierFichePA(personneId, date = null, consultationMode = false
     }
     
     console.log('Personne trouvée:', personne);
+    
+    // Définir le personneId dans le dataset du formulaire pour les boutons historique
+    const formPA = document.getElementById('form-point-accueil');
+    if (formPA) {
+      formPA.dataset.personneId = personneId;
+      console.log('📝 PersonneId défini dans le dataset PA (modifierFichePA):', personneId);
+    }
+    
     // Utiliser la date passée en paramètre si fournie, sinon celle de l'input
     const selectedDate = date || document.getElementById('pa-date')?.value;
     console.log('Date sélectionnée:', selectedDate, '(paramètre date:', date, ')');
@@ -394,8 +402,6 @@ async function modifierFichePA(personneId, date = null, consultationMode = false
     let currentTypeTransmission = existingPA?.typeTransmission || (newTypeTransmission ? newTypeTransmission.charAt(0).toUpperCase() + newTypeTransmission.slice(1) : 'Jour');
     
     console.log('📋 PA existante:', existingPA ? `ID ${existingPA.id}` : 'Aucune');
-    
-    const formPA = document.getElementById('form-point-accueil');
     
     // Récupérer les DERNIÈRES infos connues (pour pré-remplir le formulaire)
     const dernieresInfos = window.getDernieresInfos ? window.getDernieresInfos(personne) : {
