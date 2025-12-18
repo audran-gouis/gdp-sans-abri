@@ -181,13 +181,6 @@ async function loadPADataForDate(personneId, date, typeTransmission) {
       return;
     }
     
-    // S'assurer que le personneId est défini dans le dataset du formulaire
-    const formPA = document.getElementById('form-point-accueil');
-    if (formPA) {
-      formPA.dataset.personneId = pid;
-      console.log('📝 PersonneId défini dans le dataset PA:', pid);
-    }
-    
     // Récupérer les DERNIÈRES infos connues
     const dernieresInfos = window.getDernieresInfos ? window.getDernieresInfos(personne) : {
       departement: personne.departement || '',
@@ -217,6 +210,7 @@ async function loadPADataForDate(personneId, date, typeTransmission) {
     if (typeSelect && typeTransmission) {
       typeSelect.value = typeTransmission;
     }
+    const formPA = document.getElementById('form-point-accueil');
     
     if (existingPA) {
       // Remplir les champs de l'intervention existante

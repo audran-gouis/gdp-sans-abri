@@ -211,13 +211,6 @@ async function loadTransmissionDataForDate(personneId, date, typeTransmission) {
       return;
     }
     
-    // S'assurer que le personneId est défini dans le dataset du formulaire
-    const form = document.getElementById('form-modal-transmission');
-    if (form) {
-      form.dataset.personneId = pid;
-      console.log('📝 PersonneId défini dans le dataset:', pid);
-    }
-    
     // Récupérer les DERNIÈRES infos connues
     const dernieresInfos = window.getDernieresInfos ? window.getDernieresInfos(personne) : {
       departement: personne.departement || '',
