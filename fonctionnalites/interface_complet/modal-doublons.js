@@ -290,8 +290,8 @@
           
           <div class="fusion-help">
             <strong>💡 Instructions :</strong> Ces deux transmissions ont été saisies le même jour pour la même maraude. 
-            Modifiez les champs de la transmission parent (gauche, qui sera conservée), 
-            vous pouvez copier des valeurs depuis le doublon (droite) avec les boutons « ← Copier ».
+            <strong>La fusion utilisera les valeurs du parent en priorité.</strong> Les champs vides du parent seront automatiquement complétés avec les valeurs du doublon si elles existent.
+            Le doublon sera ensuite supprimé.
           </div>
           
           <div class="transmissions-compare">
@@ -337,7 +337,10 @@
    * Génère les champs d'une transmission pour la comparaison
    */
   function genererChampsTransmission(intervention, autreIntervention, type, index) {
-    const isEditable = type === 'principal';
+    // Les champs ne sont pas modifiables - la fusion est automatique
+    const isEditable = false;
+    const isParent = type === 'principal';
+    
     const fields = [
       { key: 'typeTransmission', label: 'Type transmission' },
       { key: 'adresse', label: 'Adresse' },
@@ -352,26 +355,46 @@
       const value = intervention[field.key] || '';
       const autreValue = autreIntervention[field.key] || '';
       const isEmpty = !value;
+      const autreIsEmpty = !autreValue;
       const isDifferent = value !== autreValue;
       
       html += `<div class="transmission-field">`;
       html += `<label class="transmission-field-label">${field.label}</label>`;
       
-      if (isEditable) {
-        if (field.multiline) {
-          html += `<textarea class="transmission-field-input" data-field="${field.key}" data-index="${index}">${value}</textarea>`;
-        } else {
-          html += `<input type="text" class="transmission-field-input" data-field="${field.key}" data-index="${index}" value="${value}">`;
-        }
-        
-        // Bouton copier si la valeur est différente et l'autre a une valeur
-        if (isDifferent && autreValue) {
-          html += `<div class="transmission-field-actions">`;
-          html += `<button class="btn-copy-field" data-source-value="${autreValue.replace(/"/g, '&quot;')}" data-target-field="${field.key}" data-index="${index}">← Copier depuis la droite</button>`;
+      // Toujours afficher en lecture seule
+      if (field.multiline) {
+        html += `<div class="transmission-field-value ${isEmpty ? 'empty' : ''} ${isParent ? 'parent-value' : ''}">${value || 'Non renseigné'}</div>`;
+      } else {
+        html += `<div class="transmission-field-value ${isEmpty ? 'empty' : ''} ${isParent ? 'parent-value' : ''}">${value || 'Non renseigné'}</div>`;
+      }
+      
+      // Si c'est la fiche parent, afficher des indicateurs
+      if (isParent) {
+        if (value && isDifferent && autreValue) {
+          // Parent a une valeur, doublon a une valeur différente → parent conservé
+          html += `<div class="transmission-field-note info">`;
+          html += `<span class="note-icon">✓</span>`;
+          html += `<span class="note-text">Cette valeur sera conservée (priorité parent)</span>`;
+          html += `</div>`;
+        } else if (!value && autreValue) {
+          // Parent vide, doublon rempli → sera complété
+          html += `<div class="transmission-field-note success">`;
+          html += `<span class="note-icon">➕</span>`;
+          html += `<span class="note-text">Ce champ sera complété avec la valeur du doublon : "${autreValue.length > 50 ? autreValue.substring(0, 50) + '...' : autreValue}"</span>`;
+          html += `</div>`;
+        } else if (value && !autreValue) {
+          // Parent rempli, doublon vide → parent conservé
+          html += `<div class="transmission-field-note info">`;
+          html += `<span class="note-icon">✓</span>`;
+          html += `<span class="note-text">Valeur conservée (doublon vide)</span>`;
+          html += `</div>`;
+        } else if (!value && !autreValue) {
+          // Les deux vides → restera vide
+          html += `<div class="transmission-field-note muted">`;
+          html += `<span class="note-icon">○</span>`;
+          html += `<span class="note-text">Champ vide dans les deux fiches</span>`;
           html += `</div>`;
         }
-      } else {
-        html += `<div class="transmission-field-value ${isEmpty ? 'empty' : ''}">${value || 'Non renseigné'}</div>`;
       }
       
       html += `</div>`;
@@ -386,28 +409,7 @@
   function attachFusionTransmissionsEvents() {
     console.log('🔧 Attachement des événements de fusion');
     
-    // Boutons copier
-    document.querySelectorAll('.btn-copy-field').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const sourceValue = btn.dataset.sourceValue;
-        const targetField = btn.dataset.targetField;
-        const index = btn.dataset.index;
-        
-        console.log(`📋 Copie du champ ${targetField} avec la valeur:`, sourceValue);
-        
-        const input = document.querySelector(`[data-field="${targetField}"][data-index="${index}"]`);
-        if (input) {
-          input.value = sourceValue;
-          btn.disabled = true;
-          btn.textContent = '✓ Copié';
-          setTimeout(() => {
-            btn.disabled = false;
-            btn.innerHTML = '← Copier depuis la droite';
-          }, 1500);
-        }
-      });
-    });
+    // Plus de boutons copier car les champs ne sont plus modifiables
     
     // Boutons valider fusion
     document.querySelectorAll('.btn-fusion-validate').forEach(btn => {
@@ -417,7 +419,7 @@
         const intervention2Id = parseInt(btn.dataset.intervention2Id);
         const index = btn.dataset.doublonIndex;
         
-        console.log(`🔄 Début fusion: intervention ${intervention1Id} et ${intervention2Id}, index ${index}`);
+        console.log(`🔄 Début fusion: intervention ${intervention1Id} conservée, ${intervention2Id} supprimée`);
         
         await fusionnerTransmissions(intervention1Id, intervention2Id, index);
       });
@@ -437,13 +439,15 @@
 
   /**
    * Fusionne deux transmissions
+   * La transmission parent est conservée avec priorité, mais les champs vides sont complétés par le doublon
    */
   async function fusionnerTransmissions(intervention1Id, intervention2Id, index) {
     console.log(`🔄 Fusion demandée: ${intervention1Id} <- ${intervention2Id}`);
     
     const confirmMsg = 'Êtes-vous sûr de vouloir fusionner ces transmissions ?\n\n' +
-                      'La transmission de gauche sera mise à jour avec vos modifications,\n' +
-                      'et la transmission de droite sera supprimée.\n\n' +
+                      'La transmission parent sera conservée en priorité.\n' +
+                      'Les champs vides du parent seront complétés avec les valeurs du doublon.\n' +
+                      'Le doublon sera ensuite supprimé.\n\n' +
                       'Cette action est IRRÉVERSIBLE.';
     
     const confirmation = await window.customConfirm(confirmMsg, 'Fusionner');
@@ -453,28 +457,11 @@
     }
     
     try {
-      // Récupérer les valeurs modifiées
-      const section = document.querySelector(`[data-doublon-index="${index}"]`);
-      if (!section) {
-        console.error(`❌ Section avec index ${index} introuvable`);
-        await window.customAlert('Erreur : impossible de trouver la section de fusion', 'error');
-        return;
+      // Vérifier que les fonctions existent
+      if (typeof window.getInterventionById !== 'function') {
+        throw new Error('Fonction getInterventionById non disponible');
       }
       
-      const updates = {};
-      const inputs = section.querySelectorAll(`[data-index="${index}"]`);
-      
-      console.log(`📝 ${inputs.length} champs à mettre à jour`);
-      
-      inputs.forEach(input => {
-        const field = input.dataset.field;
-        updates[field] = input.value;
-        console.log(`  - ${field}: ${input.value}`);
-      });
-      
-      console.log('📤 Mise à jour de l\'intervention', intervention1Id, 'avec:', updates);
-      
-      // Vérifier que les fonctions existent
       if (typeof window.updateIntervention !== 'function') {
         throw new Error('Fonction updateIntervention non disponible');
       }
@@ -483,18 +470,108 @@
         throw new Error('Fonction deleteIntervention non disponible');
       }
       
-      // Mettre à jour l'intervention principale
-      await window.updateIntervention(intervention1Id, updates);
-      console.log('✅ Intervention mise à jour');
+      // Récupérer les deux interventions complètes
+      const interventionParent = await window.getInterventionById(intervention1Id);
+      const interventionDoublon = await window.getInterventionById(intervention2Id);
       
-      // Supprimer l'intervention en doublon
+      if (!interventionParent) {
+        throw new Error(`Intervention parent ${intervention1Id} introuvable`);
+      }
+      
+      if (!interventionDoublon) {
+        throw new Error(`Intervention doublon ${intervention2Id} introuvable`);
+      }
+      
+      console.log('📥 Intervention parent:', interventionParent);
+      console.log('📥 Intervention doublon:', interventionDoublon);
+      
+      // Fusion intelligente : compléter les champs vides du parent avec les valeurs du doublon
+      const champsFusionnes = {
+        ...interventionParent, // Base : toutes les données du parent
+      };
+      
+      // Liste des champs à fusionner intelligemment
+      const champsAFusionner = [
+        'typeTransmission',
+        'adresse',
+        'lieu',
+        'ville',
+        'signalement',
+        'transmission',
+        'observations'
+      ];
+      
+      let champsCompletes = 0;
+      
+      champsAFusionner.forEach(champ => {
+        const valeurParent = interventionParent[champ];
+        const valeurDoublon = interventionDoublon[champ];
+        
+        // Si le champ est vide (ou null/undefined) dans le parent ET rempli dans le doublon
+        if ((!valeurParent || valeurParent.trim() === '') && valeurDoublon && valeurDoublon.trim() !== '') {
+          champsFusionnes[champ] = valeurDoublon;
+          champsCompletes++;
+          console.log(`  ✓ Champ "${champ}" complété avec la valeur du doublon: "${valeurDoublon}"`);
+        }
+      });
+      
+      // Fusionner les objets complexes (orly, accompagnement, distribution)
+      // Logique : si une checkbox est cochée dans le doublon et pas dans le parent, on la coche
+      if (interventionDoublon.orly) {
+        champsFusionnes.orly = {
+          ...interventionParent.orly,
+          ...Object.fromEntries(
+            Object.entries(interventionDoublon.orly)
+              .filter(([key, value]) => value && !interventionParent.orly?.[key])
+          )
+        };
+      }
+      
+      if (interventionDoublon.accompagnement) {
+        champsFusionnes.accompagnement = {
+          ...interventionParent.accompagnement,
+          ...Object.fromEntries(
+            Object.entries(interventionDoublon.accompagnement)
+              .filter(([key, value]) => value && !interventionParent.accompagnement?.[key])
+          )
+        };
+      }
+      
+      if (interventionDoublon.distribution) {
+        champsFusionnes.distribution = {
+          ...interventionParent.distribution,
+          ...Object.fromEntries(
+            Object.entries(interventionDoublon.distribution)
+              .filter(([key, value]) => value && !interventionParent.distribution?.[key])
+          )
+        };
+      }
+      
+      // Mettre à jour la date de modification
+      champsFusionnes.dateModification = new Date().toISOString();
+      
+      console.log(`📤 ${champsCompletes} champ(s) complété(s) depuis le doublon`);
+      console.log('📤 Mise à jour de l\'intervention parent avec:', champsFusionnes);
+      
+      // Mettre à jour l'intervention parent
+      await window.updateIntervention(intervention1Id, champsFusionnes);
+      console.log('✅ Intervention parent mise à jour');
+      
+      // Supprimer l'intervention doublon
       await window.deleteIntervention(intervention2Id);
-      console.log('✅ Intervention en doublon supprimée');
+      console.log('✅ Intervention doublon supprimée');
       
-      window.showToast('Transmissions fusionnées avec succès !', 'success');
+      const message = champsCompletes > 0 
+        ? `Fusion réussie ! ${champsCompletes} champ(s) complété(s) depuis le doublon.`
+        : 'Fusion réussie ! Aucun champ à compléter (le parent était déjà complet).';
+      
+      window.showToast(message, 'success');
       
       // Masquer la section
-      section.style.display = 'none';
+      const section = document.querySelector(`[data-doublon-index="${index}"]`);
+      if (section) {
+        section.style.display = 'none';
+      }
       
       // Recharger les données
       console.log('🔄 Rechargement des données...');
@@ -701,6 +778,13 @@
         toutesLesPersonnes = await window.getAllPersonnes();
         rechercherDoublons();
         
+        // Réinitialiser les gestionnaires de collapse après la fusion
+        if (typeof window.setupCollapseHandlers === 'function') {
+          setTimeout(() => {
+            window.setupCollapseHandlers();
+          }, 100);
+        }
+        
       } else {
         await window.customAlert('Fonction de fusion non disponible', 'error');
       }
@@ -720,6 +804,13 @@
       modal.classList.remove('active');
       ficheSelectionnee = null;
       toutesLesPersonnes = [];
+      
+      // Réinitialiser les gestionnaires de collapse pour les autres modales
+      if (typeof window.setupCollapseHandlers === 'function') {
+        setTimeout(() => {
+          window.setupCollapseHandlers();
+        }, 100);
+      }
     }
   }
 

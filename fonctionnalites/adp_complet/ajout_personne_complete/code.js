@@ -820,7 +820,11 @@ function initAdpForm() {
     
     const editId = modal.dataset.editId;
     const personneId = modal.dataset.personneId ? parseInt(modal.dataset.personneId) : null;
-    const selectedDate = document.getElementById('adp-date')?.value || new Date().toISOString().split('T')[0];
+    // IMPORTANT : Utiliser le sélecteur de date INTERNE à la modale (select-date-adp)
+    // et non celui de l'onglet (adp-date)
+    const selectedDate = document.getElementById('select-date-adp')?.value 
+                      || document.getElementById('adp-date')?.value 
+                      || new Date().toISOString().split('T')[0];
     
     console.log('💾 Soumission formulaire ADP - editId:', editId, 'personneId:', personneId, 'date:', selectedDate);
     

@@ -968,7 +968,11 @@ function initTransmissionsForm() {
     
     const editId = form.dataset.editId;
     const personneId = form.dataset.personneId ? parseInt(form.dataset.personneId) : null;
-    const selectedDate = document.getElementById('transmissions-date')?.value || new Date().toISOString().split('T')[0];
+    // IMPORTANT : Utiliser le sélecteur de date INTERNE à la modale (select-date-transmissions)
+    // et non celui de l'onglet (transmissions-date)
+    const selectedDate = document.getElementById('select-date-transmissions')?.value 
+                      || document.getElementById('transmissions-date')?.value 
+                      || new Date().toISOString().split('T')[0];
     
     console.log('💾 Soumission formulaire Transmissions - editId:', editId, 'personneId:', personneId, 'date:', selectedDate);
     

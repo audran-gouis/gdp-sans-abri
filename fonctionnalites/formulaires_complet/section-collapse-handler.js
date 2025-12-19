@@ -38,6 +38,9 @@
   }
 
   function setupCollapseHandlers() {
+    // IMPORTANT : Toujours nettoyer AVANT de réinitialiser pour éviter les doublons
+    cleanupCollapseHandlers();
+    
     // Chercher tous les h3 qui ont un .collapse-toggle
     const sections = document.querySelectorAll('.form-section h3');
     
@@ -49,12 +52,6 @@
       const toggle = header.querySelector('.collapse-toggle');
       if (!toggle) {
         // Ce n'est pas une section collapsible
-        return;
-      }
-      
-      // Vérifier si déjà initialisé
-      if (header.dataset.collapseInitialized === 'true') {
-        console.log('⏭️ Section déjà initialisée, passage');
         return;
       }
       

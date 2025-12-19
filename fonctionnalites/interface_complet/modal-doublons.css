@@ -572,6 +572,56 @@ textarea.transmission-field-input {
     color: #1e3a8a;
 }
 
+/* Notes de fusion */
+.transmission-field-note {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.transmission-field-note.info {
+    background: #eff6ff;
+    color: #1e40af;
+    border-left: 3px solid #3b82f6;
+}
+
+.transmission-field-note.success {
+    background: #f0fdf4;
+    color: #15803d;
+    border-left: 3px solid #22c55e;
+}
+
+.transmission-field-note.warning {
+    background: #fef3c7;
+    color: #92400e;
+    border-left: 3px solid #f59e0b;
+}
+
+.transmission-field-note.muted {
+    background: #f9fafb;
+    color: #6b7280;
+    border-left: 3px solid #d1d5db;
+}
+
+.transmission-field-note .note-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.transmission-field-note .note-text {
+    flex: 1;
+    line-height: 1.4;
+}
+
+.transmission-field-value.parent-value {
+    border-left: 3px solid #3b82f6;
+    background: #f8faff;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
     .modal-doublons-body {

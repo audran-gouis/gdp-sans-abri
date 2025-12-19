@@ -61,6 +61,7 @@
    * Affiche le menu contextuel
    */
   function showContextMenu(event, card) {
+    console.log('🖱️ Clic droit détecté sur une carte', card);
     event.preventDefault();
     event.stopPropagation();
 
@@ -71,6 +72,8 @@
 
     positionMenu(currentMenu, event.pageX, event.pageY);
     currentMenu.classList.add('visible');
+    
+    console.log('✅ Menu contextuel affiché à la position', {x: event.pageX, y: event.pageY});
 
     // Ajouter les événements aux items du menu
     attachMenuItemEvents();
@@ -101,7 +104,7 @@
   /**
    * Gère le clic sur un item du menu
    */
-  function handleMenuItemClick(event) {
+  async function handleMenuItemClick(event) {
     const action = event.currentTarget.dataset.action;
     
     if (!currentCard) {
@@ -373,11 +376,23 @@
    * Attache le menu contextuel à une carte
    */
   function attachContextMenuToCard(card) {
-    if (!card) return;
+    if (!card) {
+      console.warn('⚠️ Tentative d\'attachement du menu à une carte null');
+      return;
+    }
+
+    // Vérifier si l'événement est déjà attaché
+    if (card.hasAttribute('data-context-menu-attached')) {
+      return;
+    }
 
     card.addEventListener('contextmenu', (e) => {
+      console.log('🎯 Événement contextmenu déclenché sur carte');
       showContextMenu(e, card);
     });
+    
+    card.setAttribute('data-context-menu-attached', 'true');
+    console.log('✅ Menu contextuel attaché à la carte:', card.dataset.personneId || card.dataset.personId);
   }
 
   /**
@@ -385,13 +400,11 @@
    */
   function attachContextMenuToAllCards() {
     const cards = document.querySelectorAll('.transmission-card');
+    console.log(`🔍 Attachement du menu contextuel à ${cards.length} carte(s)`);
     cards.forEach(card => {
-      // Éviter d'attacher plusieurs fois
-      if (!card.hasAttribute('data-context-menu-attached')) {
-        attachContextMenuToCard(card);
-        card.setAttribute('data-context-menu-attached', 'true');
-      }
+      attachContextMenuToCard(card);
     });
+    console.log('✅ Traitement terminé pour toutes les cartes');
   }
 
   /**
@@ -399,14 +412,19 @@
    */
   function setupMutationObserver() {
     const observer = new MutationObserver((mutations) => {
+      console.log('🔄 MutationObserver détecte des changements dans le DOM');
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === 1) { // Element node
             if (node.classList && node.classList.contains('transmission-card')) {
+              console.log('✨ Nouvelle carte détectée par le MutationObserver');
               attachContextMenuToCard(node);
             } else {
               // Chercher les cartes dans les enfants
               const cards = node.querySelectorAll?.('.transmission-card');
+              if (cards && cards.length > 0) {
+                console.log(`✨ ${cards.length} carte(s) trouvée(s) dans les enfants`);
+              }
               cards?.forEach(attachContextMenuToCard);
             }
           }
@@ -428,6 +446,9 @@
           childList: true,
           subtree: true
         });
+        console.log(`👀 Observer activé sur le conteneur: ${containerId}`);
+      } else {
+        console.warn(`⚠️ Conteneur ${containerId} non trouvé pour l'observation`);
       }
     });
   }

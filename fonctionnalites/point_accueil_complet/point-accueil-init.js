@@ -834,7 +834,11 @@ function initPointAccueilForm() {
     
     const editId = formPA.dataset.editId;
     const personneId = formPA.dataset.personneId ? parseInt(formPA.dataset.personneId) : null;
-    const selectedDate = document.getElementById('pa-date')?.value || new Date().toISOString().split('T')[0];
+    // IMPORTANT : Utiliser le sélecteur de date INTERNE à la modale (select-date-pa)
+    // et non celui de l'onglet (pa-date)
+    const selectedDate = document.getElementById('select-date-pa')?.value 
+                      || document.getElementById('pa-date')?.value 
+                      || new Date().toISOString().split('T')[0];
     
     console.log('💾 Soumission formulaire PA - editId:', editId, 'personneId:', personneId, 'date:', selectedDate);
     

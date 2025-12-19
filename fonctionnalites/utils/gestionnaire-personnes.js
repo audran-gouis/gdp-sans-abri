@@ -546,7 +546,10 @@ async function afficherToutesLesPersonnesTransmissions() {
   
   // Attacher le menu contextuel aux nouvelles cartes
   if (typeof window.attachContextMenuToAllCards === 'function') {
-    window.attachContextMenuToAllCards();
+    // Utiliser setTimeout pour s'assurer que le DOM est bien mis à jour
+    setTimeout(() => {
+      window.attachContextMenuToAllCards();
+    }, 50);
   }
 }
 
@@ -682,7 +685,10 @@ async function afficherToutesLesPersonnesADP() {
   
   // Attacher le menu contextuel aux nouvelles cartes
   if (typeof window.attachContextMenuToAllCards === 'function') {
-    window.attachContextMenuToAllCards();
+    // Utiliser setTimeout pour s'assurer que le DOM est bien mis à jour
+    setTimeout(() => {
+      window.attachContextMenuToAllCards();
+    }, 50);
   }
 }
 
@@ -818,7 +824,10 @@ async function afficherToutesLesPersonnesPA() {
   
   // Attacher le menu contextuel aux nouvelles cartes
   if (typeof window.attachContextMenuToAllCards === 'function') {
-    window.attachContextMenuToAllCards();
+    // Utiliser setTimeout pour s'assurer que le DOM est bien mis à jour
+    setTimeout(() => {
+      window.attachContextMenuToAllCards();
+    }, 50);
   }
 }
 

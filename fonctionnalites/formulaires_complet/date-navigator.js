@@ -38,22 +38,36 @@ function cleanupDateNavigator(type) {
   
   const cfg = typeConfig[type];
   if (cfg) {
-    // Nettoyer les flags des event listeners
+    // Nettoyer les event listeners et leurs flags
     const dateInput = document.getElementById(cfg.dateInputId);
     const prevBtn = document.getElementById(cfg.prevBtnId);
     const nextBtn = document.getElementById(cfg.nextBtnId);
     const addBtn = document.getElementById(cfg.addBtnId);
     const addDropdown = document.getElementById(cfg.addDropdownId);
     
-    if (dateInput) delete dateInput._hasNavigatorListener;
-    if (prevBtn) delete prevBtn._hasNavigatorListener;
-    if (nextBtn) delete nextBtn._hasNavigatorListener;
-    if (addBtn) delete addBtn._hasAddListener;
+    // Supprimer complètement les handlers en réassignant null
+    if (dateInput) {
+      dateInput.onchange = null;
+      delete dateInput._hasNavigatorListener;
+    }
+    if (prevBtn) {
+      prevBtn.onclick = null;
+      delete prevBtn._hasNavigatorListener;
+    }
+    if (nextBtn) {
+      nextBtn.onclick = null;
+      delete nextBtn._hasNavigatorListener;
+    }
+    if (addBtn) {
+      addBtn.onclick = null;
+      delete addBtn._hasAddListener;
+    }
     
     // Nettoyer TOUS les flags des items du dropdown
     if (addDropdown) {
       const dropdownItems = addDropdown.querySelectorAll('.dropdown-item');
       dropdownItems.forEach(item => {
+        item.onclick = null;
         delete item._hasDropdownListener;
       });
     }
